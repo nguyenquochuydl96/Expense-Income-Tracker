@@ -1,0 +1,6 @@
+{
+  "summary":  "Kế hoạch triển khai ứng dụng Quản lý Tài chính Cá nhân (Heo & Mèo) đồng bộ trực tiếp với Google Sheets (Expenses, Income, Check tiền), bao gồm Dashboard tổng quan, Biểu đồ phân tích, Form nhập liệu nối dòng an toàn và Công cụ Đối soát tiền thực tế (Reconcile / Check tiền).",
+  "updatedAt":  "2026-10-26T03:24:20.898477210Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

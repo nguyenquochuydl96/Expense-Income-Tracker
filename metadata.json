@@ -1,0 +1,6 @@
+{
+  "name": "Heo & Mèo Finance — Quản Lý Chi Tiêu & Google Sheets",
+  "description": "Ứng dụng quản lý tài chính cá nhân, phân tích dòng tiền và đối soát số dư thực tế (Check tiền) đồng bộ trực tiếp với Google Sheets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
