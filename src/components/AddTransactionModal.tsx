@@ -1,16 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, Check, ArrowRight, Sparkles } from 'lucide-react';
+import { X, Check, ArrowRight, Sparkles, Zap } from 'lucide-react';
 import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
   ItemSuggestion,
   SheetTabType,
+  TransactionRecord,
 } from '../types/finance';
 import {
   formatNumberForSheet,
   isoToSheetDate,
   parseSheetNumber,
 } from '../utils/csvParser';
+import { getTopCategories, getSuggestedAmountsForCategory } from '../utils/quickEntry';
 
 export interface NewTransactionPayload {
   sheetType: SheetTabType;
@@ -31,6 +33,7 @@ interface AddTransactionModalProps {
   suggestions: ItemSuggestion[];
   isSheetConnected: boolean;
   initialPreset?: Partial<NewTransactionPayload> | null;
+  allRecords: TransactionRecord[]; // For analyzing history
 }
 
 export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
@@ -40,6 +43,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   suggestions,
   isSheetConnected,
   initialPreset,
+  allRecords,
 }) => {
   const [sheetType, setSheetType] = useState<SheetTabType>('Expenses');
   const [isoDate, setIsoDate] = useState<string>('2026-10-25');
@@ -91,6 +95,18 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       ? [...EXPENSE_CATEGORIES]
       : [...INCOME_CATEGORIES];
   }, [sheetType]);
+
+  // Top 6 frequently used categories (Expenses only)
+  const topCategories = useMemo(() => {
+    if (sheetType !== 'Expenses') return [];
+    return getTopCategories(allRecords, 6);
+  }, [allRecords, sheetType]);
+
+  // Smart amount suggestions for selected category
+  const smartAmounts = useMemo(() => {
+    if (sheetType !== 'Expenses') return [];
+    return getSuggestedAmountsForCategory(allRecords, category, 4);
+  }, [allRecords, category, sheetType]);
 
   const handleSheetTypeChange = (type: SheetTabType) => {
     setSheetType(type);
@@ -281,6 +297,37 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             </div>
           </div>
 
+          {/* Quick Category Chips (Top 6 hay dùng nhất) */}
+          {sheetType === 'Expenses' && topCategories.length > 0 && (
+            <div className="bg-teal-50 border border-teal-200 rounded-lg p-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <Zap className="w-3.5 h-3.5 text-teal-700" />
+                <span className="text-[11px] font-semibold text-teal-900 uppercase tracking-wide">
+                  Danh mục hay dùng (Chọn nhanh)
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {topCategories.map((cat) => (
+                  <button
+                    key={cat.category}
+                    type="button"
+                    onClick={() => setCategory(cat.category)}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                      category === cat.category
+                        ? 'bg-teal-600 text-white shadow-md'
+                        : 'bg-white text-slate-800 hover:bg-teal-100 border border-teal-200'
+                    }`}
+                  >
+                    {cat.category}
+                    <span className="ml-1.5 text-[10px] opacity-75">
+                      ({cat.count}x · ~{Math.round(cat.avgAmount / 1000)}k)
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Row 2: Purchase Item with Historical Autocomplete */}
           <div className="relative">
             <div className="flex items-center justify-between mb-1.5">
@@ -342,16 +389,30 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   4. Amount (Số tiền)
                 </label>
                 <div className="flex items-center gap-1">
-                  {[25000, 50000, 100000].map((quick) => (
-                    <button
-                      key={quick}
-                      type="button"
-                      onClick={() => setAmountStr(quick.toLocaleString('en-US'))}
-                      className="text-[10px] font-mono-tabular px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded"
-                    >
-                      {quick / 1000}k
-                    </button>
-                  ))}
+                  {smartAmounts.length > 0 ? (
+                    smartAmounts.map((smart) => (
+                      <button
+                        key={smart.amount}
+                        type="button"
+                        onClick={() => setAmountStr(smart.amount.toLocaleString('en-US'))}
+                        className="text-[10px] font-mono-tabular px-1.5 py-0.5 bg-teal-100 hover:bg-teal-200 text-teal-800 rounded font-semibold"
+                        title={`Thường dùng cho ${category}`}
+                      >
+                        {smart.label}
+                      </button>
+                    ))
+                  ) : (
+                    [25000, 50000, 100000].map((quick) => (
+                      <button
+                        key={quick}
+                        type="button"
+                        onClick={() => setAmountStr(quick.toLocaleString('en-US'))}
+                        className="text-[10px] font-mono-tabular px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded"
+                      >
+                        {quick / 1000}k
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
               <input

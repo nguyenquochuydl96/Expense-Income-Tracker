@@ -7,6 +7,7 @@ import {
   TransactionRecord,
 } from '../types/finance';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
+import { CategoryBadge } from '../utils/categoryIcons';
 
 interface TransactionLedgerTableProps {
   records: TransactionRecord[];
@@ -258,21 +259,15 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                       {rec.purchaseDate}
                     </td>
                     <td className="py-2.5 px-4 whitespace-nowrap">
-                      <button
-                        type="button"
+                      <CategoryBadge
+                        category={rec.category}
                         onClick={() =>
                           onSelectCategory(
                             selectedCategory === rec.category ? 'ALL' : rec.category
                           )
                         }
-                        className="inline-flex items-center gap-1.5 text-slate-800 hover:text-teal-700 font-medium text-left"
-                      >
-                        <span
-                          className="w-2 h-2 rounded-xs shrink-0"
-                          style={{ backgroundColor: catColor }}
-                        />
-                        <span>{rec.category}</span>
-                      </button>
+                        compact
+                      />
                     </td>
                     <td className="py-2.5 px-4 text-slate-900 font-medium">
                       {rec.purchaseItem}
@@ -309,10 +304,19 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                           <span className="text-slate-700">{rec.note}</span>
                         </>
                       )}
-                      {rec.source === 'local_new' && !rec.syncedToSheet && (
+                      {rec.source === 'local_new' && (
                         <>
                           <span className="mx-1">·</span>
-                          <span className="text-amber-700">Chờ đẩy Sheet</span>
+                          {rec.syncing ? (
+                            <span className="text-teal-700 font-medium inline-flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-ping"></span>
+                              Đang đồng bộ...
+                            </span>
+                          ) : rec.syncedToSheet ? (
+                            <span className="text-emerald-700 font-medium">✓ Đã sync Sheet</span>
+                          ) : (
+                            <span className="text-amber-700 font-medium">Chờ đẩy Sheet</span>
+                          )}
                         </>
                       )}
                     </td>

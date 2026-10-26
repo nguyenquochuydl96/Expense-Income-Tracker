@@ -360,35 +360,76 @@ export default function App() {
     setIsSyncing(true);
     setSyncError(null);
     try {
-      const meta = await fetchSpreadsheetMetadata(targetInput, token);
-      setSheetMeta(meta);
-      localStorage.setItem(SAVED_SHEET_URL_KEY, targetInput);
+      let activeToken = token;
+      try {
+        const meta = await fetchSpreadsheetMetadata(targetInput, activeToken);
+        setSheetMeta(meta);
+        localStorage.setItem(SAVED_SHEET_URL_KEY, targetInput);
 
-      const [expensesRows, incomeRows, checkTien] = await Promise.all([
-        fetchTabTransactions(meta.spreadsheetId, meta.expensesTab, 'Expenses', token),
-        fetchTabTransactions(meta.spreadsheetId, meta.incomeTab, 'Income', token),
-        meta.checkTienTab
-          ? fetchCheckTienSheet(meta.spreadsheetId, meta.checkTienTab, token)
-          : Promise.resolve(null),
-      ]);
+        const [expensesRows, incomeRows, checkTien] = await Promise.all([
+          fetchTabTransactions(meta.spreadsheetId, meta.expensesTab, 'Expenses', activeToken),
+          fetchTabTransactions(meta.spreadsheetId, meta.incomeTab, 'Income', activeToken),
+          meta.checkTienTab
+            ? fetchCheckTienSheet(meta.spreadsheetId, meta.checkTienTab, activeToken)
+            : Promise.resolve(null),
+        ]);
 
-      setSheetRecords([...expensesRows, ...incomeRows]);
-      if (checkTien) {
-        setCheckTienData(checkTien);
+        setSheetRecords([...expensesRows, ...incomeRows]);
+        if (checkTien) {
+          setCheckTienData(checkTien);
+        }
+
+        const nowStr = new Date().toLocaleTimeString('vi-VN', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        });
+        setLastSyncedAt(nowStr);
+        showToast(
+          'success',
+          `Đã đồng bộ "${meta.title}": ${expensesRows.length} dòng Expenses, ${incomeRows.length} dòng Income${
+            checkTien ? `, kèm tab "${checkTien.sheetName}"` : ''
+          }.`
+        );
+      } catch (innerErr: any) {
+        // If TOKEN_EXPIRED, automatically refresh token via googleSignIn and retry once!
+        if (innerErr?.message && innerErr.message.includes('TOKEN_EXPIRED')) {
+          showToast('warning', 'Token Google hết hạn, đang tự động làm mới phiên đăng nhập...');
+          const freshLogin = await googleSignIn();
+          if (!freshLogin) throw new Error('Không thể làm mới token đăng nhập.');
+          setUser(freshLogin.user);
+          setAccessToken(freshLogin.accessToken);
+          activeToken = freshLogin.accessToken;
+
+          // Retry sync with fresh token
+          const meta = await fetchSpreadsheetMetadata(targetInput, activeToken);
+          setSheetMeta(meta);
+          localStorage.setItem(SAVED_SHEET_URL_KEY, targetInput);
+
+          const [expensesRows, incomeRows, checkTien] = await Promise.all([
+            fetchTabTransactions(meta.spreadsheetId, meta.expensesTab, 'Expenses', activeToken),
+            fetchTabTransactions(meta.spreadsheetId, meta.incomeTab, 'Income', activeToken),
+            meta.checkTienTab
+              ? fetchCheckTienSheet(meta.spreadsheetId, meta.checkTienTab, activeToken)
+              : Promise.resolve(null),
+          ]);
+
+          setSheetRecords([...expensesRows, ...incomeRows]);
+          if (checkTien) {
+            setCheckTienData(checkTien);
+          }
+
+          const nowStr = new Date().toLocaleTimeString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+          });
+          setLastSyncedAt(nowStr);
+          showToast('success', 'Đã làm mới token và đồng bộ thành công!');
+        } else {
+          throw innerErr;
+        }
       }
-
-      const nowStr = new Date().toLocaleTimeString('vi-VN', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      });
-      setLastSyncedAt(nowStr);
-      showToast(
-        'success',
-        `Đã đồng bộ "${meta.title}": ${expensesRows.length} dòng Expenses, ${incomeRows.length} dòng Income${
-          checkTien ? `, kèm tab "${checkTien.sheetName}"` : ''
-        }.`
-      );
     } catch (err: any) {
       setSyncError(err?.message || 'Không thể đồng bộ dữ liệu từ Google Sheet.');
     } finally {
@@ -396,7 +437,7 @@ export default function App() {
     }
   };
 
-  // Save new transaction (appends to Google Sheet if connected, and updates UI immediately)
+  // Save new transaction (Optimistic Update: add to UI immediately, sync in background)
   const handleSaveTransaction = async (payload: NewTransactionPayload) => {
     const parsedDate = parseDateString(payload.purchaseDate);
     const newRecord: TransactionRecord = {
@@ -413,36 +454,64 @@ export default function App() {
       note: payload.note,
       source: 'local_new',
       syncedToSheet: false,
+      syncing: false,
     };
 
+    // OPTIMISTIC UPDATE: Add to UI immediately
     if (sheetMeta && accessToken) {
+      // Connected: show in UI with syncing badge
+      newRecord.syncing = true;
+      setSheetRecords((prev) => (prev ? [...prev, newRecord] : [newRecord]));
+      showToast('success', `✓ Đã thêm "${payload.purchaseItem}" vào bảng!`);
+
+      // Background sync to Google Sheets
       const targetTab =
         payload.sheetType === 'Expenses'
           ? sheetMeta.expensesTab
           : sheetMeta.incomeTab;
 
-      await appendTransactionToSheet(
-        sheetMeta.spreadsheetId,
-        targetTab,
-        {
-          purchaseDate: payload.purchaseDate,
-          category: payload.category,
-          purchaseItem: payload.purchaseItem,
-          amount: payload.amount,
-          beCorp: payload.beCorp,
-          credit: payload.credit,
-          note: payload.note,
-        },
-        accessToken
-      );
+      try {
+        await appendTransactionToSheet(
+          sheetMeta.spreadsheetId,
+          targetTab,
+          {
+            purchaseDate: payload.purchaseDate,
+            category: payload.category,
+            purchaseItem: payload.purchaseItem,
+            amount: payload.amount,
+            beCorp: payload.beCorp,
+            credit: payload.credit,
+            note: payload.note,
+          },
+          accessToken
+        );
 
-      newRecord.syncedToSheet = true;
-      setSheetRecords((prev) => (prev ? [...prev, newRecord] : [newRecord]));
-      showToast(
-        'success',
-        `Đã ghi thêm dòng mới "${payload.purchaseItem}" vào cuối bảng ${targetTab} trên Google Sheet!`
-      );
+        // Mark as synced
+        setSheetRecords((prev) =>
+          prev
+            ? prev.map((r) =>
+                r.id === newRecord.id
+                  ? { ...r, syncedToSheet: true, syncing: false }
+                  : r
+              )
+            : prev
+        );
+      } catch (err: any) {
+        // Sync failed: mark as unsynced
+        setSheetRecords((prev) =>
+          prev
+            ? prev.map((r) =>
+                r.id === newRecord.id ? { ...r, syncing: false } : r
+              )
+            : prev
+        );
+        showToast(
+          'warning',
+          `Không thể đẩy "${payload.purchaseItem}" lên Google Sheet. Dữ liệu vẫn lưu ở máy.`
+        );
+      }
     } else {
+      // Not connected: save to localNewRecords
       setLocalNewRecords((prev) => [...prev, newRecord]);
       showToast(
         'success',
@@ -738,24 +807,30 @@ export default function App() {
             {/* VIEW 1: DASHBOARD TỔNG QUAN */}
             {activeTab === 'dashboard' && (
               <div className="space-y-6">
-                {/* 4 KPI SUMMARY CARDS */}
+                {/* 4 KPI SUMMARY CARDS - FINTECH GLASSMORPHISM STYLE */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Card 1: Tổng Thu */}
-                  <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>Tổng thu ({formatMonthLabel(selectedMonth)})</span>
-                        <ArrowUpRight className="w-4 h-4 text-emerald-600" />
+                  {/* Card 1: Tổng Thu - Emerald Gradient Accent */}
+                  <div className="relative overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-white border border-emerald-200 rounded-2xl p-5 shadow-lg shadow-emerald-100/50 hover:shadow-xl hover:shadow-emerald-100/60 transition-all duration-300">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                    <div className="relative">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-semibold text-emerald-900/70 uppercase tracking-wide">Tổng thu</span>
+                        <div className="p-2 bg-emerald-100 rounded-lg">
+                          <ArrowUpRight className="w-4 h-4 text-emerald-600" />
+                        </div>
                       </div>
-                      <div className="text-2xl font-bold font-mono-tabular text-emerald-700 mt-2">
+                      <div className="text-3xl font-extrabold font-mono-tabular text-emerald-700 mb-1">
                         {formatCurrency(kpiStats.effectiveIncome)}
                       </div>
+                      <div className="text-xs text-emerald-700/70 font-medium">
+                        {formatMonthLabel(selectedMonth)}
+                      </div>
                     </div>
-                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                    <div className="mt-4 pt-3 border-t border-emerald-200/50 flex items-center justify-between text-xs">
                       {kpiStats.hasSheetIncome ? (
-                        <span>Từ {kpiStats.incomeCount} khoản bảng Income</span>
+                        <span className="text-slate-600">{kpiStats.incomeCount} khoản Income</span>
                       ) : (
-                        <span>Thu nhập định mức (chưa có dòng Income)</span>
+                        <span className="text-slate-500">Thu nhập định mức</span>
                       )}
                       <button
                         type="button"
@@ -770,80 +845,117 @@ export default function App() {
                           });
                           setIsAddModalOpen(true);
                         }}
-                        className="text-teal-700 hover:underline font-medium"
+                        className="text-emerald-700 hover:text-emerald-900 font-semibold"
                       >
-                        + Ghi thu nhập
+                        + Ghi thu
                       </button>
                     </div>
                   </div>
 
-                  {/* Card 2: Tổng Chi (Bao gồm Tiết kiệm theo quy tắc) */}
-                  <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>Tổng chi ({kpiStats.expenseCount} khoản)</span>
-                        <ArrowDownRight className="w-4 h-4 text-rose-600" />
+                  {/* Card 2: Tổng Chi - Rose Gradient Accent */}
+                  <div className="relative overflow-hidden bg-gradient-to-br from-rose-50 via-white to-white border border-rose-200 rounded-2xl p-5 shadow-lg shadow-rose-100/50 hover:shadow-xl hover:shadow-rose-100/60 transition-all duration-300">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                    <div className="relative">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-semibold text-rose-900/70 uppercase tracking-wide">Tổng chi</span>
+                        <div className="p-2 bg-rose-100 rounded-lg">
+                          <ArrowDownRight className="w-4 h-4 text-rose-600" />
+                        </div>
                       </div>
-                      <div className="text-2xl font-bold font-mono-tabular text-rose-700 mt-2">
+                      <div className="text-3xl font-extrabold font-mono-tabular text-rose-700 mb-1">
                         {formatCurrency(kpiStats.totalExpense)}
                       </div>
+                      <div className="text-xs text-rose-700/70 font-medium">
+                        {kpiStats.expenseCount} khoản chi tiêu
+                      </div>
                     </div>
-                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-mono-tabular">
-                      <span>Sinh hoạt: {formatCurrency(kpiStats.livingExpense)}</span>
-                      <span>·</span>
-                      <span className="text-blue-700">
-                        Tiết kiệm: {formatCurrency(kpiStats.savingsExpense)}
+                    <div className="mt-4 pt-3 border-t border-rose-200/50 flex items-center justify-between text-[11px] font-mono-tabular">
+                      <span className="text-slate-600">
+                        Sinh hoạt: <strong className="text-slate-900">{formatCurrency(kpiStats.livingExpense)}</strong>
+                      </span>
+                      <span className="text-blue-700 font-semibold">
+                        TK: {formatCurrency(kpiStats.savingsExpense)}
                       </span>
                     </div>
                   </div>
 
-                  {/* Card 3: Số Dư Tháng */}
-                  <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>Số dư còn lại (Thu − Chi)</span>
-                        <Wallet className="w-4 h-4 text-teal-700" />
+                  {/* Card 3: Số Dư - Slate/Teal Gradient */}
+                  <div className={`relative overflow-hidden bg-gradient-to-br ${
+                    kpiStats.netBalance >= 0 
+                      ? 'from-teal-50 via-white to-white border-teal-200 shadow-teal-100/50 hover:shadow-teal-100/60' 
+                      : 'from-red-50 via-white to-white border-red-200 shadow-red-100/50 hover:shadow-red-100/60'
+                  } border rounded-2xl p-5 shadow-lg hover:shadow-xl transition-all duration-300`}>
+                    <div className={`absolute top-0 right-0 w-32 h-32 ${
+                      kpiStats.netBalance >= 0 ? 'bg-teal-500/10' : 'bg-red-500/10'
+                    } rounded-full blur-3xl -mr-16 -mt-16`}></div>
+                    <div className="relative">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className={`text-xs font-semibold uppercase tracking-wide ${
+                          kpiStats.netBalance >= 0 ? 'text-teal-900/70' : 'text-red-900/70'
+                        }`}>Số dư</span>
+                        <div className={`p-2 rounded-lg ${
+                          kpiStats.netBalance >= 0 ? 'bg-teal-100' : 'bg-red-100'
+                        }`}>
+                          <Wallet className={`w-4 h-4 ${
+                            kpiStats.netBalance >= 0 ? 'text-teal-700' : 'text-red-600'
+                          }`} />
+                        </div>
                       </div>
                       <div
-                        className={`text-2xl font-bold font-mono-tabular mt-2 ${
-                          kpiStats.netBalance >= 0 ? 'text-slate-900' : 'text-rose-700'
+                        className={`text-3xl font-extrabold font-mono-tabular mb-1 ${
+                          kpiStats.netBalance >= 0 ? 'text-teal-700' : 'text-red-700'
                         }`}
                       >
                         {formatCurrency(kpiStats.netBalance, true)}
                       </div>
+                      <div className={`text-xs font-medium ${
+                        kpiStats.netBalance >= 0 ? 'text-teal-700/70' : 'text-red-700/70'
+                      }`}>
+                        Thu − Chi còn lại
+                      </div>
                     </div>
-                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                      <span>
-                        Hoàn/Bán đồ: {formatCurrency(kpiStats.negativeExpenseOffsets)}
+                    <div className={`mt-4 pt-3 border-t ${
+                      kpiStats.netBalance >= 0 ? 'border-teal-200/50' : 'border-red-200/50'
+                    } flex items-center justify-between text-xs`}>
+                      <span className="text-slate-600">
+                        Hoàn: {formatCurrency(kpiStats.negativeExpenseOffsets)}
                       </span>
                       <button
                         type="button"
                         onClick={() => setActiveTab('reconcile')}
-                        className="text-teal-700 hover:underline font-medium"
+                        className={`font-semibold ${
+                          kpiStats.netBalance >= 0 ? 'text-teal-700 hover:text-teal-900' : 'text-red-700 hover:text-red-900'
+                        }`}
                       >
-                        Check tiền thực tế →
+                        Check tiền →
                       </button>
                     </div>
                   </div>
 
-                  {/* Card 4: Phát sinh BE Corp & Credit */}
-                  <div className="bg-white border border-slate-200 rounded-xl p-5 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span>Phát sinh Credit &amp; BE Corp</span>
-                        <CreditCard className="w-4 h-4 text-indigo-600" />
+                  {/* Card 4: Credit & BE Corp - Indigo/Amber Gradient */}
+                  <div className="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-white border border-indigo-200 rounded-2xl p-5 shadow-lg shadow-indigo-100/50 hover:shadow-xl hover:shadow-indigo-100/60 transition-all duration-300">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                    <div className="relative">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-semibold text-indigo-900/70 uppercase tracking-wide">Phát sinh</span>
+                        <div className="p-2 bg-indigo-100 rounded-lg">
+                          <CreditCard className="w-4 h-4 text-indigo-600" />
+                        </div>
                       </div>
-                      <div className="text-2xl font-bold font-mono-tabular text-indigo-700 mt-2">
+                      <div className="text-3xl font-extrabold font-mono-tabular text-indigo-700 mb-1">
                         {formatCurrency(kpiStats.totalCredit + kpiStats.totalBeCorp)}
                       </div>
+                      <div className="text-xs text-indigo-700/70 font-medium">
+                        Credit &amp; BE Corp
+                      </div>
                     </div>
-                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-mono-tabular">
-                      <span className="text-amber-700">
-                        BE Corp: {formatCurrency(kpiStats.totalBeCorp)}
+                    <div className="mt-4 pt-3 border-t border-indigo-200/50 flex items-center justify-between text-[11px] font-mono-tabular">
+                      <span className="text-amber-700 font-semibold">
+                        BE: {formatCurrency(kpiStats.totalBeCorp)}
                       </span>
                       <span className="text-slate-300">·</span>
-                      <span className="text-indigo-700">
-                        Credit: {formatCurrency(kpiStats.totalCredit)}
+                      <span className="text-indigo-700 font-semibold">
+                        CR: {formatCurrency(kpiStats.totalCredit)}
                       </span>
                     </div>
                   </div>
@@ -939,7 +1051,40 @@ export default function App() {
         suggestions={itemSuggestions}
         isSheetConnected={Boolean(sheetMeta && accessToken)}
         initialPreset={addModalPreset}
+        allRecords={allRecords}
       />
+
+      {/* GLOBAL SYNC STATUS FLOATING BADGE */}
+      <div className="fixed bottom-4 right-4 z-40">
+        <button
+          type="button"
+          onClick={() => setActiveTab('sync')}
+          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl shadow-lg border text-xs font-medium transition-all ${
+            isSyncing
+              ? 'bg-teal-50 border-teal-200 text-teal-800'
+              : sheetMeta && accessToken
+              ? 'bg-white border-emerald-200 text-emerald-800 hover:bg-emerald-50'
+              : 'bg-white border-amber-200 text-amber-800 hover:bg-amber-50'
+          }`}
+        >
+          {isSyncing ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-teal-600 animate-ping"></span>
+              <span>Đang đồng bộ Google Sheets...</span>
+            </>
+          ) : sheetMeta && accessToken ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>Đã kết nối Sheet {lastSyncedAt ? `(Sync lúc ${lastSyncedAt})` : ''}</span>
+            </>
+          ) : (
+            <>
+              <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+              <span>Chưa kết nối Google Sheet (Click để cấu hình)</span>
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }

@@ -15,6 +15,7 @@ export interface TransactionRecord {
   note?: string;
   source: 'attached_csv' | 'google_sheet' | 'local_new';
   syncedToSheet?: boolean;
+  syncing?: boolean; // true while background sync is in progress
 }
 
 export interface CheckTienSheetData {

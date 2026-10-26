@@ -25,7 +25,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [hoveredMonth, setHoveredMonth] = useState<string | null>(null);
 
-  // 1. Category breakdown for Pie/Donut Chart
+  // 1. Category breakdown for Pie/Donut Chart & Advanced Insights
   const categoryStats = useMemo(() => {
     const totals = new Map<string, { amount: number; count: number; beCorp: number; credit: number }>();
 
@@ -49,6 +49,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
         count: data.count,
         beCorp: data.beCorp,
         credit: data.credit,
+        avgAmount: data.count > 0 ? data.amount / data.count : 0,
         color: CATEGORY_COLORS[category] || '#64748B',
       }))
       .filter((item) => item.amount > 0)
@@ -71,7 +72,9 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
       };
     });
 
-    return { slices, grandTotal };
+    const topCategories = slices.slice(0, 3);
+
+    return { slices, grandTotal, topCategories };
   }, [expensesInPeriod, excludeSavingsInPie]);
 
   // 2. Monthly Cashflow data for Bar Chart
@@ -198,14 +201,14 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      {/* 1. Pie / Donut Chart: Category Allocation */}
-      <section className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-6 flex flex-col justify-between">
+      {/* 1. Pie / Donut Chart: Advanced Category Allocation & Insights */}
+      <section className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-6 flex flex-col justify-between shadow-xs">
         <div>
           <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-100">
             <div>
-              <h2 className="text-base font-bold text-slate-900">Phân bổ chi tiêu theo danh mục</h2>
+              <h2 className="text-base font-bold text-slate-900">Phân bổ chi tiêu &amp; Top danh mục</h2>
               <p className="text-xs text-slate-500 mt-0.5">
-                Nhấp vào danh mục để lọc bảng giao dịch chi tiết bên dưới
+                Phân tích sâu tỷ trọng từng khoản chi tiêu trong kỳ
               </p>
             </div>
             <button
@@ -316,6 +319,20 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
           )}
         </div>
 
+        {/* Top 3 categories quick summary chip strip */}
+        <div className="mt-4 pt-3 border-t border-slate-100">
+          <div className="text-[11px] font-semibold text-slate-500 mb-2">Top danh mục chiếm tỷ trọng lớn nhất:</div>
+          <div className="grid grid-cols-3 gap-2">
+            {categoryStats.topCategories.map((top, idx) => (
+              <div key={top.category} className="p-2 bg-slate-50 border border-slate-200 rounded-lg">
+                <div className="text-[10px] text-slate-500 truncate">#{idx + 1} {top.category}</div>
+                <div className="text-xs font-bold text-slate-900 font-mono-tabular mt-0.5">{top.percentage.toFixed(1)}%</div>
+                <div className="text-[10px] text-teal-700 font-mono-tabular">{formatCurrency(top.amount)}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {selectedCategoryFilter !== 'ALL' && (
           <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
             <span>
@@ -333,7 +350,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
       </section>
 
       {/* 2. Bar Chart: Monthly Cashflow */}
-      <section className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-6 flex flex-col justify-between">
+      <section className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-6 flex flex-col justify-between shadow-xs">
         <div>
           <div className="flex flex-wrap items-start justify-between gap-4 pb-4 border-b border-slate-100">
             <div>

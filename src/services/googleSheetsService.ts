@@ -47,6 +47,9 @@ export async function fetchSpreadsheetMetadata(
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
     const msg = errBody?.error?.message || `HTTP ${res.status}`;
+    if (res.status === 401) {
+      throw new Error(`TOKEN_EXPIRED: Token Google OAuth đã hết hạn (${msg})`);
+    }
     throw new Error(`Không thể kết nối Google Sheet: ${msg}`);
   }
 
@@ -256,6 +259,9 @@ export async function appendTransactionToSheet(
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
     const msg = errBody?.error?.message || `HTTP ${res.status}`;
+    if (res.status === 401) {
+      throw new Error(`TOKEN_EXPIRED: Token Google OAuth đã hết hạn (${msg})`);
+    }
     throw new Error(`Không thể ghi dòng mới vào bảng ${tabName}: ${msg}`);
   }
 }
