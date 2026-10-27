@@ -200,8 +200,15 @@ export default function App() {
     let mounted = true;
     async function loadAttachedCsv() {
       try {
-        const res = await fetch('/assets/aistudio/Expense___Income_Tracker_1a8ce480');
-        if (!res.ok) throw new Error('Không thể tải file dữ liệu đính kèm');
+        const assetUrl = `${import.meta.env.BASE_URL || './'}assets/aistudio/Expense___Income_Tracker_1a8ce480`;
+        let res = await fetch(assetUrl).catch(() => null);
+        if (!res || !res.ok) {
+          res = await fetch('./assets/aistudio/Expense___Income_Tracker_1a8ce480').catch(() => null);
+        }
+        if (!res || !res.ok) {
+          res = await fetch('/assets/aistudio/Expense___Income_Tracker_1a8ce480').catch(() => null);
+        }
+        if (!res || !res.ok) throw new Error('Không thể tải file dữ liệu đính kèm');
         const text = await res.text();
         const parsed = parseAttachedExpenseCsv(text);
         if (mounted) {

@@ -161,3 +161,23 @@ src/
 - **Trên Linux (Hermes):**
   - Trước khi code: Chạy `git pull origin main`
   - Sau khi xong: Commit và push lại lên GitHub để đồng bộ song song 2 bên.
+
+---
+
+## 7. Hướng dẫn Public Web & Sử dụng (Deploy)
+
+Dự án đã được cấu hình sẵn 2 phương thức public lên web hoàn toàn miễn phí:
+
+### Cách 1: GitHub Pages (Tự động sẵn từ GitHub)
+1. Workflow CI/CD đã tạo sẵn tại `.github/workflows/deploy.yml`.
+2. Vào GitHub repo của bạn: `Settings` $\rightarrow$ `Pages` (bên cột trái).
+3. Tại mục **Build and deployment** $\rightarrow$ **Source**: Chọn **`GitHub Actions`**.
+4. GitHub sẽ tự động build và public web tại:  
+   👉 `https://nguyenquochuydl96.github.io/Expense-Income-Tracker/`
+
+### Cách 2: Vercel (Khuyên dùng — Cực nhanh & Mượt nhất)
+1. Truy cập https://vercel.com/new và đăng nhập bằng tài khoản GitHub của bạn.
+2. Tìm và chọn repository `Expense-Income-Tracker` $\rightarrow$ Bấm **Deploy**.
+3. Sau khoảng 30 giây, bạn sẽ nhận được một đường link web cá nhân (ví dụ: `https://expense-income-tracker-xxx.vercel.app`) để truy cập trên cả máy tính lẫn điện thoại di động!
+
+*Lưu ý khi dùng tính năng Đăng nhập Google (OAuth):* Khi deploy lên domain mới (GitHub Pages hoặc Vercel), hãy copy tên miền đó và thêm vào mục **Authorized Domains** trong Google Cloud Console / Firebase Console để cấp phép đăng nhập Google.
