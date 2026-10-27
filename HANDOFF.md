@@ -2,7 +2,7 @@
 
 > **Tài liệu bàn giao phiên làm việc.** Khi chuyển sang tài khoản Gemini mới hoặc agent khác (Antigravity / Hermes) tiếp nhận, chỉ cần đọc file này là nắm toàn bộ bối cảnh, kiến trúc giao diện mới và tiếp tục công việc ngay lập tức mà không cần hỏi lại.
 
-**Cập nhật lần cuối:** 27/10/2026 (Thêm Bảng Ngân sách theo Hạng mục [Budget · Đã chi · Còn lại], tối ưu KPI không dấu +, ưu tiên view hạng mục thay vì biểu đồ)  
+**Cập nhật lần cuối:** 27/10/2026 (Hoàn thiện Cơ chế Lũy kế cấn trừ ngân sách đa tháng [Multi-Month Rollover / Carryover], Dòng lũy kế số dư chuyển tiếp, Ma trận ngân sách 7 tháng)  
 **Repo GitHub:** https://github.com/nguyenquochuydl96/Expense-Income-Tracker  
 **Đường dẫn Local:** `C:\Users\huynq\.gemini\antigravity\scratch\Expense-Income-Tracker`  
 **Git Author:** `Nguyen Quoc Huy <nguyenquochuy.dl96@gmail.com>`
@@ -54,24 +54,33 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
   - `Tiết kiệm / Đầu tư`
   - `Tổng chi tiêu` (Hàng đậm)
   - `Còn lại (Remaining)` (Kèm tag xanh lá nếu dư, tag đỏ nếu âm)
+  - `Lũy kế số dư chuyển tiếp`: Dòng tính tổng dồn số dư khả dụng ròng tích lũy từ tháng đầu tiên đến tháng hiện tại (ví dụ: +6.19m → +7.11m → +11.30m → ... → +24.13m).
   - `Tỷ lệ chi / Thu nhập` (% used)
   - `Ví BE Corp (Chu kỳ 26–25)`
   - `Thẻ Credit (Sao kê 25–24)`
 * **Thống kê bổ sung:** Cột `Trung bình` mỗi tháng và cột `Tổng cộng`.
 * **Tương tác thông minh:** Click vào bất kỳ cột tháng nào trong bảng để lọc nhanh Dashboard sang tháng đó. Có nút thu gọn/mở rộng bảng.
 
-### 2.5 Bảng Ngân sách & Chi tiêu theo Hạng mục (Category Budget vs Actual Table)
+### 2.5 Bảng Ngân sách & Chi tiêu theo Hạng mục (Multi-Month Rollover Budgeting Engine)
 **Vị trí:** Đặt ngay bên dưới Bảng tổng hợp đa tháng, **ưu tiên hiển thị thay thế cho 2 bảng report biểu đồ trước đây**:
 * **Nguyên tắc cốt lõi: Budget tổng = Income:**
-  - Tổng ngân sách của kỳ/tháng luôn bằng đúng 100% Thu nhập của kỳ/tháng đó (`Total Budget = Income`).
-  - Ngân sách từng hạng mục được phân bổ theo **Tỷ lệ phần trăm (%)** từ Tổng thu nhập: `Budget_category = Total_Income * (Percentage / 100)`.
+  - Tổng ngân sách định mức của kỳ/tháng luôn bằng đúng 100% Thu nhập của kỳ/tháng đó (`Total Budget = Income`).
+  - Ngân sách từng hạng mục được phân bổ theo **Tỷ lệ phần trăm (%)** từ Tổng thu nhập: `Base_Budget_category = Total_Income * (Percentage / 100)`.
   - Tổng các tỷ lệ % bằng đúng `100.0%`.
-* **3 Chỉ số cốt lõi cho từng hạng mục tiêu dùng:**
-  - `Tỷ lệ % Budget`: Tỷ lệ % phân bổ của hạng mục đó (ví dụ: Tiết kiệm 38.0%, Thuê nhà 16.5%, Ăn uống 15.0%, Thú cưng 7.0%...).
-  - `Ngân sách (Budget)`: Tính tự động theo `% * Thu nhập` (ví dụ Tiền ăn: `15% * 53,500,000 ₫ = 8,025,000 ₫`).
-  - `Đã chi tiêu`: Tổng số tiền thực chi trong tháng của hạng mục đó.
-  - `Còn lại (Remaining)`: Hiển thị badge xanh `Còn lại X ₫` nếu trong hạn mức, hoặc badge đỏ `Bội chi -X ₫` nếu vượt ngân sách.
-* **Thanh tiến độ chi tiêu (% Used):** Đổi màu trực quan (Xanh ngọc `< 80%`, Cam `80% - 100%`, Đỏ `> 100%`).
+* **Cơ chế Lũy kế Cấn trừ Ngân sách qua các tháng (Rollover / Carryover Engine):**
+  - Tự động xâu chuỗi tuần tự theo thời gian từ tháng đầu tiên (T4/26) đến tháng mới nhất (T10/26).
+  - **Công thức tính cho Tháng T:**
+    - `Lũy kế tháng trước (Carryover)` = Số tiền còn lại hoặc bội chi từ Tháng $T-1$.
+    - `Ngân sách khả dụng (Effective Budget)` = `Định mức tháng (Base Budget)` + `Lũy kế tháng trước (Carryover)`.
+    - **Ví dụ đúng yêu cầu của người dùng:** Nếu tháng 10 ngân sách Tiền ăn là 5.000.000 ₫, chi tiêu 5.500.000 ₫ (bội chi 500.000 ₫) $\to$ qua tháng 11, lũy kế là `-500.000 ₫`, làm ngân sách khả dụng tháng 11 giảm đi đúng 500.000 ₫.
+    - `Còn lại chuyển tiếp (Month End Remaining)` = `Ngân sách khả dụng` - `Đã chi tiêu tháng này`.
+  - **3 Chế độ cấn trừ linh hoạt tùy chọn:**
+    1. *Lũy kế đầy đủ (Mặc định)*: Chuyển toàn bộ số dư (+ tiết kiệm / - bội chi) sang tháng sau.
+    2. *Chỉ trừ bội chi (Deficit Only)*: Chỉ khấu trừ khi tháng trước bị tiêu lạm phát (âm), nếu dư thì không cộng dồn.
+    3. *Độc lập (None)*: Mỗi tháng tính độc lập theo thu nhập tháng đó.
+* **2 Chế độ xem tương tác trực quan:**
+  - **Tab 1 - "Chi tiết tháng":** Bảng chi tiết đầy đủ 8 cột cho tháng đang chọn: `Hạng mục`, `Tỷ lệ %`, `Định mức tháng`, `Lũy kế (T trước)`, `Ngân sách khả dụng` (cột trọng tâm), `Đã chi tiêu`, `Còn lại chuyển tiếp`, `Tiến độ chi tiêu`.
+  - **Tab 2 - "Ma trận Đa tháng (7T)":** Bảng đối soát ma trận cả 7 tháng cùng lúc, mỗi ô hiển thị `Khả dụng / Đã chi` kèm badge màu thể hiện trạng thái (dư hoặc bội chi) của từng hạng mục qua từng tháng.
 * **Tính năng chỉnh sửa linh hoạt:** Nút `Chỉnh % Budget` cho phép tùy chỉnh tỷ lệ % của từng hạng mục trực tiếp trên UI, có bộ đếm kiểm tra tổng = 100% và tự động lưu `localStorage`.
 * **Bộ lọc nhanh:** Xem `Tất cả`, `Bội chi`, `Trong hạn mức`.
 * **Nút mở Biểu đồ bổ trợ:** Nút `Xem biểu đồ` cho phép mở rộng 2 biểu đồ phân tích (Top chi tiêu & Tỷ trọng) khi người dùng muốn xem.

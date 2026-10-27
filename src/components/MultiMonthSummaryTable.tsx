@@ -36,6 +36,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
 
   // Compute stats for each month
   const monthlyData = useMemo(() => {
+    let runningCumulative = 0;
     return sortedMonths.map((mKey) => {
       const [y, m] = mKey.split('-');
       const label = `T${parseInt(m, 10)}/${y.slice(2)}`;
@@ -64,6 +65,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
       }
 
       const remaining = income - totalExpense;
+      runningCumulative += remaining;
       const pctUsed = income > 0 ? (totalExpense / income) * 100 : 0;
 
       // Cycle-aware BE Corp & Credit
@@ -98,6 +100,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
         savingsExpense,
         totalExpense,
         remaining,
+        cumulativeRemaining: runningCumulative,
         pctUsed,
         beCorpTotal,
         creditTotal,
@@ -362,6 +365,37 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                   >
                     {formatCurrency(totals.total.remaining, true)}
                   </span>
+                </td>
+              </tr>
+
+              {/* Row 5b: Lũy kế số dư chuyển tiếp (Cumulative Cash Flow) */}
+              <tr className="hover:bg-slate-50/80 transition-colors bg-indigo-50/20 text-xs">
+                <td className="py-2 px-4 font-sans font-semibold text-indigo-900 sticky left-0 bg-indigo-50/40 z-10 whitespace-nowrap shadow-xs">
+                  Lũy kế số dư chuyển tiếp
+                </td>
+                {monthlyData.map((m) => (
+                  <td
+                    key={m.mKey}
+                    className={`py-2 px-3 text-right font-semibold ${
+                      selectedMonth === m.mKey ? 'bg-sky-50/60 font-bold' : ''
+                    }`}
+                  >
+                    <span
+                      className={`inline-block px-1.5 py-0.5 rounded text-[11px] ${
+                        m.cumulativeRemaining >= 0
+                          ? 'text-indigo-900 bg-indigo-50/80'
+                          : 'text-rose-800 bg-rose-50'
+                      }`}
+                    >
+                      {formatCurrency(m.cumulativeRemaining, true)}
+                    </span>
+                  </td>
+                ))}
+                <td className="py-2 px-3 text-right bg-slate-50 font-mono-tabular text-slate-400 border-l border-slate-200">
+                  —
+                </td>
+                <td className="py-2 px-4 text-right bg-indigo-100/60 font-mono-tabular font-extrabold text-indigo-950">
+                  {formatCurrency(totals.total.remaining, true)}
                 </td>
               </tr>
 
