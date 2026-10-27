@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   RefreshCw,
   CheckCircle2,
+  AlertCircle,
   Link2,
   Download,
   LogOut,
@@ -100,6 +101,17 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = ({
               <div className="mt-5">
                 {!accessToken ? (
                   <div>
+                    {user && (
+                      <div className="mb-3 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800">
+                        <div className="font-semibold flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          <span>Phiên đăng nhập Google đã hết hạn</span>
+                        </div>
+                        <div className="mt-1 text-[11px] text-amber-700">
+                          Tài khoản <strong>{user.email || user.displayName}</strong>. Dữ liệu đã đồng bộ trước đó vẫn được lưu an toàn. Nhấn nút bên dưới để kết nối lại khi muốn đồng bộ thêm dữ liệu mới.
+                        </div>
+                      </div>
+                    )}
                     <button
                       type="button"
                       onClick={onGoogleLogin}

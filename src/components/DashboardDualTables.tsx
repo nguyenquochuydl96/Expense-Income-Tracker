@@ -23,7 +23,10 @@ export const DashboardDualTables: React.FC<DashboardDualTablesProps> = ({
 }) => {
   // 1. LEFT TABLE: Category Summary by Cycle / Type (Matching AR Aging Summary in reference image)
   const categorySummaryRows = useMemo(() => {
-    const expenseRecords = records.filter((r) => r.sheetType === 'Expenses');
+    let expenseRecords = records.filter((r) => r.sheetType === 'Expenses');
+    if (selectedCategory !== 'ALL') {
+      expenseRecords = expenseRecords.filter((r) => r.category === selectedCategory);
+    }
     const map = new Map<
       string,
       {
@@ -66,15 +69,18 @@ export const DashboardDualTables: React.FC<DashboardDualTablesProps> = ({
       .filter((item) => item.total > 0)
       .sort((a, b) => b.total - a.total)
       .slice(0, 6);
-  }, [records]);
+  }, [records, selectedCategory]);
 
   // 2. RIGHT TABLE: Recent Unpaid / Incurred Transactions (Matching Unpaid Invoices in reference image)
   const recentTransactions = useMemo(() => {
-    return [...records]
-      .filter((r) => r.sheetType === 'Expenses')
+    let list = records.filter((r) => r.sheetType === 'Expenses');
+    if (selectedCategory !== 'ALL') {
+      list = list.filter((r) => r.category === selectedCategory);
+    }
+    return [...list]
       .sort((a, b) => b.isoDate.localeCompare(a.isoDate))
       .slice(0, 6);
-  }, [records]);
+  }, [records, selectedCategory]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
@@ -85,7 +91,9 @@ export const DashboardDualTables: React.FC<DashboardDualTablesProps> = ({
           <div className="flex items-baseline justify-between pb-3 mb-3 border-b border-slate-100">
             <div className="flex items-baseline gap-2">
               <h2 className="text-sm font-bold text-slate-800 tracking-tight">
-                Tổng hợp chi tiêu theo phân loại
+                {selectedCategory !== 'ALL'
+                  ? `Tổng hợp chi tiêu · ${selectedCategory}`
+                  : 'Tổng hợp chi tiêu theo phân loại'}
               </h2>
             </div>
           </div>
@@ -202,7 +210,9 @@ export const DashboardDualTables: React.FC<DashboardDualTablesProps> = ({
           <div className="flex items-baseline justify-between pb-3 mb-3 border-b border-slate-100">
             <div className="flex items-baseline gap-2">
               <h2 className="text-sm font-bold text-slate-800 tracking-tight">
-                Giao dịch chi tiêu gần nhất
+                {selectedCategory !== 'ALL'
+                  ? `Giao dịch gần nhất · ${selectedCategory}`
+                  : 'Giao dịch chi tiêu gần nhất'}
               </h2>
             </div>
             <button

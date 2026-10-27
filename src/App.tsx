@@ -9,6 +9,7 @@ import {
   ChevronDown,
   LayoutGrid,
   CalendarRange,
+  Filter,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import {
@@ -48,7 +49,11 @@ import {
 import { TransactionLedgerTable } from './components/TransactionLedgerTable';
 import { DashboardDualTables } from './components/DashboardDualTables';
 import { MultiMonthSummaryTable } from './components/MultiMonthSummaryTable';
-import { CategoryBudgetTable } from './components/CategoryBudgetTable';
+import {
+  CategoryBudgetTable,
+  DEFAULT_CATEGORY_PERCENTAGES,
+  DEFAULT_CATEGORY_PERCENTAGES_T4_T7,
+} from './components/CategoryBudgetTable';
 import { ReconcileCheckTienView } from './components/ReconcileCheckTienView';
 import { SheetSyncPanel } from './components/SheetSyncPanel';
 
@@ -58,6 +63,10 @@ const LOCAL_NEW_ROWS_KEY = 'heomeo_local_new_rows_v1';
 const SAVED_SHEET_URL_KEY = 'heomeo_spreadsheet_url_v1';
 const SAVED_ACCOUNTS_KEY = 'heomeo_real_accounts_v1';
 const SAVED_BASE_INCOME_KEY = 'heomeo_base_income_v1';
+const SAVED_SHEET_RECORDS_KEY = 'heomeo_cached_sheet_records_v1';
+const SAVED_SHEET_META_KEY = 'heomeo_cached_sheet_meta_v1';
+const SAVED_CHECK_TIEN_KEY = 'heomeo_cached_check_tien_v1';
+const SAVED_LAST_SYNCED_KEY = 'heomeo_last_synced_at_v1';
 
 const DEFAULT_ACCOUNTS: RealWorldAccount[] = [
   {
@@ -97,7 +106,14 @@ const DEFAULT_ACCOUNTS: RealWorldAccount[] = [
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
   const [attachedRecords, setAttachedRecords] = useState<TransactionRecord[]>([]);
-  const [sheetRecords, setSheetRecords] = useState<TransactionRecord[] | null>(null);
+  const [sheetRecords, setSheetRecords] = useState<TransactionRecord[] | null>(() => {
+    try {
+      const saved = localStorage.getItem(SAVED_SHEET_RECORDS_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [localNewRecords, setLocalNewRecords] = useState<TransactionRecord[]>(() => {
     try {
       const saved = localStorage.getItem(LOCAL_NEW_ROWS_KEY);
@@ -138,11 +154,27 @@ export default function App() {
   const [spreadsheetInput, setSpreadsheetInput] = useState<string>(() => {
     return localStorage.getItem(SAVED_SHEET_URL_KEY) || '';
   });
-  const [sheetMeta, setSheetMeta] = useState<SpreadsheetMetadata | null>(null);
-  const [checkTienData, setCheckTienData] = useState<CheckTienSheetData | null>(null);
+  const [sheetMeta, setSheetMeta] = useState<SpreadsheetMetadata | null>(() => {
+    try {
+      const saved = localStorage.getItem(SAVED_SHEET_META_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [checkTienData, setCheckTienData] = useState<CheckTienSheetData | null>(() => {
+    try {
+      const saved = localStorage.getItem(SAVED_CHECK_TIEN_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [syncError, setSyncError] = useState<string | null>(null);
-  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(() => {
+    return localStorage.getItem(SAVED_LAST_SYNCED_KEY) || null;
+  });
 
   // Real-world accounts for "Check tiền" reconciliation
   const [accounts, setAccounts] = useState<RealWorldAccount[]>(() => {
@@ -187,6 +219,46 @@ export default function App() {
       // ignore
     }
   }, [monthlyBaseIncome]);
+
+  useEffect(() => {
+    if (sheetRecords !== null) {
+      try {
+        localStorage.setItem(SAVED_SHEET_RECORDS_KEY, JSON.stringify(sheetRecords));
+      } catch (e) {
+        console.warn('Cannot persist sheetRecords', e);
+      }
+    }
+  }, [sheetRecords]);
+
+  useEffect(() => {
+    if (sheetMeta !== null) {
+      try {
+        localStorage.setItem(SAVED_SHEET_META_KEY, JSON.stringify(sheetMeta));
+      } catch (e) {
+        console.warn('Cannot persist sheetMeta', e);
+      }
+    }
+  }, [sheetMeta]);
+
+  useEffect(() => {
+    if (lastSyncedAt !== null) {
+      try {
+        localStorage.setItem(SAVED_LAST_SYNCED_KEY, lastSyncedAt);
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [lastSyncedAt]);
+
+  useEffect(() => {
+    if (checkTienData !== null) {
+      try {
+        localStorage.setItem(SAVED_CHECK_TIEN_KEY, JSON.stringify(checkTienData));
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [checkTienData]);
 
   const showToast = useCallback((type: 'success' | 'warning', message: string) => {
     setToast({ type, message });
@@ -398,6 +470,47 @@ export default function App() {
     activeBeCycle,
     activeCreditCycle,
   ]);
+
+  // Category-specific KPI metrics when selectedCategory !== 'ALL'
+  const categoryKpiStats = useMemo(() => {
+    if (selectedCategory === 'ALL') return null;
+
+    const catRecords = periodRecords.filter(
+      (r) => r.category === selectedCategory && r.sheetType === 'Expenses'
+    );
+    const spent = catRecords.reduce((s, r) => s + r.amount, 0);
+    const beCorp = catRecords.reduce((s, r) => s + r.beCorp, 0);
+    const credit = catRecords.reduce((s, r) => s + r.credit, 0);
+    const count = catRecords.length;
+
+    const defaultPct =
+      selectedMonth !== 'ALL' && selectedMonth <= '2026-07'
+        ? (DEFAULT_CATEGORY_PERCENTAGES_T4_T7[selectedCategory] ?? 0)
+        : (DEFAULT_CATEGORY_PERCENTAGES[selectedCategory] ?? 0);
+    let pct = defaultPct;
+    try {
+      const saved = localStorage.getItem('heomeo_category_percentages_v1');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed[selectedCategory] !== undefined) pct = parsed[selectedCategory];
+      }
+    } catch {
+      // ignore
+    }
+    const budget = Math.round((kpiStats.effectiveIncome * pct) / 100);
+    const remaining = budget - spent;
+
+    return {
+      category: selectedCategory,
+      budget,
+      spent,
+      remaining,
+      beCorp,
+      credit,
+      count,
+      percentage: pct,
+    };
+  }, [selectedCategory, periodRecords, kpiStats.effectiveIncome, selectedMonth]);
 
   // Google Sign-In handler
   const handleGoogleLogin = async () => {
@@ -863,7 +976,7 @@ export default function App() {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Google Sheet ({sheetMeta ? 'Đã kết nối' : 'Chưa sync'})
+            Google Sheet ({sheetRecords && sheetRecords.length > 0 ? 'Đã đồng bộ' : 'Chưa sync'})
           </button>
         </nav>
 
@@ -921,24 +1034,26 @@ export default function App() {
               </div>
             </div>
 
-            {/* Filter 2: Category Dropdown */}
-            <div className="relative bg-white rounded-lg border border-slate-200/90 shadow-2xs hover:border-slate-300 transition-colors">
-              <div className="flex items-center px-3 py-2 gap-2 text-xs font-medium text-slate-700">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="bg-transparent border-none outline-none cursor-pointer pr-6 appearance-none text-slate-800 font-semibold"
-                >
-                  <option value="ALL">Tất cả danh mục (Category)</option>
-                  {allCategories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 pointer-events-none absolute right-2.5" />
+            {/* Filter 2: Category Dropdown (Only show on dashboard and ledger tabs) */}
+            {(activeTab === 'dashboard' || activeTab === 'ledger') && (
+              <div className="relative bg-white rounded-lg border border-slate-200/90 shadow-2xs hover:border-slate-300 transition-colors">
+                <div className="flex items-center px-3 py-2 gap-2 text-xs font-medium text-slate-700">
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="bg-transparent border-none outline-none cursor-pointer pr-6 appearance-none text-slate-800 font-semibold"
+                  >
+                    <option value="ALL">Tất cả danh mục (Category)</option>
+                    {allCategories.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 pointer-events-none absolute right-2.5" />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Reset Filter Button if active */}
             {(selectedMonth !== '2026-10' || selectedCategory !== 'ALL') && (
@@ -963,6 +1078,30 @@ export default function App() {
           </div>
         </div>
 
+        {/* ═══════ ACTIVE CATEGORY FILTER BANNER ═══════ */}
+        {selectedCategory !== 'ALL' && (activeTab === 'dashboard' || activeTab === 'ledger') && (
+          <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs text-sky-900 shadow-2xs">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-sky-600 animate-pulse shrink-0"></span>
+              <span>
+                Đang lọc riêng theo danh mục: <strong className="font-extrabold text-sky-950 text-sm">{selectedCategory}</strong>
+                {selectedMonth !== 'ALL' ? ` · Tháng ${selectedMonth.split('-')[1]}/${selectedMonth.split('-')[0]}` : ' · Tất cả thời gian'}
+                {' · '}
+                <strong>{categoryKpiStats?.count || 0}</strong> giao dịch
+                {' · '}
+                Tổng chi: <strong className="font-mono-tabular font-bold text-sky-950 text-sm">{formatCurrency(categoryKpiStats?.spent || 0)}</strong>
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('ALL')}
+              className="px-3 py-1 font-semibold text-xs text-sky-800 bg-white hover:bg-sky-100 border border-sky-300 rounded-lg shadow-2xs transition-colors cursor-pointer"
+            >
+              ✕ Xem tất cả danh mục
+            </button>
+          </div>
+        )}
+
         {isLoadingInitial ? (
           <div className="bg-white border border-slate-200 rounded-xl p-12 text-center text-sm text-slate-500">
             Đang nạp dữ liệu lịch sử tài chính của bạn...
@@ -972,105 +1111,192 @@ export default function App() {
             {/* VIEW 1: DASHBOARD */}
             {activeTab === 'dashboard' && (
               <div className="space-y-5">
-                {/* ═══════ 5 KPI CARDS (Separating BE Corp & Credit into 2 distinct cards, NO 'in home currency') ═══════ */}
+                {/* ═══════ 5 KPI CARDS (General vs Category-specific) ═══════ */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-                  {/* Card 1: Tổng thu nhập (Deep Blue) */}
-                  <div
-                    className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
-                    style={{ backgroundColor: '#0B4B8A' }}
-                    onClick={() => {
-                      setAddModalPreset({
-                        sheetType: 'Income',
-                        isoDate: selectedMonth !== 'ALL' ? `${selectedMonth}-01` : '2026-10-01',
-                        category: 'Lương Heo',
-                      });
-                      setIsAddModalOpen(true);
-                    }}
-                  >
-                    <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
-                      Tổng thu nhập
-                    </div>
-                    <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                      {formatCurrency(kpiStats.effectiveIncome)}
-                    </div>
-                    <div className="text-xs text-white/70 font-medium">
-                      {selectedMonth === 'ALL'
-                        ? `Tất cả các tháng · ${kpiStats.incomeCount} khoản thu`
-                        : kpiStats.incomeCount > 0
-                          ? `${formatMonthLabel(selectedMonth)} · ${kpiStats.incomeCount} khoản thu (Sheet Income)`
-                          : `${formatMonthLabel(selectedMonth)} · Chưa có giao dịch`}
-                    </div>
-                  </div>
+                  {categoryKpiStats ? (
+                    <>
+                      {/* Category Card 1: Ngân sách danh mục (Budget) */}
+                      <div
+                        className="rounded-xl p-4 sm:p-5 shadow-xs transition-transform hover:-translate-y-0.5"
+                        style={{ backgroundColor: '#0B4B8A' }}
+                      >
+                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
+                          Ngân sách · {categoryKpiStats.category}
+                        </div>
+                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                          {formatCurrency(categoryKpiStats.budget)}
+                        </div>
+                        <div className="text-xs text-white/70 font-medium truncate">
+                          Chiếm {categoryKpiStats.percentage.toFixed(1)}% thu nhập ({formatCurrency(kpiStats.effectiveIncome)})
+                        </div>
+                      </div>
 
-                  {/* Card 2: Tổng chi tiêu (Ocean Blue - Calendar Month) */}
-                  <div
-                    className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
-                    style={{ backgroundColor: '#0077B6' }}
-                    onClick={() => setActiveTab('ledger')}
-                  >
-                    <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
-                      Tổng chi tiêu
-                    </div>
-                    <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                      {formatCurrency(kpiStats.totalExpense)}
-                    </div>
-                    <div className="text-xs text-white/70 font-medium">
-                      {kpiStats.expenseCount} giao dịch (01/{selectedMonth.split('-')[1]} – Hết tháng)
-                    </div>
-                  </div>
+                      {/* Category Card 2: Đã chi danh mục */}
+                      <div
+                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
+                        style={{ backgroundColor: '#0077B6' }}
+                        onClick={() => setActiveTab('ledger')}
+                      >
+                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
+                          Đã chi · {categoryKpiStats.category}
+                        </div>
+                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                          {formatCurrency(categoryKpiStats.spent)}
+                        </div>
+                        <div className="text-xs text-white/70 font-medium">
+                          {categoryKpiStats.count} giao dịch trong kỳ
+                        </div>
+                      </div>
 
-                  {/* Card 3: Số dư khả dụng Net Balance (Mint Green or Red) */}
-                  <div
-                    className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
-                    style={{ backgroundColor: kpiStats.netBalance >= 0 ? '#059669' : '#DC2626' }}
-                    onClick={() => setActiveTab('reconcile')}
-                  >
-                    <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
-                      Số dư khả dụng (Net)
-                    </div>
-                    <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                      {formatCurrency(kpiStats.netBalance)}
-                    </div>
-                    <div className="text-xs text-white/70 font-medium">
-                      Thu − Chi còn lại
-                    </div>
-                  </div>
+                      {/* Category Card 3: Còn lại danh mục (Dương / Âm) */}
+                      <div
+                        className="rounded-xl p-4 sm:p-5 shadow-xs transition-transform hover:-translate-y-0.5"
+                        style={{ backgroundColor: categoryKpiStats.remaining >= 0 ? '#059669' : '#DC2626' }}
+                      >
+                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
+                          {categoryKpiStats.remaining >= 0 ? 'Còn lại (Dư)' : 'Bội chi (Âm)'}
+                        </div>
+                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                          {formatCurrency(categoryKpiStats.remaining)}
+                        </div>
+                        <div className="text-xs text-white/80 font-medium truncate">
+                          {categoryKpiStats.remaining >= 0 ? 'Trong hạn mức ngân sách' : 'Vượt quá định mức tháng!'}
+                        </div>
+                      </div>
 
-                  {/* Card 4: Ví BE Corp (Riêng biệt - Amber / Orange) */}
-                  <div
-                    className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
-                    style={{ backgroundColor: '#D97706' }}
-                    onClick={() => setActiveTab('reconcile')}
-                  >
-                    <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
-                      Ví BE Corp
-                    </div>
-                    <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                      {formatCurrency(kpiStats.beCorpCycleTotal)}
-                    </div>
-                    <div className="text-xs text-white/80 font-medium flex items-center gap-1 font-mono-tabular">
-                      <CalendarRange className="w-3 h-3 text-white/70" />
-                      <span>{kpiStats.beRange.displayLabel}</span>
-                    </div>
-                  </div>
+                      {/* Category Card 4: BE Corp cho danh mục */}
+                      <div
+                        className="rounded-xl p-4 sm:p-5 shadow-xs transition-transform hover:-translate-y-0.5"
+                        style={{ backgroundColor: '#D97706' }}
+                      >
+                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
+                          BE Corp ({categoryKpiStats.category})
+                        </div>
+                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                          {formatCurrency(categoryKpiStats.beCorp)}
+                        </div>
+                        <div className="text-xs text-white/80 font-medium">
+                          Thanh toán qua ví công ty
+                        </div>
+                      </div>
 
-                  {/* Card 5: Thẻ tín dụng Credit (Riêng biệt - Purple / Violet) */}
-                  <div
-                    className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5 col-span-2 sm:col-span-1"
-                    style={{ backgroundColor: '#6D3894' }}
-                    onClick={() => setActiveTab('reconcile')}
-                  >
-                    <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
-                      Thẻ tín dụng (Credit)
-                    </div>
-                    <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                      {formatCurrency(kpiStats.creditCycleTotal)}
-                    </div>
-                    <div className="text-xs text-white/80 font-medium flex items-center gap-1 font-mono-tabular">
-                      <CalendarRange className="w-3 h-3 text-white/70" />
-                      <span>Sao kê: {kpiStats.creditRange.displayLabel}</span>
-                    </div>
-                  </div>
+                      {/* Category Card 5: Credit cho danh mục */}
+                      <div
+                        className="rounded-xl p-4 sm:p-5 shadow-xs transition-transform hover:-translate-y-0.5 col-span-2 sm:col-span-1"
+                        style={{ backgroundColor: '#6D3894' }}
+                      >
+                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
+                          Credit ({categoryKpiStats.category})
+                        </div>
+                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                          {formatCurrency(categoryKpiStats.credit)}
+                        </div>
+                        <div className="text-xs text-white/80 font-medium">
+                          Thanh toán qua thẻ tín dụng
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Card 1: Tổng thu nhập (Deep Blue) */}
+                      <div
+                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
+                        style={{ backgroundColor: '#0B4B8A' }}
+                        onClick={() => {
+                          setAddModalPreset({
+                            sheetType: 'Income',
+                            isoDate: selectedMonth !== 'ALL' ? `${selectedMonth}-01` : '2026-10-01',
+                            category: 'Lương Heo',
+                          });
+                          setIsAddModalOpen(true);
+                        }}
+                      >
+                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
+                          Tổng thu nhập
+                        </div>
+                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                          {formatCurrency(kpiStats.effectiveIncome)}
+                        </div>
+                        <div className="text-xs text-white/70 font-medium">
+                          {selectedMonth === 'ALL'
+                            ? `Tất cả các tháng · ${kpiStats.incomeCount} khoản thu`
+                            : kpiStats.incomeCount > 0
+                              ? `${formatMonthLabel(selectedMonth)} · ${kpiStats.incomeCount} khoản thu (Sheet Income)`
+                              : `${formatMonthLabel(selectedMonth)} · Chưa có giao dịch`}
+                        </div>
+                      </div>
+
+                      {/* Card 2: Tổng chi tiêu (Ocean Blue - Calendar Month) */}
+                      <div
+                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
+                        style={{ backgroundColor: '#0077B6' }}
+                        onClick={() => setActiveTab('ledger')}
+                      >
+                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
+                          Tổng chi tiêu
+                        </div>
+                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                          {formatCurrency(kpiStats.totalExpense)}
+                        </div>
+                        <div className="text-xs text-white/70 font-medium">
+                          {kpiStats.expenseCount} giao dịch (01/{selectedMonth.split('-')[1]} – Hết tháng)
+                        </div>
+                      </div>
+
+                      {/* Card 3: Số dư khả dụng Net Balance (Mint Green or Red) */}
+                      <div
+                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
+                        style={{ backgroundColor: kpiStats.netBalance >= 0 ? '#059669' : '#DC2626' }}
+                        onClick={() => setActiveTab('reconcile')}
+                      >
+                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
+                          Số dư khả dụng (Net)
+                        </div>
+                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                          {formatCurrency(kpiStats.netBalance)}
+                        </div>
+                        <div className="text-xs text-white/70 font-medium">
+                          Thu − Chi còn lại
+                        </div>
+                      </div>
+
+                      {/* Card 4: Ví BE Corp (Riêng biệt - Amber / Orange) */}
+                      <div
+                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
+                        style={{ backgroundColor: '#D97706' }}
+                        onClick={() => setActiveTab('reconcile')}
+                      >
+                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
+                          Ví BE Corp
+                        </div>
+                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                          {formatCurrency(kpiStats.beCorpCycleTotal)}
+                        </div>
+                        <div className="text-xs text-white/80 font-medium flex items-center gap-1 font-mono-tabular">
+                          <CalendarRange className="w-3 h-3 text-white/70" />
+                          <span>{kpiStats.beRange.displayLabel}</span>
+                        </div>
+                      </div>
+
+                      {/* Card 5: Thẻ tín dụng Credit (Riêng biệt - Purple / Violet) */}
+                      <div
+                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5 col-span-2 sm:col-span-1"
+                        style={{ backgroundColor: '#6D3894' }}
+                        onClick={() => setActiveTab('reconcile')}
+                      >
+                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
+                          Thẻ tín dụng (Credit)
+                        </div>
+                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                          {formatCurrency(kpiStats.creditCycleTotal)}
+                        </div>
+                        <div className="text-xs text-white/80 font-medium flex items-center gap-1 font-mono-tabular">
+                          <CalendarRange className="w-3 h-3 text-white/70" />
+                          <span>Sao kê: {kpiStats.creditRange.displayLabel}</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {/* ═══════ MULTI-MONTH BUDGET & CASHFLOW SUMMARY MATRIX (Answers Requirement 5) ═══════ */}

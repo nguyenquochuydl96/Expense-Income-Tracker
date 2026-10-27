@@ -306,16 +306,28 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
     };
   }, [selectedMonth, allChronologicalMonths, allCategories, percentages, multiMonthRolloverData, totalIncome]);
 
-  // Filtered items based on filterMode
+  // Filtered items based on filterMode & selectedCategory
   const displayedItems = useMemo(() => {
+    let items = currentViewStats.items;
+    if (selectedCategory !== 'ALL') {
+      items = items.filter((i) => i.category === selectedCategory);
+    }
     if (filterMode === 'over_budget') {
-      return currentViewStats.items.filter((i) => i.isOver && i.spent > 0);
+      return items.filter((i) => i.isOver && i.spent > 0);
     }
     if (filterMode === 'under_budget') {
-      return currentViewStats.items.filter((i) => !i.isOver && i.spent > 0);
+      return items.filter((i) => !i.isOver && i.spent > 0);
     }
-    return currentViewStats.items;
-  }, [currentViewStats.items, filterMode]);
+    return items;
+  }, [currentViewStats.items, filterMode, selectedCategory]);
+
+  // Itemized transactions when filtering by a specific category
+  const categoryTransactions = useMemo(() => {
+    if (selectedCategory === 'ALL') return [];
+    return recordsInPeriod
+      .filter((r) => r.category === selectedCategory && r.sheetType === 'Expenses')
+      .sort((a, b) => b.isoDate.localeCompare(a.isoDate));
+  }, [recordsInPeriod, selectedCategory]);
 
   // Handlers for editing percentages
   const handleStartEdit = () => {
@@ -516,6 +528,29 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
           )}
         </div>
       </div>
+
+      {/* Selected Category Notice Banner */}
+      {selectedCategory !== 'ALL' && (
+        <div className="mb-4 px-3.5 py-2.5 bg-sky-50 border border-sky-200 rounded-lg flex flex-wrap items-center justify-between gap-2 text-xs text-sky-900">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-sky-600 animate-pulse shrink-0"></span>
+            <span>
+              Đang lọc riêng danh mục: <strong className="font-bold text-sky-950">{selectedCategory}</strong>
+              {' · '}
+              <strong>{categoryTransactions.length}</strong> giao dịch trong kỳ
+              {' · '}
+              Tổng chi: <strong className="font-mono-tabular font-bold">{formatCurrency(categoryTransactions.reduce((s, r) => s + r.amount, 0))}</strong>
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => onSelectCategory('ALL')}
+            className="px-2.5 py-1 text-xs font-semibold text-sky-700 bg-white hover:bg-sky-100 border border-sky-300 rounded-md shadow-2xs transition-colors cursor-pointer"
+          >
+            ✕ Hiện tất cả 13 danh mục
+          </button>
+        </div>
+      )}
 
       {/* VIEW TAB 1: CHI TIẾT THÁNG (KÈM CẤN TRỪ LŨY KẾ) */}
       {viewTab === 'month_detail' && (
@@ -754,6 +789,55 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
               </tr>
             </tfoot>
           </table>
+
+          {/* Drill-down transactions for selected category */}
+          {selectedCategory !== 'ALL' && (
+            <div className="mt-5 border-t border-slate-200 pt-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <span>Chi tiết giao dịch phát sinh trong kỳ của:</span>
+                  <span className="text-sky-700 bg-sky-100/80 px-2 py-0.5 rounded font-extrabold">{selectedCategory}</span>
+                  <span className="text-slate-500 font-normal">({categoryTransactions.length} giao dịch)</span>
+                </h4>
+                <div className="text-xs font-semibold text-slate-700 font-mono-tabular">
+                  Tổng chi: <strong className="text-slate-900">{formatCurrency(categoryTransactions.reduce((s, r) => s + r.amount, 0))}</strong>
+                </div>
+              </div>
+
+              {categoryTransactions.length === 0 ? (
+                <div className="text-center py-6 text-xs text-slate-400 bg-slate-50 rounded-lg">
+                  Chưa có khoản chi nào trong kỳ cho danh mục này.
+                </div>
+              ) : (
+                <div className="overflow-x-auto max-h-72 border border-slate-200 rounded-lg shadow-2xs">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-600 sticky top-0">
+                      <tr>
+                        <th className="py-2 px-3">Ngày</th>
+                        <th className="py-2 px-3">Nội dung chi tiêu</th>
+                        <th className="py-2 px-3 text-right">Số tiền</th>
+                        <th className="py-2 px-3 text-right">BE Corp</th>
+                        <th className="py-2 px-3 text-right">Credit</th>
+                        <th className="py-2 px-3">Ghi chú</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-mono-tabular">
+                      {categoryTransactions.map((tx, idx) => (
+                        <tr key={tx.id || idx} className="hover:bg-slate-50/70">
+                          <td className="py-2 px-3 text-slate-600 whitespace-nowrap">{tx.purchaseDate}</td>
+                          <td className="py-2 px-3 font-sans text-slate-900 font-medium">{tx.purchaseItem}</td>
+                          <td className="py-2 px-3 text-right font-bold text-slate-900">{formatCurrency(tx.amount)}</td>
+                          <td className="py-2 px-3 text-right text-amber-700">{tx.beCorp > 0 ? formatCurrency(tx.beCorp) : '—'}</td>
+                          <td className="py-2 px-3 text-right text-purple-700">{tx.credit > 0 ? formatCurrency(tx.credit) : '—'}</td>
+                          <td className="py-2 px-3 font-sans text-slate-500 text-[11px]">{tx.note || '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

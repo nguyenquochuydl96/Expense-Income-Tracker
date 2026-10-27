@@ -105,6 +105,9 @@ export async function fetchTabTransactions(
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
     console.warn(`[fetchTabTransactions] Error reading ${tabName} (${res.status}):`, errBody);
+    if (res.status === 401) {
+      throw new Error(`TOKEN_EXPIRED: Token Google OAuth đã hết hạn (${errBody?.error?.message || ''})`);
+    }
     if (res.status === 400 || res.status === 404) {
       return [];
     }

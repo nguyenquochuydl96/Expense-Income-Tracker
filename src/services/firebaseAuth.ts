@@ -17,13 +17,62 @@ const auth = getAuth(app);
 
 const provider = new GoogleAuthProvider();
 SCOPES.forEach((scope) => provider.addScope(scope));
-provider.setCustomParameters({
-  prompt: 'select_account',
-});
+
+const TOKEN_KEY = 'heomeo_google_access_token_v1';
+const TOKEN_EXPIRY_KEY = 'heomeo_google_token_expiry_v1';
 
 let isSigningIn = false;
-// In-memory token cache (never stored in localStorage/sessionStorage per security rules)
 let cachedAccessToken: string | null = null;
+
+export const saveAccessToken = (token: string, expiresInSecs = 3500) => {
+  cachedAccessToken = token;
+  const expiresAt = Date.now() + expiresInSecs * 1000;
+  try {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(TOKEN_EXPIRY_KEY, String(expiresAt));
+  } catch (e) {
+    console.warn('Cannot persist access token to localStorage', e);
+  }
+};
+
+export const clearStoredAccessToken = () => {
+  cachedAccessToken = null;
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(TOKEN_EXPIRY_KEY);
+  } catch {
+    // ignore
+  }
+};
+
+export const getStoredAccessToken = (): string | null => {
+  if (cachedAccessToken) return cachedAccessToken;
+  try {
+    const token = localStorage.getItem(TOKEN_KEY);
+    const expiryStr = localStorage.getItem(TOKEN_EXPIRY_KEY);
+    if (!token || !expiryStr) return null;
+    const expiry = Number(expiryStr);
+    // If token hasn't expired (leave 2 min safety buffer)
+    if (Date.now() < expiry - 120000) {
+      cachedAccessToken = token;
+      return token;
+    }
+    clearStoredAccessToken();
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+export const isStoredTokenExpired = (): boolean => {
+  try {
+    const expiryStr = localStorage.getItem(TOKEN_EXPIRY_KEY);
+    if (!expiryStr) return true;
+    return Date.now() >= Number(expiryStr);
+  } catch {
+    return true;
+  }
+};
 
 export const initAuth = (
   onAuthSuccess?: (user: User, token: string) => void,
@@ -31,14 +80,14 @@ export const initAuth = (
 ) => {
   return onAuthStateChanged(auth, async (user: User | null) => {
     if (user) {
-      if (cachedAccessToken) {
-        if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
-      } else if (!isSigningIn) {
-        cachedAccessToken = null;
+      const token = getStoredAccessToken();
+      if (token) {
+        if (onAuthSuccess) onAuthSuccess(user, token);
+      } else {
         if (onAuthFailure) onAuthFailure(user);
       }
     } else {
-      cachedAccessToken = null;
+      clearStoredAccessToken();
       if (onAuthFailure) onAuthFailure(null);
     }
   });
@@ -53,8 +102,8 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
       throw new Error('Không lấy được quyền truy cập Google Sheets từ phiên đăng nhập.');
     }
 
-    cachedAccessToken = credential.accessToken;
-    return { user: result.user, accessToken: cachedAccessToken };
+    saveAccessToken(credential.accessToken);
+    return { user: result.user, accessToken: credential.accessToken };
   } catch (error: any) {
     console.error('Sign in error:', error);
     throw error;
@@ -64,10 +113,10 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
 };
 
 export const getAccessToken = async (): Promise<string | null> => {
-  return cachedAccessToken;
+  return getStoredAccessToken();
 };
 
 export const logout = async () => {
   await auth.signOut();
-  cachedAccessToken = null;
+  clearStoredAccessToken();
 };
