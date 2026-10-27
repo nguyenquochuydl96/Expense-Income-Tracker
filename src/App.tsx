@@ -48,6 +48,7 @@ import {
 import { TransactionLedgerTable } from './components/TransactionLedgerTable';
 import { DashboardDualTables } from './components/DashboardDualTables';
 import { MultiMonthSummaryTable } from './components/MultiMonthSummaryTable';
+import { CategoryBudgetTable } from './components/CategoryBudgetTable';
 import { ReconcileCheckTienView } from './components/ReconcileCheckTienView';
 import { SheetSyncPanel } from './components/SheetSyncPanel';
 
@@ -115,6 +116,9 @@ export default function App() {
   const [beCorpEndDay, setBeCorpEndDay] = useState<number>(25);
   const [creditStartDay, setCreditStartDay] = useState<number>(25);
   const [creditEndDay, setCreditEndDay] = useState<number>(24);
+
+  // Toggle for secondary analytics charts (Bar & Donut)
+  const [showCharts, setShowCharts] = useState<boolean>(false);
 
   // Add Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
@@ -970,7 +974,7 @@ export default function App() {
                       Số dư khả dụng (Net)
                     </div>
                     <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                      {formatCurrency(kpiStats.netBalance, true)}
+                      {formatCurrency(kpiStats.netBalance)}
                     </div>
                     <div className="text-xs text-white/70 font-medium">
                       Thu − Chi còn lại
@@ -1027,16 +1031,28 @@ export default function App() {
                   creditEndDay={creditEndDay}
                 />
 
-                {/* ═══════ MIDDLE ROW: HORIZONTAL BAR CHART + CORAL DONUT CHART ═══════ */}
-                <AnalyticsCharts
-                  expensesInPeriod={periodRecords}
-                  allRecords={allRecords}
+                {/* ═══════ MỚI: NGÂN SÁCH & CHI TIÊU THEO HẠNG MỤC (Budget · Đã chi · Còn lại) ═══════ */}
+                <CategoryBudgetTable
+                  recordsInPeriod={periodRecords}
                   selectedMonth={selectedMonth}
-                  onSelectMonth={setSelectedMonth}
-                  selectedCategoryFilter={selectedCategory}
-                  onSelectCategoryFilter={setSelectedCategory}
-                  monthlyBaseIncome={monthlyBaseIncome}
+                  selectedCategory={selectedCategory}
+                  onSelectCategory={setSelectedCategory}
+                  showChartsButton={true}
+                  onShowCharts={() => setShowCharts((prev) => !prev)}
                 />
+
+                {/* ═══════ OPTIONAL: BIỂU ĐỒ BỔ TRỢ (TOP CHI TIÊU & TỶ TRỌNG) KHI BẬT ═══════ */}
+                {showCharts && (
+                  <AnalyticsCharts
+                    expensesInPeriod={periodRecords}
+                    allRecords={allRecords}
+                    selectedMonth={selectedMonth}
+                    onSelectMonth={setSelectedMonth}
+                    selectedCategoryFilter={selectedCategory}
+                    onSelectCategoryFilter={setSelectedCategory}
+                    monthlyBaseIncome={monthlyBaseIncome}
+                  />
+                )}
 
                 {/* ═══════ BOTTOM ROW: TWO DUAL DATA TABLES ═══════ */}
                 <DashboardDualTables

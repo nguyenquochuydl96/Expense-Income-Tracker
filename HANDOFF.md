@@ -2,7 +2,7 @@
 
 > **Tài liệu bàn giao phiên làm việc.** Khi chuyển sang tài khoản Gemini mới hoặc agent khác (Antigravity / Hermes) tiếp nhận, chỉ cần đọc file này là nắm toàn bộ bối cảnh, kiến trúc giao diện mới và tiếp tục công việc ngay lập tức mà không cần hỏi lại.
 
-**Cập nhật lần cuối:** 27/10/2026 (Chuẩn hóa chu kỳ Credit 25–24, BE Corp 26–25, Thu nhập tính động từ sheet Income từng tháng)  
+**Cập nhật lần cuối:** 27/10/2026 (Thêm Bảng Ngân sách theo Hạng mục [Budget · Đã chi · Còn lại], tối ưu KPI không dấu +, ưu tiên view hạng mục thay vì biểu đồ)  
 **Repo GitHub:** https://github.com/nguyenquochuydl96/Expense-Income-Tracker  
 **Đường dẫn Local:** `C:\Users\huynq\.gemini\antigravity\scratch\Expense-Income-Tracker`  
 **Git Author:** `Nguyen Quoc Huy <nguyenquochuy.dl96@gmail.com>`
@@ -37,11 +37,11 @@
   - **Dropdown Danh mục:** Lọc nhanh theo danh mục chi tiêu (`Ăn uống`, `Tiết kiệm`, `Thuê nhà`,...).
   - **Nhãn chu kỳ hiển thị trực quan:** Ghi rõ chu kỳ áp dụng cho kỳ đang chọn (`Chu kỳ BE: 26/09 – 25/10 · Sao kê Credit: 25/09 – 24/10`).
 
-### 2.3 Bộ 5 KPI Summary Cards (Tách riêng BE Corp & Credit, Bỏ nhãn "in home currency")
+### 2.3 Bộ 5 KPI Summary Cards (Tách riêng BE Corp & Credit, Bỏ nhãn "in home currency", Chuẩn hóa dấu số tiền)
 Đã tách biệt 2 nguồn tiền BE Corp và Thẻ tín dụng thành 2 card riêng biệt và gỡ bỏ toàn bộ dòng chữ dư thừa `in home currency`:
 1. **Card 1 - Xanh Navy Sâu (`#0B4B8A`):** **Tổng thu nhập** lấy trực tiếp từ các khoản ghi trong tab **`Income`** theo từng tháng riêng biệt (`kpiStats.effectiveIncome`), kèm số lượng khoản thu. Tuyệt đối không áp đặt con số cố định 45m.
 2. **Card 2 - Xanh Dương Đại Dương (`#0077B6`):** Tổng chi tiêu (`kpiStats.totalExpense`), tính theo tháng lịch (01 đến cuối tháng).
-3. **Card 3 - Đỏ San hô / Xanh Ngọc Net Balance (`#DC2626` / `#059669`):** Số dư khả dụng Net (`Thu - Chi còn lại`).
+3. **Card 3 - Đỏ San hô / Xanh Ngọc Net Balance (`#DC2626` / `#059669`):** Số dư khả dụng Net (`Thu - Chi còn lại`). **Số dương hiển thị tự nhiên không có dấu `+` (ví dụ `4,200,000 ₫`), chỉ hiển thị dấu `-` khi âm**.
 4. **Card 4 - Cam Hổ Phách Amber (`#D97706`):** **Ví BE Corp riêng biệt**, tính đúng theo chu kỳ BE (Ngày 26 tháng trước -> Ngày 25 tháng này, ví dụ `26/09 – 25/10`).
 5. **Card 5 - Tím Violet Purple (`#6D3894`):** **Thẻ tín dụng (Credit) riêng biệt**, tính đúng theo chu kỳ sao kê thẻ (**Ngày 25 tháng trước -> Ngày 24 tháng này**, ví dụ `25/09 – 24/10`).
 
@@ -60,9 +60,16 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
 * **Thống kê bổ sung:** Cột `Trung bình` mỗi tháng và cột `Tổng cộng`.
 * **Tương tác thông minh:** Click vào bất kỳ cột tháng nào trong bảng để lọc nhanh Dashboard sang tháng đó. Có nút thu gọn/mở rộng bảng.
 
-### 2.5 Hàng biểu đồ giữa (Middle Row)
-* **Bên trái (Horizontal Bar Chart - 60%):** Biểu đồ thanh ngang màu xanh Cyan (`#38BDF8`) hiển thị Top các danh mục chi tiêu lớn nhất.
-* **Bên phải (Coral Donut Chart - 40%):** Biểu đồ hình tròn khuyết với dải màu san hô / hồng đào hiển thị tỷ trọng chi tiêu.
+### 2.5 Bảng Ngân sách & Chi tiêu theo Hạng mục (Category Budget vs Actual Table)
+**Vị trí:** Đặt ngay bên dưới Bảng tổng hợp đa tháng, **ưu tiên hiển thị thay thế cho 2 bảng report biểu đồ trước đây**:
+* **3 Chỉ số cốt lõi cho từng hạng mục tiêu dùng:**
+  - `Ngân sách (Budget)`: Định mức chi tiêu dự kiến cho hạng mục.
+  - `Đã chi tiêu`: Tổng số tiền thực chi trong tháng của hạng mục đó.
+  - `Còn lại (Remaining)`: Hiển thị badge xanh `Còn lại X ₫` nếu trong hạn mức, hoặc badge đỏ `Bội chi -X ₫` nếu vượt ngân sách.
+* **Thanh tiến độ chi tiêu (% Used):** Đổi màu trực quan (Xanh ngọc `< 80%`, Cam `80% - 100%`, Đỏ `> 100%`).
+* **Tính năng chỉnh sửa linh hoạt:** Nút `Chỉnh Budget` cho phép tùy chỉnh hạn mức từng hạng mục trực tiếp trên UI và tự động lưu `localStorage`.
+* **Bộ lọc nhanh:** Xem `Tất cả`, `Bội chi`, `Trong hạn mức`.
+* **Nút mở Biểu đồ bổ trợ:** Nút `Xem biểu đồ` cho phép mở rộng 2 biểu đồ phân tích (Top chi tiêu & Tỷ trọng) khi người dùng muốn xem.
 
 ### 2.6 Hàng bảng dữ liệu đáy (Bottom Dual Tables)
 * **Bảng trái ("Tổng hợp chi tiêu theo phân loại"):** Ma trận Danh mục vs Phương thức thanh toán (Tiền mặt/Ví, BE Corp, Credit, Tổng chi).
@@ -89,27 +96,17 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
 
 ---
 
-## 5. Tình trạng kết nối Google Sheet (Sync Status)
-
-- **Trạng thái hiện tại:** App nạp dữ liệu mẫu lịch sử (1,235 dòng chi tiêu + các dòng thu nhập từ `SEED_INCOME_RECORDS`).
-- **Để đồng bộ Live với Google Sheet của bạn:**
-  1. Chuyển sang tab **Google Sheet (Chưa sync)** trên thanh điều hướng app.
-  2. Nhấn **"Đăng nhập Google"** để cấp quyền đọc/ghi.
-  3. Dán đường link Google Sheet cá nhân (chứa các sheet `Thu chi`, `Income`, `Check tiền`, `Summary`).
-  4. App đã hỗ trợ tự động nhận diện tab `Summary` / `Tổng hợp`, `Income` / `Thu nhập` và `Check tiền`.
-
----
-
-## 6. Bản đồ File dự án
+## 5. Bản đồ File dự án
 
 ```
 src/
 ├── App.tsx                              # Main layout, 5 KPI cards riêng biệt, Header bo cong, Filter bar
 ├── index.css                            # Palette màu mới, font tokens, scrollbar styling
 ├── components/
+│   ├── CategoryBudgetTable.tsx          # MỚI: Bảng Ngân sách & Chi tiêu theo Hạng mục (Budget · Đã chi · Còn lại)
 │   ├── MultiMonthSummaryTable.tsx       # Ma trận đối chiếu ngân sách đa tháng (Thu nhập Sheet Income, Chi, Remaining)
 │   ├── DashboardDualTables.tsx          # 2 bảng dữ liệu song song đáy Dashboard chuẩn ảnh mẫu
-│   ├── AnalyticsCharts.tsx              # Horizontal Cyan Bar Chart + Coral Donut Chart
+│   ├── AnalyticsCharts.tsx              # Horizontal Cyan Bar Chart + Coral Donut Chart (ẩn/hiện theo toggle)
 │   ├── TransactionLedgerTable.tsx       # Bảng sổ cái đầy đủ 6 cột chuẩn Google Sheet
 │   ├── AddTransactionModal.tsx          # Modal thêm giao dịch mới
 │   ├── ReconcileCheckTienView.tsx       # Màn hình Check tiền & đối soát số dư ví/thẻ
@@ -121,7 +118,7 @@ src/
 │   └── finance.ts                       # Định nghĩa TypeScript cho giao dịch, tài khoản, cấu hình chu kỳ
 └── utils/
     ├── cycleUtils.ts                    # Tính toán chu kỳ ngày riêng cho BE Corp (26-25) & Credit (25-24)
-    ├── seedData.ts                      # MỚI: Dữ liệu Income mẫu đa tháng cho chế độ offline
+    ├── seedData.ts                      # Dữ liệu Income mẫu đa tháng cho chế độ offline
     ├── categoryIcons.tsx                # Mapping 20+ danh mục tiếng Việt với icon Lucide & màu
     ├── csvParser.ts                     # Parser CSV, format tiền tệ VNĐ, ngày tháng
     └── quickEntry.ts                    # Phân tích tần suất chi tiêu, gợi ý số tiền thông minh
@@ -129,7 +126,7 @@ src/
 
 ---
 
-## 7. Hướng dẫn tiếp tục làm việc & phối hợp với Hermes
+## 6. Hướng dẫn tiếp tục làm việc & phối hợp với Hermes
 
 - **Trên Windows (Antigravity):**
   - Node.js portable: `C:\Users\huynq\node-v20.18.0-win-x64`
