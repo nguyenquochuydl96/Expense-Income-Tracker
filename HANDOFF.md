@@ -2,8 +2,9 @@
 
 > **Tài liệu bàn giao phiên làm việc.** Khi chuyển sang tài khoản Gemini mới hoặc agent khác (Antigravity / Hermes) tiếp nhận, chỉ cần đọc file này là nắm toàn bộ bối cảnh, kiến trúc giao diện mới và tiếp tục công việc ngay lập tức mà không cần hỏi lại.
 
-**Cập nhật lần cuối:** 27/10/2026 (Khớp 100% dữ liệu Ngân sách & Thu nhập thực tế từ Google Sheet, Tiết kiệm Tháng 10 đạt chuẩn +56k)  
+**Cập nhật lần cuối:** 27/10/2026 (Đã Public Web thành công lên GitHub Pages: https://nguyenquochuydl96.github.io/Expense-Income-Tracker/)  
 **Repo GitHub:** https://github.com/nguyenquochuydl96/Expense-Income-Tracker  
+**Live Website URL:** https://nguyenquochuydl96.github.io/Expense-Income-Tracker/  
 **Đường dẫn Local:** `C:\Users\huynq\.gemini\antigravity\scratch\Expense-Income-Tracker`  
 **Git Author:** `Nguyen Quoc Huy <nguyenquochuy.dl96@gmail.com>`
 
