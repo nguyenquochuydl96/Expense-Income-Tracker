@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { CATEGORY_COLORS, TransactionRecord } from '../types/finance';
+import { TransactionRecord } from '../types/finance';
 import { formatCurrency } from '../utils/csvParser';
 
 interface AnalyticsChartsProps {
@@ -12,6 +12,18 @@ interface AnalyticsChartsProps {
   monthlyBaseIncome: number;
 }
 
+// Coral / Salmon shades matching the reference image donut chart
+const DONUT_CORAL_SHADES = [
+  '#F87171', // Coral primary
+  '#FB7185', // Rose
+  '#F43F5E', // Crimson coral
+  '#FB923C', // Warm orange coral
+  '#FDA4AF', // Soft pink
+  '#FECDD3', // Light blush
+  '#FCA5A5', // Soft salmon
+  '#FEE2E2', // Pale peach
+];
+
 export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
   expensesInPeriod,
   allRecords,
@@ -23,9 +35,9 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
 }) => {
   const [excludeSavingsInPie, setExcludeSavingsInPie] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
-  const [hoveredMonth, setHoveredMonth] = useState<string | null>(null);
+  const [activeChartTab, setActiveChartTab] = useState<'categories' | 'monthly'>('categories');
 
-  // 1. Category breakdown for Pie/Donut Chart & Advanced Insights
+  // 1. Category breakdown for Horizontal Bar Chart & Donut Chart
   const categoryStats = useMemo(() => {
     const totals = new Map<string, { amount: number; count: number; beCorp: number; credit: number }>();
 
@@ -42,15 +54,13 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
     }
 
     const positiveItems = Array.from(totals.entries())
-      .map(([category, data]) => ({
+      .map(([category, data], idx) => ({
         category,
         amount: Math.max(0, data.amount),
-        netAmount: data.amount,
         count: data.count,
         beCorp: data.beCorp,
         credit: data.credit,
-        avgAmount: data.count > 0 ? data.amount / data.count : 0,
-        color: CATEGORY_COLORS[category] || '#64748B',
+        color: DONUT_CORAL_SHADES[idx % DONUT_CORAL_SHADES.length],
       }))
       .filter((item) => item.amount > 0)
       .sort((a, b) => b.amount - a.amount);
@@ -58,7 +68,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
     const grandTotal = positiveItems.reduce((acc, item) => acc + item.amount, 0);
 
     let cumulativeAngle = 0;
-    const slices = positiveItems.map((item) => {
+    const slices = positiveItems.map((item, idx) => {
       const percentage = grandTotal > 0 ? (item.amount / grandTotal) * 100 : 0;
       const angle = grandTotal > 0 ? (item.amount / grandTotal) * 360 : 0;
       const startAngle = cumulativeAngle;
@@ -69,15 +79,20 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
         percentage,
         startAngle,
         endAngle,
+        color: DONUT_CORAL_SHADES[idx % DONUT_CORAL_SHADES.length],
       };
     });
 
-    const topCategories = slices.slice(0, 3);
-
-    return { slices, grandTotal, topCategories };
+    return { slices, grandTotal, topItems: slices.slice(0, 6) };
   }, [expensesInPeriod, excludeSavingsInPie]);
 
-  // 2. Monthly Cashflow data for Bar Chart
+  // Max value for horizontal bars
+  const maxCategoryAmount = useMemo(() => {
+    if (categoryStats.topItems.length === 0) return 1000000;
+    return Math.max(...categoryStats.topItems.map((c) => c.amount)) * 1.15;
+  }, [categoryStats.topItems]);
+
+  // 2. Monthly Cashflow data for alternative Bar Chart view
   const monthlyCashflow = useMemo(() => {
     const map = new Map<
       string,
@@ -130,14 +145,6 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
     }));
   }, [allRecords, monthlyBaseIncome]);
 
-  const maxBarValue = useMemo(() => {
-    let max = 10_000_000;
-    for (const m of monthlyCashflow) {
-      max = Math.max(max, m.effectiveIncome, m.totalExpense, m.livingExpense);
-    }
-    return max * 1.08;
-  }, [monthlyCashflow]);
-
   // Helper to draw SVG donut arc
   const describeArc = (
     x: number,
@@ -189,99 +196,271 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
     ].join(' ');
   };
 
-  const activeSlice = useMemo(() => {
-    if (hoveredCategory) {
-      return categoryStats.slices.find((s) => s.category === hoveredCategory) || null;
-    }
-    if (selectedCategoryFilter && selectedCategoryFilter !== 'ALL') {
-      return categoryStats.slices.find((s) => s.category === selectedCategoryFilter) || null;
-    }
-    return null;
-  }, [hoveredCategory, selectedCategoryFilter, categoryStats.slices]);
+  // Helper to calculate text position on donut segment
+  const getLabelPosition = (
+    cx: number,
+    cy: number,
+    radius: number,
+    startAngle: number,
+    endAngle: number
+  ) => {
+    const midAngle = startAngle + (endAngle - startAngle) / 2;
+    const angleInRadians = ((midAngle - 90) * Math.PI) / 180.0;
+    return {
+      x: cx + radius * Math.cos(angleInRadians),
+      y: cy + radius * Math.sin(angleInRadians),
+    };
+  };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      {/* 1. Pie / Donut Chart: Advanced Category Allocation & Insights */}
-      <section className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-6 flex flex-col justify-between shadow-xs">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      {/* ═══════ LEFT CHART: HORIZONTAL BAR CHART (Matching Xero Reference) ═══════ */}
+      <section className="lg:col-span-7 bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
         <div>
-          <div className="flex items-start justify-between gap-4 pb-4 border-b border-slate-100">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">Phân bổ chi tiêu &amp; Top danh mục</h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Phân tích sâu tỷ trọng từng khoản chi tiêu trong kỳ
-              </p>
+          {/* Header */}
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-sm font-bold text-slate-800 tracking-tight">
+                Top chi tiêu theo danh mục
+              </h2>
+              <span className="text-xs italic text-slate-400">in home currency</span>
             </div>
+            <div className="flex items-center gap-1.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setActiveChartTab('categories')}
+                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                  activeChartTab === 'categories'
+                    ? 'bg-sky-100 text-sky-800 font-semibold'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Top danh mục
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveChartTab('monthly')}
+                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                  activeChartTab === 'monthly'
+                    ? 'bg-sky-100 text-sky-800 font-semibold'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Dòng tiền tháng
+              </button>
+            </div>
+          </div>
+
+          {activeChartTab === 'categories' ? (
+            /* Horizontal Bar Chart (Cyan bars like the reference image) */
+            <div className="space-y-3.5 pt-1">
+              {categoryStats.topItems.length === 0 ? (
+                <div className="py-12 text-center text-xs text-slate-400">
+                  Không có dữ liệu chi tiêu trong kỳ này
+                </div>
+              ) : (
+                categoryStats.topItems.map((item) => {
+                  const widthPercent = Math.min(100, Math.max(8, (item.amount / maxCategoryAmount) * 100));
+                  const isSelected = selectedCategoryFilter === item.category;
+
+                  return (
+                    <div
+                      key={item.category}
+                      onClick={() =>
+                        onSelectCategoryFilter(selectedCategoryFilter === item.category ? 'ALL' : item.category)
+                      }
+                      className="group flex items-center gap-3 cursor-pointer py-0.5"
+                    >
+                      {/* Category Label (Right aligned on Y-axis) */}
+                      <div className="w-32 sm:w-36 text-right shrink-0">
+                        <span
+                          className={`text-xs truncate block ${
+                            isSelected
+                              ? 'font-bold text-sky-800'
+                              : 'text-slate-700 group-hover:text-slate-900 font-medium'
+                          }`}
+                          title={item.category}
+                        >
+                          {item.category}
+                        </span>
+                      </div>
+
+                      {/* Bar Container */}
+                      <div className="flex-1 bg-slate-50 rounded-sm h-7 relative flex items-center overflow-hidden">
+                        <div
+                          className={`h-full rounded-r-sm transition-all duration-300 flex items-center justify-end pr-2.5 ${
+                            isSelected
+                              ? 'bg-sky-500 shadow-sm'
+                              : 'bg-cyan-400 group-hover:bg-cyan-500'
+                          }`}
+                          style={{
+                            width: `${widthPercent}%`,
+                            backgroundColor: isSelected ? '#0284C7' : '#38BDF8',
+                          }}
+                        >
+                          {/* Value on Bar */}
+                          <span className="text-[11px] font-bold font-mono-tabular text-slate-800 whitespace-nowrap">
+                            {formatCurrency(item.amount)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+
+              {/* X-Axis Ticks */}
+              {categoryStats.topItems.length > 0 && (
+                <div className="flex items-center justify-between pl-36 sm:pl-40 pt-2 text-[10px] font-mono-tabular text-slate-400 border-t border-slate-100">
+                  <span>0</span>
+                  <span>{formatCurrency(maxCategoryAmount * 0.25)}</span>
+                  <span>{formatCurrency(maxCategoryAmount * 0.5)}</span>
+                  <span>{formatCurrency(maxCategoryAmount * 0.75)}</span>
+                  <span>{formatCurrency(maxCategoryAmount)}</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Monthly Cashflow Bar Chart */
+            <div className="pt-2">
+              <div className="grid grid-cols-7 gap-2 items-end h-44 pt-4 px-2 border-b border-slate-100">
+                {monthlyCashflow.map((m) => {
+                  const isSelected = selectedMonth === m.monthKey;
+                  const maxVal = Math.max(1, ...monthlyCashflow.map((x) => Math.max(x.effectiveIncome, x.totalExpense)));
+                  const incomeH = Math.max(4, Math.round((m.effectiveIncome / maxVal) * 120));
+                  const expenseH = Math.max(4, Math.round((m.totalExpense / maxVal) * 120));
+
+                  return (
+                    <div
+                      key={m.monthKey}
+                      onClick={() => onSelectMonth(selectedMonth === m.monthKey ? 'ALL' : m.monthKey)}
+                      className={`flex flex-col items-center cursor-pointer rounded-t p-1 transition-colors ${
+                        isSelected ? 'bg-sky-50' : 'hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-end justify-center gap-1 w-full h-32">
+                        <div
+                          className="w-3 bg-emerald-500 rounded-t-xs"
+                          style={{ height: `${incomeH}px` }}
+                          title={`Thu nhập: ${formatCurrency(m.effectiveIncome)}`}
+                        />
+                        <div
+                          className="w-3 bg-rose-500 rounded-t-xs"
+                          style={{ height: `${expenseH}px` }}
+                          title={`Chi tiêu: ${formatCurrency(m.totalExpense)}`}
+                        />
+                      </div>
+                      <span className="text-[10px] font-mono-tabular mt-1.5 text-slate-600 font-medium">
+                        {m.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Selected Category Filter Indicator */}
+        {selectedCategoryFilter !== 'ALL' && (
+          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+            <span>
+              Đang lọc: <strong className="text-sky-800">{selectedCategoryFilter}</strong>
+            </span>
+            <button
+              type="button"
+              onClick={() => onSelectCategoryFilter('ALL')}
+              className="text-sky-600 hover:text-sky-800 font-semibold"
+            >
+              Bỏ lọc danh mục
+            </button>
+          </div>
+        )}
+      </section>
+
+      {/* ═══════ RIGHT CHART: DONUT CHART (Coral/Salmon Palette like Reference) ═══════ */}
+      <section className="lg:col-span-5 bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
+        <div>
+          {/* Header */}
+          <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+            <h2 className="text-sm font-bold text-slate-800 tracking-tight">
+              Tỷ trọng chi tiêu
+            </h2>
             <button
               type="button"
               onClick={() => setExcludeSavingsInPie((prev) => !prev)}
-              className={`px-2.5 py-1 text-xs font-medium rounded-md border transition-colors whitespace-nowrap shrink-0 ${
+              className={`px-2 py-0.5 text-[11px] font-medium rounded border transition-colors ${
                 excludeSavingsInPie
-                  ? 'bg-teal-50 border-teal-200 text-teal-800'
-                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900'
+                  ? 'bg-rose-50 border-rose-200 text-rose-700'
+                  : 'bg-slate-50 border-slate-200 text-slate-600'
               }`}
             >
-              {excludeSavingsInPie ? 'Đang ẩn Tiết kiệm' : 'Gồm cả Tiết kiệm'}
+              {excludeSavingsInPie ? 'Ẩn TK' : 'Gồm TK'}
             </button>
           </div>
 
           {categoryStats.slices.length === 0 ? (
-            <div className="py-16 text-center text-sm text-slate-500">
-              Không có dữ liệu chi tiêu dương trong kỳ đã chọn.
+            <div className="py-16 text-center text-xs text-slate-400">
+              Không có dữ liệu trong kỳ đã chọn
             </div>
           ) : (
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-              {/* SVG Donut */}
-              <div className="sm:col-span-6 flex justify-center relative">
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+              {/* Donut SVG with percentages in segments */}
+              <div className="sm:col-span-7 flex justify-center relative">
                 <svg viewBox="0 0 220 220" className="w-48 h-48 overflow-visible">
                   {categoryStats.slices.map((slice) => {
                     const isSelected = selectedCategoryFilter === slice.category;
                     const isHovered = hoveredCategory === slice.category;
-                    const outerRadius = isSelected || isHovered ? 96 : 90;
+                    const outerRadius = isSelected || isHovered ? 98 : 92;
+                    const innerRadius = 52;
+                    const labelPos = getLabelPosition(110, 110, 72, slice.startAngle, slice.endAngle);
+                    const showLabel = slice.percentage >= 8;
+
                     return (
-                      <path
-                        key={slice.category}
-                        d={describeArc(110, 110, outerRadius, 58, slice.startAngle, slice.endAngle)}
-                        fill={slice.color}
-                        stroke="#FFFFFF"
-                        strokeWidth={1.5}
-                        className="cursor-pointer transition-opacity duration-150"
-                        style={{
-                          opacity:
-                            (selectedCategoryFilter !== 'ALL' && !isSelected) ||
-                            (hoveredCategory && !isHovered)
-                              ? 0.45
-                              : 1,
-                        }}
-                        onMouseEnter={() => setHoveredCategory(slice.category)}
-                        onMouseLeave={() => setHoveredCategory(null)}
-                        onClick={() =>
-                          onSelectCategoryFilter(
-                            selectedCategoryFilter === slice.category ? 'ALL' : slice.category
-                          )
-                        }
-                      />
+                      <g key={slice.category}>
+                        <path
+                          d={describeArc(110, 110, outerRadius, innerRadius, slice.startAngle, slice.endAngle)}
+                          fill={slice.color}
+                          stroke="#FFFFFF"
+                          strokeWidth={2}
+                          className="cursor-pointer transition-all duration-200"
+                          style={{
+                            opacity:
+                              (selectedCategoryFilter !== 'ALL' && !isSelected) ||
+                              (hoveredCategory && !isHovered)
+                                ? 0.35
+                                : 1,
+                          }}
+                          onMouseEnter={() => setHoveredCategory(slice.category)}
+                          onMouseLeave={() => setHoveredCategory(null)}
+                          onClick={() =>
+                            onSelectCategoryFilter(
+                              selectedCategoryFilter === slice.category ? 'ALL' : slice.category
+                            )
+                          }
+                        />
+                        {/* Percentage Label on Slice (Matching reference image) */}
+                        {showLabel && (
+                          <text
+                            x={labelPos.x}
+                            y={labelPos.y}
+                            textAnchor="middle"
+                            dominantBaseline="central"
+                            className="text-[11px] font-bold font-mono-tabular fill-slate-800 pointer-events-none"
+                            style={{ textShadow: '0 0 3px rgba(255,255,255,0.8)' }}
+                          >
+                            {slice.percentage.toFixed(1)}%
+                          </text>
+                        )}
+                      </g>
                     );
                   })}
                 </svg>
-                {/* Center readout */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-6">
-                  <span className="text-[11px] text-slate-500 truncate max-w-[110px]">
-                    {activeSlice ? activeSlice.category : 'Tổng chi danh mục'}
-                  </span>
-                  <span className="text-xs font-bold text-slate-900 font-mono-tabular mt-0.5">
-                    {formatCurrency(activeSlice ? activeSlice.amount : categoryStats.grandTotal)}
-                  </span>
-                  {activeSlice && (
-                    <span className="text-[11px] font-medium text-teal-700 font-mono-tabular">
-                      {activeSlice.percentage.toFixed(1)}% · {activeSlice.count} khoản
-                    </span>
-                  )}
-                </div>
               </div>
 
-              {/* Legend list */}
-              <div className="sm:col-span-6 space-y-1.5 max-h-56 overflow-y-auto pr-1">
-                {categoryStats.slices.map((slice) => {
+              {/* Legend with colored dots (Matching reference image) */}
+              <div className="sm:col-span-5 space-y-2 max-h-48 overflow-y-auto pr-1">
+                {categoryStats.slices.slice(0, 6).map((slice) => {
                   const isSelected = selectedCategoryFilter === slice.category;
                   return (
                     <button
@@ -292,25 +471,15 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                       }
                       onMouseEnter={() => setHoveredCategory(slice.category)}
                       onMouseLeave={() => setHoveredCategory(null)}
-                      className={`w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded text-left text-xs transition-colors ${
-                        isSelected
-                          ? 'bg-slate-900 text-white font-medium'
-                          : 'hover:bg-slate-50 text-slate-700'
+                      className={`w-full flex items-center gap-2 text-left text-xs transition-colors py-0.5 rounded ${
+                        isSelected ? 'font-bold text-slate-900' : 'text-slate-600 hover:text-slate-900'
                       }`}
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span
-                          className="w-2.5 h-2.5 rounded-xs shrink-0"
-                          style={{ backgroundColor: slice.color }}
-                        />
-                        <span className="truncate">{slice.category}</span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0 font-mono-tabular">
-                        <span className={isSelected ? 'text-slate-300' : 'text-slate-400'}>
-                          {slice.percentage.toFixed(1)}%
-                        </span>
-                        <span className="font-medium">{formatCurrency(slice.amount)}</span>
-                      </div>
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: slice.color }}
+                      />
+                      <span className="truncate text-xs">{slice.category}</span>
                     </button>
                   );
                 })}
@@ -319,177 +488,11 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
           )}
         </div>
 
-        {/* Top 3 categories quick summary chip strip */}
-        <div className="mt-4 pt-3 border-t border-slate-100">
-          <div className="text-[11px] font-semibold text-slate-500 mb-2">Top danh mục chiếm tỷ trọng lớn nhất:</div>
-          <div className="grid grid-cols-3 gap-2">
-            {categoryStats.topCategories.map((top, idx) => (
-              <div key={top.category} className="p-2 bg-slate-50 border border-slate-200 rounded-lg">
-                <div className="text-[10px] text-slate-500 truncate">#{idx + 1} {top.category}</div>
-                <div className="text-xs font-bold text-slate-900 font-mono-tabular mt-0.5">{top.percentage.toFixed(1)}%</div>
-                <div className="text-[10px] text-teal-700 font-mono-tabular">{formatCurrency(top.amount)}</div>
-              </div>
-            ))}
-          </div>
+        {/* Bottom Total Note */}
+        <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-mono-tabular">
+          <span>Tổng chi danh mục:</span>
+          <span className="font-bold text-slate-800">{formatCurrency(categoryStats.grandTotal)}</span>
         </div>
-
-        {selectedCategoryFilter !== 'ALL' && (
-          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
-            <span>
-              Đang lọc theo danh mục: <strong className="text-slate-900">{selectedCategoryFilter}</strong>
-            </span>
-            <button
-              type="button"
-              onClick={() => onSelectCategoryFilter('ALL')}
-              className="text-teal-700 hover:underline font-medium"
-            >
-              Bỏ lọc danh mục
-            </button>
-          </div>
-        )}
-      </section>
-
-      {/* 2. Bar Chart: Monthly Cashflow */}
-      <section className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-6 flex flex-col justify-between shadow-xs">
-        <div>
-          <div className="flex flex-wrap items-start justify-between gap-4 pb-4 border-b border-slate-100">
-            <div>
-              <h2 className="text-base font-bold text-slate-900">
-                Biểu đồ dòng tiền theo tháng (T4/2026 – T10/2026)
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                So sánh Thu nhập, Chi sinh hoạt và Tiết kiệm giữa các tháng · Nhấp vào cột để xem tháng đó
-              </p>
-            </div>
-            <div className="flex items-center gap-4 text-xs text-slate-600">
-              <span className="flex items-center gap-1.5 whitespace-nowrap">
-                <span className="w-2.5 h-2.5 bg-emerald-600 inline-block rounded-xs" />
-                Thu nhập
-              </span>
-              <span className="flex items-center gap-1.5 whitespace-nowrap">
-                <span className="w-2.5 h-2.5 bg-rose-600 inline-block rounded-xs" />
-                Chi sinh hoạt
-              </span>
-              <span className="flex items-center gap-1.5 whitespace-nowrap">
-                <span className="w-2.5 h-2.5 bg-blue-600 inline-block rounded-xs" />
-                Tiết kiệm
-              </span>
-            </div>
-          </div>
-
-          {/* Bar Chart Canvas */}
-          <div className="mt-6 relative">
-            <div className="grid grid-cols-7 gap-3 items-end h-52 pt-6 px-2 border-b border-slate-200">
-              {monthlyCashflow.map((m) => {
-                const isSelected = selectedMonth === m.monthKey;
-                const incomeH = Math.max(2, Math.round((m.effectiveIncome / maxBarValue) * 165));
-                const livingH = Math.max(2, Math.round((Math.max(0, m.livingExpense) / maxBarValue) * 165));
-                const savingsH = Math.max(
-                  0,
-                  Math.round((Math.max(0, m.savingsExpense) / maxBarValue) * 165)
-                );
-
-                return (
-                  <div
-                    key={m.monthKey}
-                    onClick={() =>
-                      onSelectMonth(selectedMonth === m.monthKey ? 'ALL' : m.monthKey)
-                    }
-                    onMouseEnter={() => setHoveredMonth(m.monthKey)}
-                    onMouseLeave={() => setHoveredMonth(null)}
-                    className={`group flex flex-col items-center cursor-pointer rounded-t-lg pt-2 px-1 transition-colors ${
-                      isSelected ? 'bg-slate-100/90' : 'hover:bg-slate-50'
-                    }`}
-                  >
-                    <div className="flex items-end justify-center gap-1.5 w-full h-44">
-                      {/* Income Bar */}
-                      {m.effectiveIncome > 0 && (
-                        <div
-                          className="w-3 sm:w-4 bg-emerald-600 rounded-t-xs transition-opacity group-hover:opacity-90"
-                          style={{ height: `${incomeH}px` }}
-                          title={`Thu nhập ${m.label}: ${formatCurrency(m.effectiveIncome)}`}
-                        />
-                      )}
-                      {/* Stacked Expense Bar (Living + Savings) */}
-                      <div className="flex flex-col justify-end w-3 sm:w-4 h-full">
-                        {savingsH > 0 && (
-                          <div
-                            className="w-full bg-blue-600 rounded-t-xs"
-                            style={{ height: `${savingsH}px` }}
-                            title={`Tiết kiệm ${m.label}: ${formatCurrency(m.savingsExpense)}`}
-                          />
-                        )}
-                        <div
-                          className={`w-full bg-rose-600 ${savingsH === 0 ? 'rounded-t-xs' : ''}`}
-                          style={{ height: `${livingH}px` }}
-                          title={`Chi sinh hoạt ${m.label}: ${formatCurrency(m.livingExpense)}`}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* X-axis Labels */}
-            <div className="grid grid-cols-7 gap-3 pt-2 px-2 text-center">
-              {monthlyCashflow.map((m) => {
-                const isSelected = selectedMonth === m.monthKey;
-                return (
-                  <button
-                    key={m.monthKey}
-                    type="button"
-                    onClick={() =>
-                      onSelectMonth(selectedMonth === m.monthKey ? 'ALL' : m.monthKey)
-                    }
-                    className={`text-xs font-mono-tabular py-1 rounded transition-colors ${
-                      isSelected
-                        ? 'font-bold text-teal-800 bg-teal-50'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    {m.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Hovered or Active Month Detail Strip */}
-        {(() => {
-          const targetKey =
-            hoveredMonth || (selectedMonth !== 'ALL' ? selectedMonth : monthlyCashflow[monthlyCashflow.length - 1]?.monthKey);
-          const detail = monthlyCashflow.find((m) => m.monthKey === targetKey);
-          if (!detail) return null;
-
-          return (
-            <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 font-mono-tabular">
-              <span className="font-sans font-semibold text-slate-900">
-                Chi tiết {detail.label}:
-              </span>
-              <span>
-                Tổng chi: <strong className="text-slate-900">{formatCurrency(detail.totalExpense)}</strong>
-              </span>
-              <span aria-hidden="true">·</span>
-              <span>
-                Sinh hoạt: <strong className="text-rose-700">{formatCurrency(detail.livingExpense)}</strong>
-              </span>
-              <span aria-hidden="true">·</span>
-              <span>
-                Tiết kiệm: <strong className="text-blue-700">{formatCurrency(detail.savingsExpense)}</strong>
-              </span>
-              <span aria-hidden="true">·</span>
-              <span>
-                BE Corp: <strong className="text-amber-700">{formatCurrency(detail.beCorp)}</strong>
-              </span>
-              <span aria-hidden="true">·</span>
-              <span>
-                Credit: <strong className="text-indigo-700">{formatCurrency(detail.credit)}</strong>
-              </span>
-            </div>
-          );
-        })()}
       </section>
     </div>
   );
