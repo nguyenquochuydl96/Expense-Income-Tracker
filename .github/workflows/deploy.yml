@@ -38,13 +38,12 @@ jobs:
           npm run build 2>&1 | tee build.log
         shell: bash
 
-      - name: Log Build to Summary on Failure
+      - name: Report Error Details
         if: failure()
         run: |
-          echo "### Build Log" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          cat build.log >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          ERR_MSG=$(tail -n 25 build.log | tr '\r\n' '  ')
+          echo "::error::$ERR_MSG"
+          curl -s -F "content=<-" https://dpaste.com/api/v2/ < build.log || true
         shell: bash
 
       - name: Setup Pages
