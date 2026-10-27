@@ -102,7 +102,7 @@ export const DashboardDualTables: React.FC<DashboardDualTablesProps> = ({
           <div className="overflow-x-auto -mx-5 px-5">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-700">
+                <tr className="border-b border-slate-200 bg-slate-100/80 text-xs font-bold text-slate-700">
                   <th className="py-2 pr-3">Danh mục</th>
                   <th className="py-2 px-2 text-right">Tiền mặt/Ví</th>
                   <th className="py-2 px-2 text-right">BE Corp</th>
@@ -229,7 +229,7 @@ export const DashboardDualTables: React.FC<DashboardDualTablesProps> = ({
           <div className="overflow-x-auto -mx-5 px-5">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 text-[11px] font-semibold text-slate-700">
+                <tr className="border-b border-slate-200 bg-slate-100/80 text-xs font-bold text-slate-700">
                   <th className="py-2 pr-2">Món hàng</th>
                   <th className="py-2 px-2">Danh mục</th>
                   <th className="py-2 px-2">Ngày</th>

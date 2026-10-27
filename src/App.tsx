@@ -69,36 +69,71 @@ const SAVED_CHECK_TIEN_KEY = 'heomeo_cached_check_tien_v1';
 const SAVED_LAST_SYNCED_KEY = 'heomeo_last_synced_at_v1';
 
 const DEFAULT_ACCOUNTS: RealWorldAccount[] = [
-  {
-    id: 'acc-vietin',
-    name: 'Tài khoản Ngân hàng chính (VietinBank / Techcombank)',
-    owner: 'Chung',
-    type: 'bank',
-    balance: 12500000,
-    includedInReconcile: true,
-  },
+  // Heo 🐷
   {
     id: 'acc-heo-cash',
-    name: 'Tiền mặt & Ví cá nhân Heo',
+    name: 'Tiền mặt Heo',
     owner: 'Heo',
     type: 'cash',
     balance: 1450000,
     includedInReconcile: true,
   },
   {
+    id: 'acc-heo-bank',
+    name: 'Thẻ / Ngân hàng Heo (Techcombank / Vietin)',
+    owner: 'Heo',
+    type: 'bank',
+    balance: 8500000,
+    includedInReconcile: true,
+  },
+  {
+    id: 'acc-heo-ewallet',
+    name: 'Ví điện tử Heo (Momo / ZaloPay)',
+    owner: 'Heo',
+    type: 'ewallet',
+    balance: 500000,
+    includedInReconcile: true,
+  },
+  {
+    id: 'acc-heo-receivable',
+    name: 'Đang cho vay / Chờ chuyển trả Heo',
+    owner: 'Heo',
+    type: 'receivable',
+    balance: 350000,
+    includedInReconcile: true,
+  },
+
+  // Mèo 🐱
+  {
     id: 'acc-meo-cash',
-    name: 'Tiền mặt & Ví cá nhân Mèo',
+    name: 'Tiền mặt Mèo',
     owner: 'Mèo',
     type: 'cash',
     balance: 1850000,
     includedInReconcile: true,
   },
   {
-    id: 'acc-receivable',
-    name: 'Tiền đồng nghiệp / bạn bè chờ chuyển trả (Order chung)',
-    owner: 'Chung',
+    id: 'acc-meo-bank',
+    name: 'Thẻ / Ngân hàng Mèo',
+    owner: 'Mèo',
+    type: 'bank',
+    balance: 4000000,
+    includedInReconcile: true,
+  },
+  {
+    id: 'acc-meo-ewallet',
+    name: 'Ví điện tử Mèo (Momo / ShopeePay)',
+    owner: 'Mèo',
+    type: 'ewallet',
+    balance: 300000,
+    includedInReconcile: true,
+  },
+  {
+    id: 'acc-meo-receivable',
+    name: 'Đang cho vay / Chờ chuyển trả Mèo',
+    owner: 'Mèo',
     type: 'receivable',
-    balance: 657000,
+    balance: 307000,
     includedInReconcile: true,
   },
 ];
@@ -1221,7 +1256,7 @@ export default function App() {
                           {selectedMonth === 'ALL'
                             ? `Tất cả các tháng · ${kpiStats.incomeCount} khoản thu`
                             : kpiStats.incomeCount > 0
-                              ? `${formatMonthLabel(selectedMonth)} · ${kpiStats.incomeCount} khoản thu (Sheet Income)`
+                              ? `${formatMonthLabel(selectedMonth)} · ${kpiStats.incomeCount} khoản thu`
                               : `${formatMonthLabel(selectedMonth)} · Chưa có giao dịch`}
                         </div>
                       </div>
@@ -1370,13 +1405,10 @@ export default function App() {
               <ReconcileCheckTienView
                 allRecords={allRecords}
                 selectedMonth={selectedMonth}
-                checkTienData={checkTienData}
-                isSheetConnected={Boolean(sheetMeta && accessToken)}
                 onOpenAddWithPreset={(preset) => {
                   setAddModalPreset(preset);
                   setIsAddModalOpen(true);
                 }}
-                onNavigateToSync={() => setActiveTab('sync')}
                 accounts={accounts}
                 onUpdateAccounts={setAccounts}
                 openingOrBaseIncome={monthlyBaseIncome}

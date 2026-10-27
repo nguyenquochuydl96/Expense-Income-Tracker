@@ -557,7 +557,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
         <div className="overflow-x-auto -mx-5 px-5">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
+              <tr className="border-b border-slate-200 bg-slate-100/90 text-xs font-bold text-slate-700">
                 <th className="py-2.5 px-3">Hạng mục tiêu dùng</th>
                 <th className="py-2.5 px-3 text-center w-24">Tỷ lệ %</th>
                 <th className="py-2.5 px-3 text-right">Định mức tháng</th>
@@ -853,7 +853,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
 
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-semibold text-slate-700">
+              <tr className="border-b border-slate-200 bg-slate-100/90 text-xs font-bold text-slate-700">
                 <th className="py-2.5 px-3 sticky left-0 bg-slate-50 z-10 w-44 shadow-xs">
                   Hạng mục tiêu dùng
                 </th>
