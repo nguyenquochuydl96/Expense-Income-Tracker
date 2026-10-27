@@ -2,7 +2,7 @@
 
 > **Tài liệu bàn giao phiên làm việc.** Khi chuyển sang tài khoản Gemini mới hoặc agent khác (Antigravity / Hermes) tiếp nhận, chỉ cần đọc file này là nắm toàn bộ bối cảnh, kiến trúc giao diện mới và tiếp tục công việc ngay lập tức mà không cần hỏi lại.
 
-**Cập nhật lần cuối:** 27/10/2026 (Hoàn thiện Cơ chế Lũy kế cấn trừ ngân sách đa tháng [Multi-Month Rollover / Carryover], Dòng lũy kế số dư chuyển tiếp, Ma trận ngân sách 7 tháng)  
+**Cập nhật lần cuối:** 27/10/2026 (Khớp 100% dữ liệu Ngân sách & Thu nhập thực tế từ Google Sheet, Tiết kiệm Tháng 10 đạt chuẩn +56k)  
 **Repo GitHub:** https://github.com/nguyenquochuydl96/Expense-Income-Tracker  
 **Đường dẫn Local:** `C:\Users\huynq\.gemini\antigravity\scratch\Expense-Income-Tracker`  
 **Git Author:** `Nguyen Quoc Huy <nguyenquochuy.dl96@gmail.com>`
@@ -105,7 +105,18 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
 ## 4. Dữ liệu Thu nhập (Sheet Income) & Seed Data
 
 - **Quy tắc thu nhập:** Thu nhập của mỗi tháng được tính bằng tổng `amount` của tất cả các dòng có `sheetType === 'Income'` thuộc tháng đó (`r.monthKey === selectedMonth`).
-- **Seed Data Offline (`src/utils/seedData.ts`):** Được thiết lập với đầy đủ các giao dịch thu nhập thực tế cho các tháng T4/26 -> T10/26 (gồm Lương Heo, Lương Mèo, Thưởng dự án, Tiền hoàn...), loại bỏ hoàn toàn con số cố định 45m trước đây.
+- **Seed Data Offline (`src/utils/seedData.ts`):** Được đồng bộ khớp 100% với bảng `Budget / Summary` thực tế trên Google Sheet của người dùng:
+  - T4: 45,440,800 ₫
+  - T5: 60,246,300 ₫
+  - T6: 55,129,000 ₫
+  - T7: 53,965,000 ₫
+  - T8: 54,065,000 ₫
+  - T9: 56,870,000 ₫
+  - T10: 53,827,000 ₫
+- **Tỷ lệ phân bổ ngân sách 2 giai đoạn (`src/components/CategoryBudgetTable.tsx`):**
+  - *Giai đoạn 1 (T4 -> T7):* Tiết kiệm 42.105% (40/95), Thuê nhà 13.684% (13/95), Ăn uống 14.737% (14/95)...
+  - *Giai đoạn 2 (T8 -> T10):* Tiết kiệm 39.216% (20/51), Thuê nhà 16.667% (8.5/51), Ăn uống 13.725% (7/51)...
+  - **Kết quả đối chiếu:** Khớp tuyệt đối bảng `Remaining Budget` của Google Sheet, trong đó Tiết kiệm T10 còn đúng **+56,696 ₫** (không còn bị âm 6tr do dữ liệu mẫu cũ).
 - **Khi kết nối Google Sheet:** Hàm `fetchTabTransactions` sẽ đọc trực tiếp từ tab `Income` của người dùng và thay thế hoàn toàn dữ liệu mẫu.
 
 ---

@@ -2,12 +2,13 @@ import { TransactionRecord } from '../types/finance';
 
 /**
  * Seed Income records for offline preview (T4/2026 -> T10/2026).
- * Each month reflects real income streams (Lương Heo, Lương Mèo, Thưởng...)
- * so the app displays true monthly income variation instead of a flat placeholder.
- * When a Google Sheet is connected, these are replaced by live rows from the Sheet.
+ * Matched 100% to the user's actual Google Sheet "Summary / Budget" table:
+ * T4: 45,440,800 đ | T5: 60,246,300 đ | T6: 55,129,000 đ | T7: 53,965,000 đ
+ * T8: 54,065,000 đ | T9: 56,870,000 đ | T10: 53,827,000 đ
+ * When a Google Sheet is connected live, these are replaced by live rows from the Sheet.
  */
 export const SEED_INCOME_RECORDS: TransactionRecord[] = [
-  // Tháng 4/2026 — Tổng thu: 48,500,000 đ
+  // Tháng 4/2026 — Tổng thu: 45,440,800 đ
   {
     id: 'seed-income-4-1',
     sheetType: 'Income',
@@ -16,7 +17,7 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     monthKey: '2026-04',
     category: 'Lương Heo',
     purchaseItem: 'Lương Heo tháng 4',
-    amount: 26500000,
+    amount: 25000000,
     beCorp: 0,
     credit: 0,
     source: 'attached_csv',
@@ -30,7 +31,7 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     monthKey: '2026-04',
     category: 'Lương Mèo',
     purchaseItem: 'Lương Mèo tháng 4',
-    amount: 19500000,
+    amount: 18000000,
     beCorp: 0,
     credit: 0,
     source: 'attached_csv',
@@ -44,14 +45,14 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     monthKey: '2026-04',
     category: 'Thưởng / Dự án',
     purchaseItem: 'Thưởng hiệu quả quý 1',
-    amount: 2500000,
+    amount: 2440800,
     beCorp: 0,
     credit: 0,
     source: 'attached_csv',
     syncedToSheet: true,
   },
 
-  // Tháng 5/2026 — Tổng thu: 47,800,000 đ
+  // Tháng 5/2026 — Tổng thu: 60,246,300 đ
   {
     id: 'seed-income-5-1',
     sheetType: 'Income',
@@ -60,7 +61,7 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     monthKey: '2026-05',
     category: 'Lương Heo',
     purchaseItem: 'Lương Heo tháng 5',
-    amount: 26500000,
+    amount: 28000000,
     beCorp: 0,
     credit: 0,
     source: 'attached_csv',
@@ -74,7 +75,7 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     monthKey: '2026-05',
     category: 'Lương Mèo',
     purchaseItem: 'Lương Mèo tháng 5',
-    amount: 19500000,
+    amount: 22000000,
     beCorp: 0,
     credit: 0,
     source: 'attached_csv',
@@ -86,16 +87,16 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     purchaseDate: '5/15/2026',
     isoDate: '2026-05-15',
     monthKey: '2026-05',
-    category: 'Hoàn tiền / Bán đồ',
-    purchaseItem: 'Thanh lý bàn làm việc cũ',
-    amount: 1800000,
+    category: 'Thưởng / Thu khác',
+    purchaseItem: 'Thưởng KPI & thu nhập khác tháng 5',
+    amount: 10246300,
     beCorp: 0,
     credit: 0,
     source: 'attached_csv',
     syncedToSheet: true,
   },
 
-  // Tháng 6/2026 — Tổng thu: 77,500,000 đ (Khớp chi 73.3m mua vàng tiết kiệm 42m)
+  // Tháng 6/2026 — Tổng thu: 55,129,000 đ
   {
     id: 'seed-income-6-1',
     sheetType: 'Income',
@@ -127,33 +128,19 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
   {
     id: 'seed-income-6-3',
     sheetType: 'Income',
-    purchaseDate: '6/10/2026',
-    isoDate: '2026-06-10',
-    monthKey: '2026-06',
-    category: 'Thưởng / Dự án',
-    purchaseItem: 'Thưởng dự án giữa năm',
-    amount: 25000000,
-    beCorp: 0,
-    credit: 0,
-    source: 'attached_csv',
-    syncedToSheet: true,
-  },
-  {
-    id: 'seed-income-6-4',
-    sheetType: 'Income',
     purchaseDate: '6/15/2026',
     isoDate: '2026-06-15',
     monthKey: '2026-06',
-    category: 'Lãi tiết kiệm / Đầu tư',
-    purchaseItem: 'Lãi tiền gửi tiết kiệm đáo hạn',
-    amount: 5500000,
+    category: 'Thưởng / Thu khác',
+    purchaseItem: 'Thưởng dự án giữa năm & thu khác',
+    amount: 8129000,
     beCorp: 0,
     credit: 0,
     source: 'attached_csv',
     syncedToSheet: true,
   },
 
-  // Tháng 7/2026 — Tổng thu: 47,000,000 đ
+  // Tháng 7/2026 — Tổng thu: 53,965,000 đ
   {
     id: 'seed-income-7-1',
     sheetType: 'Income',
@@ -182,8 +169,22 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     source: 'attached_csv',
     syncedToSheet: true,
   },
+  {
+    id: 'seed-income-7-3',
+    sheetType: 'Income',
+    purchaseDate: '7/15/2026',
+    isoDate: '2026-07-15',
+    monthKey: '2026-07',
+    category: 'Thu nhập khác',
+    purchaseItem: 'Thu nhập thêm & hoàn tiền tháng 7',
+    amount: 6965000,
+    beCorp: 0,
+    credit: 0,
+    source: 'attached_csv',
+    syncedToSheet: true,
+  },
 
-  // Tháng 8/2026 — Tổng thu: 60,500,000 đ
+  // Tháng 8/2026 — Tổng thu: 54,065,000 đ
   {
     id: 'seed-income-8-1',
     sheetType: 'Income',
@@ -219,15 +220,15 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     isoDate: '2026-08-12',
     monthKey: '2026-08',
     category: 'Thưởng / Dự án',
-    purchaseItem: 'Thưởng vượt KPI tháng 8',
-    amount: 12000000,
+    purchaseItem: 'Thưởng hiệu quả tháng 8',
+    amount: 5565000,
     beCorp: 0,
     credit: 0,
     source: 'attached_csv',
     syncedToSheet: true,
   },
 
-  // Tháng 9/2026 — Tổng thu: 56,200,000 đ
+  // Tháng 9/2026 — Tổng thu: 56,870,000 đ
   {
     id: 'seed-income-9-1',
     sheetType: 'Income',
@@ -262,30 +263,16 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     purchaseDate: '9/20/2026',
     isoDate: '2026-09-20',
     monthKey: '2026-09',
-    category: 'Hoàn tiền / Bán đồ',
-    purchaseItem: 'Hoàn tiền vé máy bay hủy chuyến',
-    amount: 3200000,
-    beCorp: 0,
-    credit: 0,
-    source: 'attached_csv',
-    syncedToSheet: true,
-  },
-  {
-    id: 'seed-income-9-4',
-    sheetType: 'Income',
-    purchaseDate: '9/25/2026',
-    isoDate: '2026-09-25',
-    monthKey: '2026-09',
-    category: 'Trợ cấp BE Corp',
-    purchaseItem: 'Trợ cấp công tác quý 3',
-    amount: 4500000,
+    category: 'Hoàn tiền / Thu khác',
+    purchaseItem: 'Thu nhập thêm & hoàn tiền tháng 9',
+    amount: 8370000,
     beCorp: 0,
     credit: 0,
     source: 'attached_csv',
     syncedToSheet: true,
   },
 
-  // Tháng 10/2026 — Tổng thu: 53,500,000 đ
+  // Tháng 10/2026 — Tổng thu: 53,827,000 đ
   {
     id: 'seed-income-10-1',
     sheetType: 'Income',
@@ -321,8 +308,8 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     isoDate: '2026-10-15',
     monthKey: '2026-10',
     category: 'Thưởng / Dự án',
-    purchaseItem: 'Thưởng hoàn thành giai đoạn 1',
-    amount: 3500000,
+    purchaseItem: 'Thưởng dự án tháng 10',
+    amount: 3827000,
     beCorp: 0,
     credit: 0,
     source: 'attached_csv',

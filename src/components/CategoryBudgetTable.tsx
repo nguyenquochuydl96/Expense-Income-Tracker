@@ -24,21 +24,38 @@ const SAVED_ROLLOVER_MODE_KEY = 'heomeo_rollover_mode_v1';
 
 export type RolloverMode = 'full' | 'deficit_only' | 'none';
 
-// Default percentage allocation of Total Income (% Budget, total = 100%)
+// T4-T7 base percentages matching Google Sheet (sum = 100%)
+export const DEFAULT_CATEGORY_PERCENTAGES_T4_T7: Record<string, number> = {
+  'Tiết kiệm': 42.1053,
+  'Thuê nhà': 13.6842,
+  'Ăn uống': 14.7368,
+  'Quà tặng/Cưới hỏi': 7.3684,
+  'Hóa/Mỹ phẩm': 6.3158,
+  'Thú cưng': 4.2105,
+  'Giải trí Heo': 2.1053,
+  'Giải trí Mèo': 2.1053,
+  'Shopping': 2.1053,
+  'Điện thoại/Xăng xe': 2.1053,
+  'Sức khỏe': 1.0526,
+  'Du lịch': 1.0526,
+  'Khác': 1.0526,
+};
+
+// Current phase (T8-T10) base percentages matching Google Sheet (sum = 100%)
 export const DEFAULT_CATEGORY_PERCENTAGES: Record<string, number> = {
-  'Tiết kiệm': 38.0,
-  'Thuê nhà': 16.5,
-  'Ăn uống': 15.0,
-  'Thú cưng': 7.0,
-  'Hóa/Mỹ phẩm': 5.5,
-  'Giải trí Heo': 5.0,
-  'Quà tặng/Cưới hỏi': 4.0,
-  'Giải trí Mèo': 3.0,
-  'Điện thoại/Xăng xe': 2.0,
-  'Shopping': 2.0,
-  'Sức khỏe': 1.0,
-  'Du lịch': 1.0,
-  'Khác': 0.0,
+  'Tiết kiệm': 39.2157,
+  'Thuê nhà': 16.6667,
+  'Ăn uống': 13.7255,
+  'Quà tặng/Cưới hỏi': 7.8431,
+  'Hóa/Mỹ phẩm': 4.9020,
+  'Thú cưng': 3.9216,
+  'Shopping': 2.9412,
+  'Điện thoại/Xăng xe': 1.9608,
+  'Giải trí Heo': 1.9608,
+  'Giải trí Mèo': 1.9608,
+  'Du lịch': 1.9608,
+  'Sức khỏe': 1.9608,
+  'Khác': 0.9804,
 };
 
 interface CategoryBudgetTableProps {
@@ -167,7 +184,17 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
       for (let i = 0; i < allChronologicalMonths.length; i++) {
         const mKey = allChronologicalMonths[i];
         const mIncome = monthlyIncomes[mKey] || 0;
-        const pct = percentages[cat] ?? 0;
+        const defaultPct =
+          mKey <= '2026-07'
+            ? (DEFAULT_CATEGORY_PERCENTAGES_T4_T7[cat] ?? 0)
+            : (DEFAULT_CATEGORY_PERCENTAGES[cat] ?? 0);
+        let hasCustom = false;
+        try {
+          hasCustom = Boolean(localStorage.getItem(SAVED_CATEGORY_PERCENTAGES_KEY));
+        } catch {
+          // ignore
+        }
+        const pct = hasCustom ? (percentages[cat] ?? defaultPct) : defaultPct;
         const baseBudget = Math.round((mIncome * pct) / 100);
 
         let carryover = 0;
@@ -222,7 +249,17 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
     const targetMonth = selectedMonth !== 'ALL' ? selectedMonth : allChronologicalMonths[allChronologicalMonths.length - 1];
 
     const items = allCategories.map((cat) => {
-      const pct = percentages[cat] ?? 0;
+      const defaultPct =
+        targetMonth && targetMonth <= '2026-07'
+          ? (DEFAULT_CATEGORY_PERCENTAGES_T4_T7[cat] ?? 0)
+          : (DEFAULT_CATEGORY_PERCENTAGES[cat] ?? 0);
+      let hasCustom = false;
+      try {
+        hasCustom = Boolean(localStorage.getItem(SAVED_CATEGORY_PERCENTAGES_KEY));
+      } catch {
+        // ignore
+      }
+      const pct = hasCustom ? (percentages[cat] ?? defaultPct) : defaultPct;
       const mData = targetMonth ? multiMonthRolloverData.chain[cat]?.[targetMonth] : undefined;
 
       const baseBudget = mData?.baseBudget ?? Math.round((totalIncome * pct) / 100);
