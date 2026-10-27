@@ -1034,6 +1034,7 @@ export default function App() {
                 {/* ═══════ MỚI: NGÂN SÁCH & CHI TIÊU THEO HẠNG MỤC (Budget · Đã chi · Còn lại) ═══════ */}
                 <CategoryBudgetTable
                   recordsInPeriod={periodRecords}
+                  totalIncome={kpiStats.effectiveIncome}
                   selectedMonth={selectedMonth}
                   selectedCategory={selectedCategory}
                   onSelectCategory={setSelectedCategory}

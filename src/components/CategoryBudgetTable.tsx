@@ -11,30 +11,33 @@ import {
   Edit3,
   RotateCcw,
   BarChart3,
-  Table as TableIcon,
+  PieChart,
   Check,
+  Percent,
 } from 'lucide-react';
 
-const SAVED_CATEGORY_BUDGETS_KEY = 'heomeo_category_budgets_v1';
+const SAVED_CATEGORY_PERCENTAGES_KEY = 'heomeo_category_percentages_v1';
 
-export const DEFAULT_CATEGORY_BUDGETS: Record<string, number> = {
-  'Ăn uống': 8500000,
-  'Thuê nhà': 9000000,
-  'Thú cưng': 4000000,
-  'Tiết kiệm': 20000000,
-  'Hóa/Mỹ phẩm': 3000000,
-  'Giải trí Heo': 3000000,
-  'Giải trí Mèo': 1500000,
-  'Quà tặng/Cưới hỏi': 2500000,
-  'Điện thoại/Xăng xe': 1000000,
-  'Shopping': 1000000,
-  'Sức khỏe': 500000,
-  'Du lịch': 1000000,
-  'Khác': 500000,
+// Default percentage allocation of Total Income (% Budget, total = 100%)
+export const DEFAULT_CATEGORY_PERCENTAGES: Record<string, number> = {
+  'Tiết kiệm': 38.0,
+  'Thuê nhà': 16.5,
+  'Ăn uống': 15.0,
+  'Thú cưng': 7.0,
+  'Hóa/Mỹ phẩm': 5.5,
+  'Giải trí Heo': 5.0,
+  'Quà tặng/Cưới hỏi': 4.0,
+  'Giải trí Mèo': 3.0,
+  'Điện thoại/Xăng xe': 2.0,
+  'Shopping': 2.0,
+  'Sức khỏe': 1.0,
+  'Du lịch': 1.0,
+  'Khác': 0.0,
 };
 
 interface CategoryBudgetTableProps {
   recordsInPeriod: TransactionRecord[];
+  totalIncome: number; // Budget tổng = Income của tháng đó
   selectedMonth: string;
   selectedCategory: string;
   onSelectCategory: (cat: string) => void;
@@ -44,27 +47,28 @@ interface CategoryBudgetTableProps {
 
 export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
   recordsInPeriod,
+  totalIncome,
   selectedMonth,
   selectedCategory,
   onSelectCategory,
   onShowCharts,
   showChartsButton = false,
 }) => {
-  // Category budget map state
-  const [budgets, setBudgets] = useState<Record<string, number>>(() => {
+  // Category percentage allocation map (% of Total Budget/Income)
+  const [percentages, setPercentages] = useState<Record<string, number>>(() => {
     try {
-      const saved = localStorage.getItem(SAVED_CATEGORY_BUDGETS_KEY);
+      const saved = localStorage.getItem(SAVED_CATEGORY_PERCENTAGES_KEY);
       if (saved) {
-        return { ...DEFAULT_CATEGORY_BUDGETS, ...JSON.parse(saved) };
+        return { ...DEFAULT_CATEGORY_PERCENTAGES, ...JSON.parse(saved) };
       }
     } catch {
       // fallback
     }
-    return DEFAULT_CATEGORY_BUDGETS;
+    return DEFAULT_CATEGORY_PERCENTAGES;
   });
 
   const [isEditingBudgets, setIsEditingBudgets] = useState<boolean>(false);
-  const [tempBudgets, setTempBudgets] = useState<Record<string, number>>({});
+  const [tempPercentages, setTempPercentages] = useState<Record<string, number>>({});
   const [filterMode, setFilterMode] = useState<'all' | 'over_budget' | 'under_budget'>('all');
 
   // Compute spent for each category in this period
@@ -87,13 +91,16 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
     const items = allCatNames.map((cat) => {
       const spent = spentMap[cat]?.total || 0;
       const count = spentMap[cat]?.count || 0;
-      const budget = budgets[cat] ?? 0;
+      const pct = percentages[cat] ?? 0;
+      // Budget = Total Income * (% / 100)
+      const budget = Math.round((totalIncome * pct) / 100);
       const remaining = budget - spent;
       const pctUsed = budget > 0 ? (spent / budget) * 100 : spent > 0 ? 999 : 0;
       const isOver = remaining < 0;
 
       return {
         category: cat,
+        percentage: pct,
         budget,
         spent,
         remaining,
@@ -106,19 +113,22 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
     // Sort by spent descending
     items.sort((a, b) => b.spent - a.spent);
 
-    const totalBudget = items.reduce((sum, item) => sum + item.budget, 0);
+    const sumPercentages = items.reduce((sum, item) => sum + item.percentage, 0);
+    // Total budget is strictly equal to totalIncome if percentages sum to 100%
+    const totalBudget = totalIncome > 0 ? totalIncome : items.reduce((sum, item) => sum + item.budget, 0);
     const totalSpent = items.reduce((sum, item) => sum + item.spent, 0);
     const totalRemaining = totalBudget - totalSpent;
     const overallPctUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
     return {
       items,
+      sumPercentages,
       totalBudget,
       totalSpent,
       totalRemaining,
       overallPctUsed,
     };
-  }, [recordsInPeriod, budgets]);
+  }, [recordsInPeriod, percentages, totalIncome]);
 
   // Filtered items based on tab
   const displayedItems = useMemo(() => {
@@ -131,16 +141,20 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
     return categoryStats.items;
   }, [categoryStats.items, filterMode]);
 
-  // Save edited budgets
+  // Edit mode handlers
   const handleStartEdit = () => {
-    setTempBudgets({ ...budgets });
+    setTempPercentages({ ...percentages });
     setIsEditingBudgets(true);
   };
 
+  const currentTempSum = useMemo(() => {
+    return Object.values(tempPercentages).reduce((s, v) => s + (Number(v) || 0), 0);
+  }, [tempPercentages]);
+
   const handleSaveBudgets = () => {
-    setBudgets(tempBudgets);
+    setPercentages(tempPercentages);
     try {
-      localStorage.setItem(SAVED_CATEGORY_BUDGETS_KEY, JSON.stringify(tempBudgets));
+      localStorage.setItem(SAVED_CATEGORY_PERCENTAGES_KEY, JSON.stringify(tempPercentages));
     } catch {
       // ignore
     }
@@ -148,9 +162,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
   };
 
   const handleResetBudgets = () => {
-    setBudgets(DEFAULT_CATEGORY_BUDGETS);
+    setPercentages(DEFAULT_CATEGORY_PERCENTAGES);
     try {
-      localStorage.removeItem(SAVED_CATEGORY_BUDGETS_KEY);
+      localStorage.removeItem(SAVED_CATEGORY_PERCENTAGES_KEY);
     } catch {
       // ignore
     }
@@ -172,16 +186,19 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
             <SlidersHorizontal className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-sm font-bold text-slate-900 tracking-tight">
                 Ngân sách &amp; Chi tiêu theo Hạng mục
               </h2>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                Budget · Đã chi · Còn lại
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                Budget tổng = Income ({formatCurrency(totalIncome)})
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-sky-50 text-sky-800 border border-sky-200">
+                Phân bổ theo %
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Theo dõi chi tiết hạn mức ngân sách và số dư còn lại của từng khoản chi tiêu trong {monthLabel}
+              Budget tổng bằng đúng Thu nhập ({formatCurrency(totalIncome)}), chia % định mức cho từng hạng mục trong {monthLabel}
             </p>
           </div>
         </div>
@@ -225,7 +242,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
             </button>
           </div>
 
-          {/* Edit Budgets button */}
+          {/* Edit Percentages button */}
           {!isEditingBudgets ? (
             <button
               type="button"
@@ -233,10 +250,20 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 rounded-lg border border-slate-200 shadow-xs transition-colors"
             >
               <Edit3 className="w-3.5 h-3.5 text-slate-500" />
-              <span>Chỉnh Budget</span>
+              <span>Chỉnh % Budget</span>
             </button>
           ) : (
             <div className="flex items-center gap-1.5">
+              <span
+                className={`text-xs px-2 py-1 rounded font-bold ${
+                  Math.abs(currentTempSum - 100) < 0.1
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-rose-100 text-rose-800'
+                }`}
+                title="Tổng các tỷ lệ phải bằng 100%"
+              >
+                Tổng: {currentTempSum.toFixed(1)}%
+              </span>
               <button
                 type="button"
                 onClick={handleSaveBudgets}
@@ -275,10 +302,11 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50/60 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
               <th className="py-2.5 px-3">Hạng mục tiêu dùng</th>
+              <th className="py-2.5 px-3 text-center w-28">Tỷ lệ % Budget</th>
               <th className="py-2.5 px-3 text-right">Ngân sách (Budget)</th>
               <th className="py-2.5 px-3 text-right">Đã chi tiêu</th>
               <th className="py-2.5 px-3 text-right">Còn lại (Remaining)</th>
-              <th className="py-2.5 px-3 text-center w-48">Tiến độ chi tiêu (% Used)</th>
+              <th className="py-2.5 px-3 text-center w-44">Tiến độ (% Used)</th>
               <th className="py-2.5 px-3 text-center">Giao dịch</th>
             </tr>
           </thead>
@@ -307,22 +335,35 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                     </div>
                   </td>
 
-                  {/* Budget (Ngân sách) */}
-                  <td className="py-2.5 px-3 text-right font-semibold text-slate-800">
+                  {/* Percentage Allocation */}
+                  <td className="py-2.5 px-3 text-center">
                     {isEditingBudgets ? (
-                      <input
-                        type="number"
-                        className="w-28 px-2 py-1 text-right text-xs border border-teal-300 rounded focus:outline-teal-600 font-mono-tabular bg-white"
-                        value={tempBudgets[item.category] ?? 0}
-                        onChange={(e) => {
-                          const val = Number(e.target.value) || 0;
-                          setTempBudgets((prev) => ({ ...prev, [item.category]: val }));
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      />
+                      <div className="flex items-center justify-center gap-1">
+                        <input
+                          type="number"
+                          step="0.5"
+                          min="0"
+                          max="100"
+                          className="w-16 px-1.5 py-0.5 text-center text-xs border border-teal-300 rounded focus:outline-teal-600 font-mono-tabular bg-white"
+                          value={tempPercentages[item.category] ?? 0}
+                          onChange={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            setTempPercentages((prev) => ({ ...prev, [item.category]: val }));
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <span className="text-slate-400 text-xs">%</span>
+                      </div>
                     ) : (
-                      formatCurrency(item.budget)
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700">
+                        {item.percentage.toFixed(1)}%
+                      </span>
                     )}
+                  </td>
+
+                  {/* Budget Amount (Calculated from Total Income * %) */}
+                  <td className="py-2.5 px-3 text-right font-semibold text-slate-800">
+                    {formatCurrency(item.budget)}
                   </td>
 
                   {/* Đã chi tiêu */}
@@ -335,7 +376,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                     {isOver ? (
                       <span className="inline-flex items-center gap-1 font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
                         <TrendingDown className="w-3 h-3 shrink-0" />
-                        <span>Bội chi {formatCurrency(Math.abs(item.remaining))}</span>
+                        <span>Bội chi -{formatCurrency(Math.abs(item.remaining))}</span>
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
@@ -393,7 +434,12 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
           <tfoot>
             <tr className="border-t-2 border-slate-300 bg-slate-50/90 font-bold text-xs font-mono-tabular">
               <td className="py-3 px-3 font-sans text-slate-900">
-                Tổng cộng ngân sách chi tiêu
+                Tổng cộng ngân sách chi tiêu (= Thu nhập)
+              </td>
+              <td className="py-3 px-3 text-center text-slate-800">
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-teal-100 text-teal-800">
+                  {categoryStats.sumPercentages.toFixed(1)}%
+                </span>
               </td>
               <td className="py-3 px-3 text-right text-slate-900">
                 {formatCurrency(categoryStats.totalBudget)}
@@ -404,7 +450,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
               <td className="py-3 px-3 text-right">
                 {categoryStats.totalRemaining < 0 ? (
                   <span className="text-rose-700 bg-rose-100/80 px-2.5 py-1 rounded border border-rose-300 font-bold">
-                    Vượt {formatCurrency(Math.abs(categoryStats.totalRemaining))}
+                    Vượt -{formatCurrency(Math.abs(categoryStats.totalRemaining))}
                   </span>
                 ) : (
                   <span className="text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded border border-emerald-300 font-bold">

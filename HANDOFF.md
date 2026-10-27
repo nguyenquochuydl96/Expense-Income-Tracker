@@ -62,12 +62,17 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
 
 ### 2.5 Bảng Ngân sách & Chi tiêu theo Hạng mục (Category Budget vs Actual Table)
 **Vị trí:** Đặt ngay bên dưới Bảng tổng hợp đa tháng, **ưu tiên hiển thị thay thế cho 2 bảng report biểu đồ trước đây**:
+* **Nguyên tắc cốt lõi: Budget tổng = Income:**
+  - Tổng ngân sách của kỳ/tháng luôn bằng đúng 100% Thu nhập của kỳ/tháng đó (`Total Budget = Income`).
+  - Ngân sách từng hạng mục được phân bổ theo **Tỷ lệ phần trăm (%)** từ Tổng thu nhập: `Budget_category = Total_Income * (Percentage / 100)`.
+  - Tổng các tỷ lệ % bằng đúng `100.0%`.
 * **3 Chỉ số cốt lõi cho từng hạng mục tiêu dùng:**
-  - `Ngân sách (Budget)`: Định mức chi tiêu dự kiến cho hạng mục.
+  - `Tỷ lệ % Budget`: Tỷ lệ % phân bổ của hạng mục đó (ví dụ: Tiết kiệm 38.0%, Thuê nhà 16.5%, Ăn uống 15.0%, Thú cưng 7.0%...).
+  - `Ngân sách (Budget)`: Tính tự động theo `% * Thu nhập` (ví dụ Tiền ăn: `15% * 53,500,000 ₫ = 8,025,000 ₫`).
   - `Đã chi tiêu`: Tổng số tiền thực chi trong tháng của hạng mục đó.
   - `Còn lại (Remaining)`: Hiển thị badge xanh `Còn lại X ₫` nếu trong hạn mức, hoặc badge đỏ `Bội chi -X ₫` nếu vượt ngân sách.
 * **Thanh tiến độ chi tiêu (% Used):** Đổi màu trực quan (Xanh ngọc `< 80%`, Cam `80% - 100%`, Đỏ `> 100%`).
-* **Tính năng chỉnh sửa linh hoạt:** Nút `Chỉnh Budget` cho phép tùy chỉnh hạn mức từng hạng mục trực tiếp trên UI và tự động lưu `localStorage`.
+* **Tính năng chỉnh sửa linh hoạt:** Nút `Chỉnh % Budget` cho phép tùy chỉnh tỷ lệ % của từng hạng mục trực tiếp trên UI, có bộ đếm kiểm tra tổng = 100% và tự động lưu `localStorage`.
 * **Bộ lọc nhanh:** Xem `Tất cả`, `Bội chi`, `Trong hạn mức`.
 * **Nút mở Biểu đồ bổ trợ:** Nút `Xem biểu đồ` cho phép mở rộng 2 biểu đồ phân tích (Top chi tiêu & Tỷ trọng) khi người dùng muốn xem.
 
