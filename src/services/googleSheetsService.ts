@@ -8,6 +8,13 @@ export interface SpreadsheetMetadata {
   expensesTab: string;
   incomeTab: string;
   checkTienTab: string | null;
+  summaryTab: string | null;
+}
+
+export interface SummarySheetData {
+  sheetName: string;
+  formattedRows: string[][];
+  formulaRows: string[][];
 }
 
 export function extractSpreadsheetId(input: string): string {
@@ -58,11 +65,8 @@ export async function fetchSpreadsheetMetadata(
 
   const expensesTab = findMatchingTab(sheetNames, ['expenses', 'chi tiêu', 'chi tieu', 'expense'], sheetNames[0] || 'Expenses');
   const incomeTab = findMatchingTab(sheetNames, ['income', 'thu nhập', 'thu nhap', 'thu'], 'Income');
-  const checkTienMatch = findMatchingTab(
-    sheetNames,
-    ['check tiền', 'check tien', 'đối soát', 'reconcile', 'check'],
-    ''
-  );
+  const checkTienMatch = findMatchingTab(sheetNames, ['check tiền', 'check tien', 'đối soát', 'reconcile', 'check'], '');
+  const summaryMatch = findMatchingTab(sheetNames, ['summary', 'tổng hợp', 'tong hop', 'báo cáo', 'overview'], '');
 
   return {
     spreadsheetId: data.spreadsheetId || spreadsheetId,
@@ -71,6 +75,7 @@ export async function fetchSpreadsheetMetadata(
     expensesTab,
     incomeTab,
     checkTienTab: checkTienMatch || null,
+    summaryTab: summaryMatch || null,
   };
 }
 
@@ -89,7 +94,6 @@ export async function fetchTabTransactions(
   );
 
   if (!res.ok) {
-    // If Income tab doesn't exist yet or is empty, return empty array gracefully
     if (res.status === 400 || res.status === 404) {
       return [];
     }
@@ -102,7 +106,6 @@ export async function fetchTabTransactions(
   if (rows.length <= 1) return [];
 
   const records: TransactionRecord[] = [];
-
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
     if (!row || row.length === 0) continue;
@@ -115,9 +118,7 @@ export async function fetchTabTransactions(
     const rawCredit = (row[5] || '').trim();
     const rawNote = (row[6] || '').trim();
 
-    // Skip completely empty rows or trailing placeholder rows without amount/item
     if (!rawDate && !rawCategory && !rawItem && !rawAmount) continue;
-    // Skip header repetition if any
     if (rawDate.toLowerCase() === 'purchase date' || rawDate.toLowerCase() === 'date') continue;
 
     const parsedDate = parseDateString(rawDate);
@@ -125,7 +126,6 @@ export async function fetchTabTransactions(
     const beCorp = parseSheetNumber(rawBeCorp);
     const credit = parseSheetNumber(rawCredit);
 
-    // Skip rows that only have date and category but no item and 0 amount/becorp/credit (like pre-filled empty dates at bottom of sheet)
     if (!rawItem && amount === 0 && beCorp === 0 && credit === 0 && !rawNote) {
       continue;
     }
@@ -185,16 +185,11 @@ export async function fetchCheckTienSheet(
       const cell = (row[c] || '').trim();
       const formula = (fRow[c] || '').toString().trim();
       if (formula.startsWith('=')) {
-        // Look for an adjacent label on the left or above
         const leftLabel = c > 0 ? (row[c - 1] || '').trim() : '';
         const topLabel = r > 0 && formattedRows[r - 1] ? (formattedRows[r - 1][c] || '').trim() : '';
         const label = leftLabel || topLabel || `Ô ${String.fromCharCode(65 + c)}${r + 1}`;
         if (cell) {
-          detectedSummary.push({
-            label,
-            value: cell,
-            formula,
-          });
+          detectedSummary.push({ label, value: cell, formula });
         }
       }
     }
@@ -208,10 +203,35 @@ export async function fetchCheckTienSheet(
   };
 }
 
-/**
- * Appends a single new row at the bottom of Expenses or Income without altering any existing rows or formatting.
- * Column order strictly preserved: Purchase Date | Category | Purchase Item | Amount | BE Corp | Credit | Note
- */
+export async function fetchSummarySheet(
+  spreadsheetId: string,
+  tabName: string,
+  accessToken: string
+): Promise<SummarySheetData | null> {
+  const range = `${tabName}!A1:Z100`;
+  const [formattedRes, formulaRes] = await Promise.all([
+    fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}?valueRenderOption=FORMATTED_VALUE`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    ),
+    fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}?valueRenderOption=FORMULA`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    ),
+  ]);
+
+  if (!formattedRes.ok) return null;
+
+  const formattedData = await formattedRes.json();
+  const formulaData = formulaRes.ok ? await formulaRes.json() : { values: [] };
+
+  return {
+    sheetName: tabName,
+    formattedRows: formattedData.values || [],
+    formulaRows: formulaData.values || [],
+  };
+}
+
 export async function appendTransactionToSheet(
   spreadsheetId: string,
   tabName: string,
@@ -234,15 +254,12 @@ export async function appendTransactionToSheet(
     record.beCorp !== 0 ? formatNumberForSheet(record.beCorp, false) : '',
     record.credit !== 0 ? formatNumberForSheet(record.credit, false) : '',
   ];
-
   if (record.note && record.note.trim()) {
     rowValues.push(record.note.trim());
   }
 
   const range = `${tabName}!A:F`;
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
-    spreadsheetId
-  )}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 
   const res = await fetch(url, {
     method: 'POST',

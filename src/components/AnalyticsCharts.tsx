@@ -223,7 +223,6 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
               <h2 className="text-sm font-bold text-slate-800 tracking-tight">
                 Top chi tiêu theo danh mục
               </h2>
-              <span className="text-xs italic text-slate-400">in home currency</span>
             </div>
             <div className="flex items-center gap-1.5 text-xs">
               <button

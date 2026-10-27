@@ -87,7 +87,6 @@ export const DashboardDualTables: React.FC<DashboardDualTablesProps> = ({
               <h2 className="text-sm font-bold text-slate-800 tracking-tight">
                 Tổng hợp chi tiêu theo phân loại
               </h2>
-              <span className="text-xs italic text-slate-400">in home currency</span>
             </div>
           </div>
 
@@ -205,7 +204,6 @@ export const DashboardDualTables: React.FC<DashboardDualTablesProps> = ({
               <h2 className="text-sm font-bold text-slate-800 tracking-tight">
                 Giao dịch chi tiêu gần nhất
               </h2>
-              <span className="text-xs italic text-slate-400">in home currency</span>
             </div>
             <button
               type="button"

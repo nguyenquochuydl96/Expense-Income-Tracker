@@ -7,6 +7,8 @@ import {
   Calendar,
   Layers,
   ChevronDown,
+  LayoutGrid,
+  CalendarRange,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import {
@@ -22,6 +24,9 @@ import {
   parseAttachedExpenseCsv,
   parseDateString,
 } from './utils/csvParser';
+import {
+  getBillingCycleRange,
+} from './utils/cycleUtils';
 import {
   googleSignIn,
   initAuth,
@@ -41,6 +46,7 @@ import {
 } from './components/AddTransactionModal';
 import { TransactionLedgerTable } from './components/TransactionLedgerTable';
 import { DashboardDualTables } from './components/DashboardDualTables';
+import { MultiMonthSummaryTable } from './components/MultiMonthSummaryTable';
 import { ReconcileCheckTienView } from './components/ReconcileCheckTienView';
 import { SheetSyncPanel } from './components/SheetSyncPanel';
 
@@ -102,6 +108,12 @@ export default function App() {
   const [isLoadingInitial, setIsLoadingInitial] = useState<boolean>(true);
   const [selectedMonth, setSelectedMonth] = useState<string>('2026-10');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+
+  // Cycle start/end day configuration for BE Corp and Credit
+  const [beCorpStartDay, setBeCorpStartDay] = useState<number>(26);
+  const [beCorpEndDay, setBeCorpEndDay] = useState<number>(25);
+  const [creditStartDay, setCreditStartDay] = useState<number>(20);
+  const [creditEndDay, setCreditEndDay] = useState<number>(19);
 
   // Add Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
@@ -244,7 +256,7 @@ export default function App() {
     return Array.from(set).sort((a, b) => b.localeCompare(a));
   }, [allRecords]);
 
-  // Records filtered by selectedMonth
+  // Records filtered by selectedMonth (Calendar month: 1st to 30/31st)
   const periodRecords = useMemo(() => {
     if (selectedMonth === 'ALL') return allRecords;
     return allRecords.filter((r) => r.monthKey === selectedMonth);
@@ -255,15 +267,30 @@ export default function App() {
     return buildItemSuggestions(allRecords);
   }, [allRecords]);
 
-  // KPI calculations for the selected month / period
+  // Cycle range calculations for BE Corp and Credit for the active month
+  const activeBeCycle = useMemo(() => {
+    return getBillingCycleRange(
+      selectedMonth !== 'ALL' ? selectedMonth : '2026-10',
+      beCorpStartDay,
+      beCorpEndDay
+    );
+  }, [selectedMonth, beCorpStartDay, beCorpEndDay]);
+
+  const activeCreditCycle = useMemo(() => {
+    return getBillingCycleRange(
+      selectedMonth !== 'ALL' ? selectedMonth : '2026-10',
+      creditStartDay,
+      creditEndDay
+    );
+  }, [selectedMonth, creditStartDay, creditEndDay]);
+
+  // KPI calculations (Separating BE Corp & Credit into their own independent cycles)
   const kpiStats = useMemo(() => {
     let sheetIncome = 0;
     let totalExpense = 0;
     let savingsExpense = 0;
     let livingExpense = 0;
     let negativeExpenseOffsets = 0;
-    let totalBeCorp = 0;
-    let totalCredit = 0;
     let expenseCount = 0;
     let incomeCount = 0;
 
@@ -282,8 +309,6 @@ export default function App() {
         if (r.amount < 0) {
           negativeExpenseOffsets += Math.abs(r.amount);
         }
-        totalBeCorp += r.beCorp;
-        totalCredit += r.credit;
       }
     }
 
@@ -293,6 +318,49 @@ export default function App() {
       sheetIncome > 0 ? sheetIncome : monthlyBaseIncome * monthMultiplier;
     const netBalance = effectiveIncome - totalExpense;
 
+    // Distinct cycle calculations for BE Corp and Credit
+    let beCorpCycleTotal = 0;
+    let beCorpCount = 0;
+    let creditCycleTotal = 0;
+    let creditCount = 0;
+
+    if (selectedMonth === 'ALL') {
+      for (const r of allRecords) {
+        if (r.sheetType === 'Expenses') {
+          if (r.beCorp > 0) {
+            beCorpCycleTotal += r.beCorp;
+            beCorpCount += 1;
+          }
+          if (r.credit > 0) {
+            creditCycleTotal += r.credit;
+            creditCount += 1;
+          }
+        }
+      }
+    } else {
+      // Filter by respective cycle dates
+      for (const r of allRecords) {
+        if (r.sheetType === 'Expenses') {
+          if (
+            r.beCorp > 0 &&
+            r.isoDate >= activeBeCycle.startDate &&
+            r.isoDate <= activeBeCycle.endDate
+          ) {
+            beCorpCycleTotal += r.beCorp;
+            beCorpCount += 1;
+          }
+          if (
+            r.credit > 0 &&
+            r.isoDate >= activeCreditCycle.startDate &&
+            r.isoDate <= activeCreditCycle.endDate
+          ) {
+            creditCycleTotal += r.credit;
+            creditCount += 1;
+          }
+        }
+      }
+    }
+
     return {
       sheetIncome,
       effectiveIncome,
@@ -301,13 +369,25 @@ export default function App() {
       savingsExpense,
       livingExpense,
       negativeExpenseOffsets,
-      totalBeCorp,
-      totalCredit,
+      beCorpCycleTotal,
+      beCorpCount,
+      creditCycleTotal,
+      creditCount,
+      beRange: activeBeCycle,
+      creditRange: activeCreditCycle,
       netBalance,
       expenseCount,
       incomeCount,
     };
-  }, [periodRecords, monthlyBaseIncome, selectedMonth, availableMonths.length]);
+  }, [
+    periodRecords,
+    allRecords,
+    monthlyBaseIncome,
+    selectedMonth,
+    availableMonths.length,
+    activeBeCycle,
+    activeCreditCycle,
+  ]);
 
   // Google Sign-In handler
   const handleGoogleLogin = async () => {
@@ -630,9 +710,8 @@ export default function App() {
             backgroundColor: '#132247',
           }}
         >
-          {/* Left Brand: Circular Logo + Name (Matching Reference Image) */}
+          {/* Left Brand */}
           <div className="flex items-center gap-3.5">
-            {/* Circular Coupler-style logo */}
             <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-xs">
               <div className="w-7 h-7 rounded-lg bg-[#0077B6] flex items-center justify-center">
                 <span className="text-white font-black text-sm tracking-tighter">HM</span>
@@ -648,9 +727,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* Right Action Buttons (Matching Reference Image) */}
+          {/* Right Action Buttons */}
           <div className="flex items-center gap-3">
-            {/* Explore more dashboards button (Lavender pill) */}
             <button
               type="button"
               onClick={() => setActiveTab(activeTab === 'dashboard' ? 'ledger' : 'dashboard')}
@@ -664,7 +742,6 @@ export default function App() {
               <span>{activeTab === 'dashboard' ? 'Xem sổ chi tiết' : 'Về Dashboard'}</span>
             </button>
 
-            {/* Set up dashboard button (Dark purple pill) */}
             <button
               type="button"
               onClick={() => {
@@ -760,63 +837,72 @@ export default function App() {
 
       {/* Main Content Container */}
       <main className="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-6 py-4 space-y-5">
-        {/* ═══════ FLOATING FILTER BAR (Matching Reference Image) ═══════ */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Filter 1: Date Range Selector with Calendar Icon */}
-          <div className="relative bg-white rounded-lg border border-slate-200/90 shadow-2xs hover:border-slate-300 transition-colors">
-            <div className="flex items-center px-3 py-2 gap-2 text-xs font-medium text-slate-700">
-              <Calendar className="w-3.5 h-3.5 text-slate-500" />
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-transparent border-none outline-none cursor-pointer pr-6 appearance-none text-slate-800 font-semibold"
-              >
-                {availableMonths.map((mKey) => {
-                  const [y, m] = mKey.split('-');
-                  return (
-                    <option key={mKey} value={mKey}>
-                      Tháng {parseInt(m, 10)}, {y}
+        {/* ═══════ FLOATING FILTER BAR ═══════ */}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Filter 1: Date Range Selector (Month: 01 to 30/31st) */}
+            <div className="relative bg-white rounded-lg border border-slate-200/90 shadow-2xs hover:border-slate-300 transition-colors">
+              <div className="flex items-center px-3 py-2 gap-2 text-xs font-medium text-slate-700">
+                <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                <select
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="bg-transparent border-none outline-none cursor-pointer pr-6 appearance-none text-slate-800 font-semibold"
+                >
+                  {availableMonths.map((mKey) => {
+                    const [y, m] = mKey.split('-');
+                    return (
+                      <option key={mKey} value={mKey}>
+                        Tháng {parseInt(m, 10)}, {y} (01/{m} – Hết tháng)
+                      </option>
+                    );
+                  })}
+                  <option value="ALL">Tất cả thời gian ({allRecords.length} giao dịch)</option>
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 pointer-events-none absolute right-2.5" />
+              </div>
+            </div>
+
+            {/* Filter 2: Category Dropdown */}
+            <div className="relative bg-white rounded-lg border border-slate-200/90 shadow-2xs hover:border-slate-300 transition-colors">
+              <div className="flex items-center px-3 py-2 gap-2 text-xs font-medium text-slate-700">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="bg-transparent border-none outline-none cursor-pointer pr-6 appearance-none text-slate-800 font-semibold"
+                >
+                  <option value="ALL">Tất cả danh mục (Category)</option>
+                  {allCategories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
                     </option>
-                  );
-                })}
-                <option value="ALL">Tất cả thời gian ({allRecords.length} giao dịch)</option>
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 pointer-events-none absolute right-2.5" />
+                  ))}
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 pointer-events-none absolute right-2.5" />
+              </div>
             </div>
-          </div>
 
-          {/* Filter 2: Category Dropdown (Matching "Customer" dropdown in reference image) */}
-          <div className="relative bg-white rounded-lg border border-slate-200/90 shadow-2xs hover:border-slate-300 transition-colors">
-            <div className="flex items-center px-3 py-2 gap-2 text-xs font-medium text-slate-700">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="bg-transparent border-none outline-none cursor-pointer pr-6 appearance-none text-slate-800 font-semibold"
+            {/* Reset Filter Button if active */}
+            {(selectedMonth !== '2026-10' || selectedCategory !== 'ALL') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedMonth('2026-10');
+                  setSelectedCategory('ALL');
+                }}
+                className="text-xs text-sky-700 hover:text-sky-900 font-medium px-2 py-1"
               >
-                <option value="ALL">Tất cả danh mục (Category)</option>
-                {allCategories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 pointer-events-none absolute right-2.5" />
-            </div>
+                Đặt lại bộ lọc
+              </button>
+            )}
           </div>
 
-          {/* Reset Filter Button if active */}
-          {(selectedMonth !== '2026-10' || selectedCategory !== 'ALL') && (
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedMonth('2026-10');
-                setSelectedCategory('ALL');
-              }}
-              className="text-xs text-sky-700 hover:text-sky-900 font-medium px-2 py-1"
-            >
-              Đặt lại bộ lọc
-            </button>
-          )}
+          {/* Quick cycle info pill */}
+          <div className="flex items-center gap-2 text-[11px] text-slate-500 font-mono-tabular">
+            <span className="hidden sm:inline">Chu kỳ BE: <strong>{kpiStats.beRange.displayLabel}</strong></span>
+            <span className="hidden sm:inline">·</span>
+            <span className="hidden sm:inline">Sao kê Credit: <strong>{kpiStats.creditRange.displayLabel}</strong></span>
+          </div>
         </div>
 
         {isLoadingInitial ? (
@@ -825,14 +911,14 @@ export default function App() {
           </div>
         ) : (
           <>
-            {/* VIEW 1: DASHBOARD (Matching Reference Image) */}
+            {/* VIEW 1: DASHBOARD */}
             {activeTab === 'dashboard' && (
               <div className="space-y-5">
-                {/* ═══════ 4 KPI SUMMARY CARDS (Exact Match to Reference Colors & Layout) ═══════ */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {/* Card 1: Deep Blue (Matching Unpaid Invoices Amount) */}
+                {/* ═══════ 5 KPI CARDS (Separating BE Corp & Credit into 2 distinct cards, NO 'in home currency') ═══════ */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+                  {/* Card 1: Tổng thu nhập (Deep Blue) */}
                   <div
-                    className="rounded-xl p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
+                    className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
                     style={{ backgroundColor: '#0B4B8A' }}
                     onClick={() => {
                       setAddModalPreset({
@@ -843,68 +929,100 @@ export default function App() {
                       setIsAddModalOpen(true);
                     }}
                   >
-                    <div className="text-xs font-semibold text-white/90 tracking-wide mb-1.5">
+                    <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
                       Tổng thu nhập
                     </div>
-                    <div className="text-3xl font-extrabold font-mono-tabular text-white mb-3">
+                    <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
                       {formatCurrency(kpiStats.effectiveIncome)}
                     </div>
-                    <div className="text-right">
-                      <span className="text-[11px] italic text-white/70">in home currency</span>
+                    <div className="text-xs text-white/70 font-medium">
+                      {formatMonthLabel(selectedMonth)}
                     </div>
                   </div>
 
-                  {/* Card 2: Ocean Blue (Matching Overdue Amount) */}
+                  {/* Card 2: Tổng chi tiêu (Ocean Blue - Calendar Month) */}
                   <div
-                    className="rounded-xl p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
+                    className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
                     style={{ backgroundColor: '#0077B6' }}
                     onClick={() => setActiveTab('ledger')}
                   >
-                    <div className="text-xs font-semibold text-white/90 tracking-wide mb-1.5">
+                    <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
                       Tổng chi tiêu
                     </div>
-                    <div className="text-3xl font-extrabold font-mono-tabular text-white mb-3">
+                    <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
                       {formatCurrency(kpiStats.totalExpense)}
                     </div>
-                    <div className="text-right">
-                      <span className="text-[11px] italic text-white/70">in home currency</span>
+                    <div className="text-xs text-white/70 font-medium">
+                      {kpiStats.expenseCount} giao dịch (01/{selectedMonth.split('-')[1]} – Hết tháng)
                     </div>
                   </div>
 
-                  {/* Card 3: Mint/Teal Green (Matching Overdue Invoices 30+ Days) */}
+                  {/* Card 3: Số dư khả dụng Net Balance (Mint Green or Red) */}
                   <div
-                    className="rounded-xl p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
-                    style={{ backgroundColor: '#059669' }}
+                    className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
+                    style={{ backgroundColor: kpiStats.netBalance >= 0 ? '#059669' : '#DC2626' }}
                     onClick={() => setActiveTab('reconcile')}
                   >
-                    <div className="text-xs font-semibold text-white/90 tracking-wide mb-1.5">
+                    <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
                       Số dư khả dụng (Net)
                     </div>
-                    <div className="text-3xl font-extrabold font-mono-tabular text-white mb-3">
+                    <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
                       {formatCurrency(kpiStats.netBalance, true)}
                     </div>
-                    <div className="text-right">
-                      <span className="text-[11px] italic text-white/70">in home currency</span>
+                    <div className="text-xs text-white/70 font-medium">
+                      Thu − Chi còn lại
                     </div>
                   </div>
 
-                  {/* Card 4: Purple/Violet (Matching Overdue Invoices 90+ Days) */}
+                  {/* Card 4: Ví BE Corp (Riêng biệt - Amber / Orange) */}
                   <div
-                    className="rounded-xl p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
-                    style={{ backgroundColor: '#6D3894' }}
-                    onClick={() => setActiveTab('ledger')}
+                    className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
+                    style={{ backgroundColor: '#D97706' }}
+                    onClick={() => setActiveTab('reconcile')}
                   >
-                    <div className="text-xs font-semibold text-white/90 tracking-wide mb-1.5">
-                      Phát sinh BE Corp &amp; Credit
+                    <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
+                      Ví BE Corp
                     </div>
-                    <div className="text-3xl font-extrabold font-mono-tabular text-white mb-3">
-                      {formatCurrency(kpiStats.totalCredit + kpiStats.totalBeCorp)}
+                    <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                      {formatCurrency(kpiStats.beCorpCycleTotal)}
                     </div>
-                    <div className="text-right">
-                      <span className="text-[11px] italic text-white/70">in home currency</span>
+                    <div className="text-xs text-white/80 font-medium flex items-center gap-1 font-mono-tabular">
+                      <CalendarRange className="w-3 h-3 text-white/70" />
+                      <span>{kpiStats.beRange.displayLabel}</span>
+                    </div>
+                  </div>
+
+                  {/* Card 5: Thẻ tín dụng Credit (Riêng biệt - Purple / Violet) */}
+                  <div
+                    className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5 col-span-2 sm:col-span-1"
+                    style={{ backgroundColor: '#6D3894' }}
+                    onClick={() => setActiveTab('reconcile')}
+                  >
+                    <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
+                      Thẻ tín dụng (Credit)
+                    </div>
+                    <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                      {formatCurrency(kpiStats.creditCycleTotal)}
+                    </div>
+                    <div className="text-xs text-white/80 font-medium flex items-center gap-1 font-mono-tabular">
+                      <CalendarRange className="w-3 h-3 text-white/70" />
+                      <span>Sao kê: {kpiStats.creditRange.displayLabel}</span>
                     </div>
                   </div>
                 </div>
+
+                {/* ═══════ MULTI-MONTH BUDGET & CASHFLOW SUMMARY MATRIX (Answers Requirement 5) ═══════ */}
+                <MultiMonthSummaryTable
+                  allRecords={allRecords}
+                  availableMonths={availableMonths}
+                  selectedMonth={selectedMonth}
+                  onSelectMonth={setSelectedMonth}
+                  monthlyBaseIncome={monthlyBaseIncome}
+                  beCorpStartDay={beCorpStartDay}
+                  beCorpEndDay={beCorpEndDay}
+                  creditStartDay={creditStartDay}
+                  creditEndDay={creditEndDay}
+                />
 
                 {/* ═══════ MIDDLE ROW: HORIZONTAL BAR CHART + CORAL DONUT CHART ═══════ */}
                 <AnalyticsCharts
@@ -917,7 +1035,7 @@ export default function App() {
                   monthlyBaseIncome={monthlyBaseIncome}
                 />
 
-                {/* ═══════ BOTTOM ROW: TWO DUAL DATA TABLES (Matching Reference Image) ═══════ */}
+                {/* ═══════ BOTTOM ROW: TWO DUAL DATA TABLES ═══════ */}
                 <DashboardDualTables
                   records={periodRecords}
                   allRecords={allRecords}
