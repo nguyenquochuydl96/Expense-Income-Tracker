@@ -34,7 +34,18 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build
+        run: |
+          npm run build 2>&1 | tee build.log
+        shell: bash
+
+      - name: Log Build to Summary on Failure
+        if: failure()
+        run: |
+          echo "### Build Log" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat build.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        shell: bash
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
