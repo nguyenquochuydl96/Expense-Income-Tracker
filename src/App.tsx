@@ -465,6 +465,14 @@ export default function App() {
         setSheetMeta(meta);
         localStorage.setItem(SAVED_SHEET_URL_KEY, targetInput);
 
+        const savedIncomeTab = localStorage.getItem('heomeo_custom_income_tab_v1');
+        if (savedIncomeTab && meta.sheetNames.includes(savedIncomeTab)) {
+          meta.incomeTab = savedIncomeTab;
+        }
+        const savedExpensesTab = localStorage.getItem('heomeo_custom_expenses_tab_v1');
+        if (savedExpensesTab && meta.sheetNames.includes(savedExpensesTab)) {
+          meta.expensesTab = savedExpensesTab;
+        }
         const [expensesRows, incomeRows, checkTien] = await Promise.all([
           fetchTabTransactions(meta.spreadsheetId, meta.expensesTab, 'Expenses', activeToken),
           fetchTabTransactions(meta.spreadsheetId, meta.incomeTab, 'Income', activeToken),
@@ -654,6 +662,46 @@ export default function App() {
       );
     } catch (err: any) {
       setSyncError(err?.message || 'Lỗi khi đẩy các dòng chờ lên Google Sheet.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleSelectIncomeTab = async (tabName: string) => {
+    if (!sheetMeta || !accessToken) return;
+    try {
+      localStorage.setItem('heomeo_custom_income_tab_v1', tabName);
+      const updatedMeta = { ...sheetMeta, incomeTab: tabName };
+      setSheetMeta(updatedMeta);
+      setIsSyncing(true);
+      const incomeRows = await fetchTabTransactions(sheetMeta.spreadsheetId, tabName, 'Income', accessToken);
+      setSheetRecords((prev) => {
+        const expenses = (prev || []).filter((r) => r.sheetType === 'Expenses');
+        return [...expenses, ...incomeRows];
+      });
+      showToast('success', `Đã chuyển sang Bảng Thu nhập "${tabName}": tìm thấy ${incomeRows.length} dòng.`);
+    } catch (err: any) {
+      showToast('warning', `Lỗi đọc tab "${tabName}": ${err?.message}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleSelectExpensesTab = async (tabName: string) => {
+    if (!sheetMeta || !accessToken) return;
+    try {
+      localStorage.setItem('heomeo_custom_expenses_tab_v1', tabName);
+      const updatedMeta = { ...sheetMeta, expensesTab: tabName };
+      setSheetMeta(updatedMeta);
+      setIsSyncing(true);
+      const expenseRows = await fetchTabTransactions(sheetMeta.spreadsheetId, tabName, 'Expenses', accessToken);
+      setSheetRecords((prev) => {
+        const incomes = (prev || []).filter((r) => r.sheetType === 'Income');
+        return [...expenseRows, ...incomes];
+      });
+      showToast('success', `Đã chuyển sang Bảng Chi tiêu "${tabName}": tìm thấy ${expenseRows.length} dòng.`);
+    } catch (err: any) {
+      showToast('warning', `Lỗi đọc tab "${tabName}": ${err?.message}`);
     } finally {
       setIsSyncing(false);
     }
@@ -1130,6 +1178,8 @@ export default function App() {
                 onExportCsv={handleExportCsv}
                 totalExpensesCount={totalExpensesCount}
                 totalIncomeCount={totalIncomeCount}
+                onSelectIncomeTab={handleSelectIncomeTab}
+                onSelectExpensesTab={handleSelectExpensesTab}
               />
             )}
           </>

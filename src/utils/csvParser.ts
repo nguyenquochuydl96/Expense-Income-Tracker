@@ -47,6 +47,21 @@ export function isoToSheetDate(isoDate: string): string {
  * Parses M/D/YYYY (as used throughout the attached sheet: 4/1/2026 -> 4/30/2026 -> 10/25/2026)
  * into isoDate (YYYY-MM-DD), monthKey (YYYY-MM), and displayDate (M/D/YYYY).
  */
+const ENGLISH_MONTHS: Record<string, number> = {
+  january: 1, jan: 1,
+  february: 2, feb: 2,
+  march: 3, mar: 3,
+  april: 4, apr: 4,
+  may: 5,
+  june: 6, jun: 6,
+  july: 7, jul: 7,
+  august: 8, aug: 8,
+  september: 9, sep: 9, sept: 9,
+  october: 10, oct: 10,
+  november: 11, nov: 11,
+  december: 12, dec: 12,
+};
+
 export function parseDateString(rawDate: string): {
   isoDate: string;
   monthKey: string;
@@ -56,15 +71,46 @@ export function parseDateString(rawDate: string): {
   day: number;
 } {
   const trimmed = (rawDate || '').trim();
-  // Match M/D/YYYY
+
+  // 1. Match English Month Name (e.g. "April 2026", "October 2026", "October")
+  const engMatch = trimmed.match(/^([a-zA-Z]+)(?:[\s,/-]+(\d{4}))?$/);
+  if (engMatch && ENGLISH_MONTHS[engMatch[1].toLowerCase()]) {
+    const m = ENGLISH_MONTHS[engMatch[1].toLowerCase()];
+    const y = engMatch[2] ? parseInt(engMatch[2], 10) : 2026;
+    const mm = String(m).padStart(2, '0');
+    return {
+      isoDate: `${y}-${mm}-01`,
+      monthKey: `${y}-${mm}`,
+      displayDate: `${m}/1/${y}`,
+      year: y,
+      month: m,
+      day: 1,
+    };
+  }
+
+  // 2. Match Vietnamese Month (e.g. "Tháng 10/2026", "Tháng 4", "T10/2026", "T4")
+  const vnMatch = trimmed.match(/^t(?:háng)?\s*(\d{1,2})(?:[\/\s-]+(\d{4}))?$/i);
+  if (vnMatch) {
+    const m = parseInt(vnMatch[1], 10);
+    const y = vnMatch[2] ? parseInt(vnMatch[2], 10) : 2026;
+    const mm = String(Math.max(1, Math.min(12, m))).padStart(2, '0');
+    return {
+      isoDate: `${y}-${mm}-01`,
+      monthKey: `${y}-${mm}`,
+      displayDate: `${m}/1/${y}`,
+      year: y,
+      month: m,
+      day: 1,
+    };
+  }
+
+  // 3. Match M/D/YYYY or M/YYYY
   const slashParts = trimmed.split('/');
   if (slashParts.length === 3) {
     let m = parseInt(slashParts[0], 10);
     let d = parseInt(slashParts[1], 10);
     let y = parseInt(slashParts[2], 10);
     if (y < 100) y += 2000;
-    // In the user's sheet, dates are M/D/YYYY (e.g. 4/25/2026, 10/25/2026).
-    // If someone ever entered D/M/YYYY where first number > 12, swap gracefully:
     if (m > 12 && d <= 12) {
       const temp = m;
       m = d;
@@ -83,7 +129,27 @@ export function parseDateString(rawDate: string): {
     };
   }
 
-  // Match YYYY-MM-DD
+  if (slashParts.length === 2) {
+    let m = parseInt(slashParts[0], 10);
+    let y = parseInt(slashParts[1], 10);
+    if (m > 100 && y <= 12) {
+      const temp = m;
+      m = y;
+      y = temp;
+    }
+    if (y < 100) y += 2000;
+    const mm = String(Math.max(1, Math.min(12, m || 1))).padStart(2, '0');
+    return {
+      isoDate: `${y}-${mm}-01`,
+      monthKey: `${y}-${mm}`,
+      displayDate: `${m}/1/${y}`,
+      year: y,
+      month: m,
+      day: 1,
+    };
+  }
+
+  // 4. Match YYYY-MM-DD or YYYY-MM
   const dashParts = trimmed.split('-');
   if (dashParts.length === 3 && dashParts[0].length === 4) {
     const y = parseInt(dashParts[0], 10) || 2026;
@@ -101,6 +167,20 @@ export function parseDateString(rawDate: string): {
     };
   }
 
+  if (dashParts.length === 2 && dashParts[0].length === 4) {
+    const y = parseInt(dashParts[0], 10) || 2026;
+    const m = parseInt(dashParts[1], 10) || 10;
+    const mm = String(m).padStart(2, '0');
+    return {
+      isoDate: `${y}-${mm}-01`,
+      monthKey: `${y}-${mm}`,
+      displayDate: `${m}/1/${y}`,
+      year: y,
+      month: m,
+      day: 1,
+    };
+  }
+
   return {
     isoDate: '2026-10-25',
     monthKey: '2026-10',
@@ -111,10 +191,6 @@ export function parseDateString(rawDate: string): {
   };
 }
 
-/**
- * Full RFC-4180 state-machine CSV parser that properly handles quoted values with commas and embedded newlines
- * (e.g. "Bộ Molly 1tr7\n3 Polar 200k/box","2,300,000").
- */
 export function parseRawCsvToGrid(csvText: string): string[][] {
   const rows: string[][] = [];
   let currentRow: string[] = [];

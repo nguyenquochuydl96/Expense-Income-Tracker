@@ -63,8 +63,16 @@ export async function fetchSpreadsheetMetadata(
   const data = await res.json();
   const sheetNames: string[] = (data.sheets || []).map((s: any) => s.properties?.title || '');
 
-  const expensesTab = findMatchingTab(sheetNames, ['expenses', 'chi tiêu', 'chi tieu', 'expense'], sheetNames[0] || 'Expenses');
-  const incomeTab = findMatchingTab(sheetNames, ['income', 'thu nhập', 'thu nhap', 'thu'], 'Income');
+  const expensesTab = findMatchingTab(
+    sheetNames,
+    ['expenditure', 'expenses', 'chi tiêu', 'chi tieu', 'expense', 'chi'],
+    sheetNames[0] || 'Expenditure'
+  );
+  const incomeTab = findMatchingTab(
+    sheetNames,
+    ['income', 'thu nhập', 'thu nhap', 'thu', 'lương', 'salary', 'incomes', 'sheet income'],
+    sheetNames.find((s) => /income|thu|lương/i.test(s)) || (sheetNames.length > 1 ? sheetNames[1] : 'Income')
+  );
   const checkTienMatch = findMatchingTab(sheetNames, ['check tiền', 'check tien', 'đối soát', 'reconcile', 'check'], '');
   const summaryMatch = findMatchingTab(sheetNames, ['summary', 'tổng hợp', 'tong hop', 'báo cáo', 'overview'], '');
 
@@ -85,7 +93,8 @@ export async function fetchTabTransactions(
   sheetType: SheetTabType,
   accessToken: string
 ): Promise<TransactionRecord[]> {
-  const range = `${tabName}!A1:G5000`;
+  const safeTab = `'${tabName.replace(/'/g, "''")}'`;
+  const range = `${safeTab}!A1:Z5000`;
   const res = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}?valueRenderOption=FORMATTED_VALUE`,
     {
@@ -94,10 +103,11 @@ export async function fetchTabTransactions(
   );
 
   if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    console.warn(`[fetchTabTransactions] Error reading ${tabName} (${res.status}):`, errBody);
     if (res.status === 400 || res.status === 404) {
       return [];
     }
-    const errBody = await res.json().catch(() => ({}));
     throw new Error(errBody?.error?.message || `Không đọc được bảng ${tabName}`);
   }
 
@@ -105,18 +115,70 @@ export async function fetchTabTransactions(
   const rows: string[][] = data.values || [];
   if (rows.length <= 1) return [];
 
+  // Intelligent header and column detection
+  const header = (rows[0] || []).map((c) => (c || '').trim().toLowerCase());
+
+  let dateIdx = -1;
+  let categoryIdx = -1;
+  let itemIdx = -1;
+  let amountIdx = -1;
+  let beCorpIdx = -1;
+  let creditIdx = -1;
+  let noteIdx = -1;
+
+  for (let c = 0; c < header.length; c++) {
+    const h = header[c];
+    if (dateIdx === -1 && /date|ngày|time|thời gian|tháng|month/i.test(h)) dateIdx = c;
+    else if (beCorpIdx === -1 && /be corp|becorp|be\s*corp/i.test(h)) beCorpIdx = c;
+    else if (creditIdx === -1 && /credit|thẻ|tín dụng/i.test(h)) creditIdx = c;
+    else if (amountIdx === -1 && /amount|số tiền|tiền|thu nhập|income|lương|giá trị|thực nhận/i.test(h)) amountIdx = c;
+    else if (categoryIdx === -1 && /category|hạng mục|danh mục|loại|nguồn/i.test(h)) categoryIdx = c;
+    else if (itemIdx === -1 && /item|nội dung|khoản|mô tả|tên|chi tiết/i.test(h)) itemIdx = c;
+    else if (noteIdx === -1 && /note|ghi chú/i.test(h)) noteIdx = c;
+  }
+
+  // Fallbacks
+  if (dateIdx === -1) dateIdx = 0;
+  if (sheetType === 'Expenses') {
+    if (categoryIdx === -1) categoryIdx = 1;
+    if (itemIdx === -1) itemIdx = 2;
+    if (amountIdx === -1) amountIdx = 3;
+    if (beCorpIdx === -1) beCorpIdx = 4;
+    if (creditIdx === -1) creditIdx = 5;
+    if (noteIdx === -1) noteIdx = 6;
+  } else {
+    // For Income: inspect sample rows to find numeric column if amountIdx not in header
+    if (amountIdx === -1) {
+      for (let r = 1; r < Math.min(rows.length, 10); r++) {
+        const testRow = rows[r];
+        if (!testRow) continue;
+        for (let col = testRow.length - 1; col >= 0; col--) {
+          const val = parseSheetNumber(testRow[col]);
+          if (val > 10000) {
+            amountIdx = col;
+            break;
+          }
+        }
+        if (amountIdx !== -1) break;
+      }
+    }
+    if (amountIdx === -1) amountIdx = rows[1]?.length === 3 ? 2 : 3;
+    if (categoryIdx === -1) categoryIdx = amountIdx > 1 ? 1 : 0;
+    if (itemIdx === -1) itemIdx = amountIdx > 2 ? 2 : categoryIdx;
+  }
+
   const records: TransactionRecord[] = [];
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
     if (!row || row.length === 0) continue;
 
-    const rawDate = (row[0] || '').trim();
-    const rawCategory = (row[1] || '').trim();
-    const rawItem = (row[2] || '').trim();
-    const rawAmount = (row[3] || '').trim();
-    const rawBeCorp = (row[4] || '').trim();
-    const rawCredit = (row[5] || '').trim();
-    const rawNote = (row[6] || '').trim();
+    const rawDate = dateIdx < row.length ? (row[dateIdx] || '').trim() : '';
+    const rawCategory = categoryIdx !== -1 && categoryIdx < row.length ? (row[categoryIdx] || '').trim() : '';
+    const rawItem = itemIdx !== -1 && itemIdx < row.length ? (row[itemIdx] || '').trim() : '';
+    const rawAmount = amountIdx !== -1 && amountIdx < row.length ? (row[amountIdx] || '').trim() : '';
+    const rawBeCorp = beCorpIdx !== -1 && beCorpIdx < row.length ? (row[beCorpIdx] || '').trim() : '';
+    const rawCredit = creditIdx !== -1 && creditIdx < row.length ? (row[creditIdx] || '').trim() : '';
+    const rawNote = noteIdx !== -1 && noteIdx < row.length ? (row[noteIdx] || '').trim() : '';
 
     if (!rawDate && !rawCategory && !rawItem && !rawAmount) continue;
     if (rawDate.toLowerCase() === 'purchase date' || rawDate.toLowerCase() === 'date') continue;
@@ -138,7 +200,7 @@ export async function fetchTabTransactions(
       isoDate: parsedDate.isoDate,
       monthKey: parsedDate.monthKey,
       category: rawCategory || (sheetType === 'Income' ? 'Thu nhập' : 'Khác'),
-      purchaseItem: rawItem || '(Không ghi nội dung)',
+      purchaseItem: rawItem || (sheetType === 'Income' ? 'Khoản thu' : '(Không ghi nội dung)'),
       amount,
       beCorp,
       credit,
@@ -156,7 +218,7 @@ export async function fetchCheckTienSheet(
   tabName: string,
   accessToken: string
 ): Promise<CheckTienSheetData | null> {
-  const range = `${tabName}!A1:M120`;
+  const range = `'${tabName.replace(/'/g, "''")}'!A1:M120`;
   const [formattedRes, formulaRes] = await Promise.all([
     fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}?valueRenderOption=FORMATTED_VALUE`,
@@ -258,7 +320,7 @@ export async function appendTransactionToSheet(
     rowValues.push(record.note.trim());
   }
 
-  const range = `${tabName}!A:F`;
+  const range = `'${tabName.replace(/'/g, "''")}'!A:F`;
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 
   const res = await fetch(url, {

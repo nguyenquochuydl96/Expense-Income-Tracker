@@ -30,6 +30,8 @@ interface SheetSyncPanelProps {
   onExportCsv: () => void;
   totalExpensesCount: number;
   totalIncomeCount: number;
+  onSelectIncomeTab?: (tabName: string) => void;
+  onSelectExpensesTab?: (tabName: string) => void;
 }
 
 export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = ({
@@ -50,6 +52,8 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = ({
   onExportCsv,
   totalExpensesCount,
   totalIncomeCount,
+  onSelectIncomeTab,
+  onSelectExpensesTab,
 }) => {
   const [localInput, setLocalInput] = useState(spreadsheetInput);
 
