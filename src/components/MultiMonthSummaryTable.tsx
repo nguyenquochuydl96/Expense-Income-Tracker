@@ -9,7 +9,7 @@ interface MultiMonthSummaryTableProps {
   availableMonths: string[];
   selectedMonth: string;
   onSelectMonth: (monthKey: string) => void;
-  monthlyBaseIncome: number;
+  monthlyBaseIncome?: number;
   beCorpStartDay?: number;
   beCorpEndDay?: number;
   creditStartDay?: number;
@@ -24,8 +24,8 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
   monthlyBaseIncome,
   beCorpStartDay = 26,
   beCorpEndDay = 25,
-  creditStartDay = 20,
-  creditEndDay = 19,
+  creditStartDay = 25,
+  creditEndDay = 24,
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
 
@@ -42,11 +42,11 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
 
       const mRecords = allRecords.filter((r) => r.monthKey === mKey);
 
-      // Income / Budget
+      // Income strictly from Sheet Income records for this specific month
       const sheetIncome = mRecords
         .filter((r) => r.sheetType === 'Income')
         .reduce((sum, r) => sum + r.amount, 0);
-      const budget = sheetIncome > 0 ? sheetIncome : monthlyBaseIncome;
+      const income = sheetIncome;
 
       // Expenses
       const expenseRecords = mRecords.filter((r) => r.sheetType === 'Expenses');
@@ -63,8 +63,8 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
         }
       }
 
-      const remaining = budget - totalExpense;
-      const pctUsed = budget > 0 ? (totalExpense / budget) * 100 : 0;
+      const remaining = income - totalExpense;
+      const pctUsed = income > 0 ? (totalExpense / income) * 100 : 0;
 
       // Cycle-aware BE Corp & Credit
       const beRange = getBillingCycleRange(mKey, beCorpStartDay, beCorpEndDay);
@@ -93,7 +93,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
       return {
         mKey,
         label,
-        budget,
+        budget: income,
         livingExpense,
         savingsExpense,
         totalExpense,
@@ -108,7 +108,6 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
   }, [
     sortedMonths,
     allRecords,
-    monthlyBaseIncome,
     beCorpStartDay,
     beCorpEndDay,
     creditStartDay,
@@ -164,7 +163,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
               </span>
             </h2>
             <p className="text-[11px] text-slate-500">
-              Đối chiếu đồng thời Budget, Chi tiêu &amp; Remaining qua tất cả các tháng · Nhấp vào cột tháng để lọc Dashboard
+              Đối chiếu đồng thời Thu nhập (Sheet Income), Chi tiêu &amp; Remaining qua tất cả các tháng · Nhấp vào cột tháng để lọc Dashboard
             </p>
           </div>
         </div>
@@ -226,10 +225,10 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
             </thead>
 
             <tbody className="divide-y divide-slate-100 text-xs font-mono-tabular">
-              {/* Row 1: Thu nhập / Budget */}
+              {/* Row 1: Thu nhập (Sheet Income) */}
               <tr className="hover:bg-slate-50/80 transition-colors">
-                <td className="py-2.5 px-4 font-sans font-medium text-slate-800 sticky left-0 bg-white z-10 whitespace-nowrap shadow-xs">
-                  Thu nhập / Budget
+                <td className="py-2.5 px-4 font-sans font-medium text-emerald-900 sticky left-0 bg-white z-10 whitespace-nowrap shadow-xs">
+                  Thu nhập (Sheet Income)
                 </td>
                 {monthlyData.map((m) => (
                   <td
@@ -366,10 +365,10 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                 </td>
               </tr>
 
-              {/* Row 6: Tỷ lệ chi / Budget */}
+              {/* Row 6: Tỷ lệ chi / Thu nhập */}
               <tr className="hover:bg-slate-50/80 transition-colors text-[11px]">
                 <td className="py-2 px-4 font-sans text-slate-500 sticky left-0 bg-white z-10 whitespace-nowrap shadow-xs">
-                  Tỷ lệ tiêu / Ngân sách
+                  Tỷ lệ chi / Thu nhập
                 </td>
                 {monthlyData.map((m) => (
                   <td
@@ -402,7 +401,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
               {/* Row 7: BE Corp Cycle */}
               <tr className="hover:bg-slate-50/80 transition-colors">
                 <td className="py-2 px-4 font-sans text-amber-800 font-medium sticky left-0 bg-white z-10 whitespace-nowrap shadow-xs">
-                  Ví BE Corp (Chu kỳ)
+                  Ví BE Corp (Chu kỳ 26–25)
                 </td>
                 {monthlyData.map((m) => (
                   <td
@@ -432,7 +431,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
               {/* Row 8: Credit Card Statement Cycle */}
               <tr className="hover:bg-slate-50/80 transition-colors">
                 <td className="py-2 px-4 font-sans text-indigo-800 font-medium sticky left-0 bg-white z-10 whitespace-nowrap shadow-xs">
-                  Thẻ Credit (Sao kê)
+                  Thẻ Credit (Sao kê 25–24)
                 </td>
                 {monthlyData.map((m) => (
                   <td

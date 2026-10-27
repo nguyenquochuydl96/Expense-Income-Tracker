@@ -2,7 +2,7 @@
 
 > **Tài liệu bàn giao phiên làm việc.** Khi chuyển sang tài khoản Gemini mới hoặc agent khác (Antigravity / Hermes) tiếp nhận, chỉ cần đọc file này là nắm toàn bộ bối cảnh, kiến trúc giao diện mới và tiếp tục công việc ngay lập tức mà không cần hỏi lại.
 
-**Cập nhật lần cuối:** 27/10/2026 (Tách biệt KPI BE Corp & Credit, tính chu kỳ sao kê riêng, thêm Bảng tổng hợp ngân sách đa tháng Multi-Month Summary)  
+**Cập nhật lần cuối:** 27/10/2026 (Chuẩn hóa chu kỳ Credit 25–24, BE Corp 26–25, Thu nhập tính động từ sheet Income từng tháng)  
 **Repo GitHub:** https://github.com/nguyenquochuydl96/Expense-Income-Tracker  
 **Đường dẫn Local:** `C:\Users\huynq\.gemini\antigravity\scratch\Expense-Income-Tracker`  
 **Git Author:** `Nguyen Quoc Huy <nguyenquochuy.dl96@gmail.com>`
@@ -35,28 +35,28 @@
 * Thanh lọc nổi với nền trắng, viền mảnh:
   - **Dropdown Kỳ thống kê:** Icon lịch 📅 chọn theo tháng (T4/26 -> T10/26 hoặc Tất cả).
   - **Dropdown Danh mục:** Lọc nhanh theo danh mục chi tiêu (`Ăn uống`, `Tiết kiệm`, `Thuê nhà`,...).
-  - **Nhãn chu kỳ hiển thị trực quan:** Ghi rõ chu kỳ áp dụng cho kỳ đang chọn (`Chu kỳ BE: 26/09 – 25/10 · Sao kê Credit: 20/09 – 19/10`).
+  - **Nhãn chu kỳ hiển thị trực quan:** Ghi rõ chu kỳ áp dụng cho kỳ đang chọn (`Chu kỳ BE: 26/09 – 25/10 · Sao kê Credit: 25/09 – 24/10`).
 
-### 2.3 Bộ 5 KPI Summary Cards (Đã tách riêng BE Corp & Credit, Bỏ nhãn "in home currency")
+### 2.3 Bộ 5 KPI Summary Cards (Tách riêng BE Corp & Credit, Bỏ nhãn "in home currency")
 Đã tách biệt 2 nguồn tiền BE Corp và Thẻ tín dụng thành 2 card riêng biệt và gỡ bỏ toàn bộ dòng chữ dư thừa `in home currency`:
-1. **Card 1 - Xanh Navy Sâu (`#0B4B8A`):** Tổng thu nhập (`kpiStats.effectiveIncome`), click để mở nhanh form ghi thu.
+1. **Card 1 - Xanh Navy Sâu (`#0B4B8A`):** **Tổng thu nhập** lấy trực tiếp từ các khoản ghi trong tab **`Income`** theo từng tháng riêng biệt (`kpiStats.effectiveIncome`), kèm số lượng khoản thu. Tuyệt đối không áp đặt con số cố định 45m.
 2. **Card 2 - Xanh Dương Đại Dương (`#0077B6`):** Tổng chi tiêu (`kpiStats.totalExpense`), tính theo tháng lịch (01 đến cuối tháng).
 3. **Card 3 - Đỏ San hô / Xanh Ngọc Net Balance (`#DC2626` / `#059669`):** Số dư khả dụng Net (`Thu - Chi còn lại`).
-4. **Card 4 - Cam Hổ Phách Amber (`#D97706`):** **Ví BE Corp riêng biệt**, tính đúng theo chu kỳ BE (Mặc định: Ngày 26 tháng trước -> Ngày 25 tháng này).
-5. **Card 5 - Tím Violet Purple (`#6D3894`):** **Thẻ tín dụng (Credit) riêng biệt**, tính đúng theo chu kỳ sao kê thẻ (Mặc định: Ngày 20 tháng trước -> Ngày 19 tháng này).
+4. **Card 4 - Cam Hổ Phách Amber (`#D97706`):** **Ví BE Corp riêng biệt**, tính đúng theo chu kỳ BE (Ngày 26 tháng trước -> Ngày 25 tháng này, ví dụ `26/09 – 25/10`).
+5. **Card 5 - Tím Violet Purple (`#6D3894`):** **Thẻ tín dụng (Credit) riêng biệt**, tính đúng theo chu kỳ sao kê thẻ (**Ngày 25 tháng trước -> Ngày 24 tháng này**, ví dụ `25/09 – 24/10`).
 
 ### 2.4 Bảng tổng hợp ngân sách đa tháng (Multi-Month Summary Table)
 Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` trên Google Sheets:
 * **Đối chiếu ma trận ngang:** Hiển thị toàn bộ các tháng có dữ liệu (T4/26 -> T10/26) trên cùng 1 bảng.
 * **Các chỉ số tài chính:**
-  - `Thu nhập / Budget`
+  - `Thu nhập (Sheet Income)`: Tổng thu nhập thực tế của từng tháng từ tab `Income` (không dùng số 45m tĩnh).
   - `Chi sinh hoạt`
   - `Tiết kiệm / Đầu tư`
   - `Tổng chi tiêu` (Hàng đậm)
   - `Còn lại (Remaining)` (Kèm tag xanh lá nếu dư, tag đỏ nếu âm)
-  - `Tỷ lệ tiêu / Ngân sách` (% used)
-  - `Ví BE Corp (Chu kỳ)`
-  - `Thẻ Credit (Sao kê)`
+  - `Tỷ lệ chi / Thu nhập` (% used)
+  - `Ví BE Corp (Chu kỳ 26–25)`
+  - `Thẻ Credit (Sao kê 25–24)`
 * **Thống kê bổ sung:** Cột `Trung bình` mỗi tháng và cột `Tổng cộng`.
 * **Tương tác thông minh:** Click vào bất kỳ cột tháng nào trong bảng để lọc nhanh Dashboard sang tháng đó. Có nút thu gọn/mở rộng bảng.
 
@@ -75,31 +75,39 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
 Được đóng gói tại `src/utils/cycleUtils.ts`:
 - **Thu nhập & Chi tiêu thông thường:** Theo tháng dương lịch (Từ ngày `01` đến ngày cuối cùng `30/31`).
 - **Ví BE Corp:** Chu kỳ từ ngày `26` tháng trước đến ngày `25` tháng này.
-- **Thẻ tín dụng Credit:** Chu kỳ sao kê từ ngày `20` tháng trước đến ngày `19` tháng này.
+- **Thẻ tín dụng Credit:** Chu kỳ sao kê chuẩn từ ngày **`25` tháng trước đến ngày `24` tháng này**.
 - Hàm `getBillingCycleRange(monthKey, startDay, endDay)` tự động xử lý chuyển giao tháng (cross-month).
 - Hàm `isDateInCycle(dateStr, range)` lọc chính xác các giao dịch thuộc chu kỳ.
 
 ---
 
-## 4. Tình trạng kết nối Google Sheet (Sync Status)
+## 4. Dữ liệu Thu nhập (Sheet Income) & Seed Data
 
-- **Trạng thái hiện tại:** App đang chạy với **Dữ liệu mẫu Seed Data** nội bộ (1,235 giao dịch lịch sử từ file seed đính kèm trong repo).
-- **Để đồng bộ Live với Google Sheet của bạn:**
-  1. Chuyển sang tab **Google Sheet (Chưa sync)** trên thanh điều hướng app.
-  2. Nhấn **"Đăng nhập Google"** để cấp quyền đọc/ghi.
-  3. Dán đường link Google Sheet cá nhân (chứa các sheet `Thu chi`, `Check tiền`, `Summary`).
-  4. App đã hỗ trợ tự động nhận diện tab `Summary` / `Tổng hợp` và tab `Check tiền` để tải dữ liệu ngân sách và cấu hình chu kỳ.
+- **Quy tắc thu nhập:** Thu nhập của mỗi tháng được tính bằng tổng `amount` của tất cả các dòng có `sheetType === 'Income'` thuộc tháng đó (`r.monthKey === selectedMonth`).
+- **Seed Data Offline (`src/utils/seedData.ts`):** Được thiết lập với đầy đủ các giao dịch thu nhập thực tế cho các tháng T4/26 -> T10/26 (gồm Lương Heo, Lương Mèo, Thưởng dự án, Tiền hoàn...), loại bỏ hoàn toàn con số cố định 45m trước đây.
+- **Khi kết nối Google Sheet:** Hàm `fetchTabTransactions` sẽ đọc trực tiếp từ tab `Income` của người dùng và thay thế hoàn toàn dữ liệu mẫu.
 
 ---
 
-## 5. Bản đồ File dự án
+## 5. Tình trạng kết nối Google Sheet (Sync Status)
+
+- **Trạng thái hiện tại:** App nạp dữ liệu mẫu lịch sử (1,235 dòng chi tiêu + các dòng thu nhập từ `SEED_INCOME_RECORDS`).
+- **Để đồng bộ Live với Google Sheet của bạn:**
+  1. Chuyển sang tab **Google Sheet (Chưa sync)** trên thanh điều hướng app.
+  2. Nhấn **"Đăng nhập Google"** để cấp quyền đọc/ghi.
+  3. Dán đường link Google Sheet cá nhân (chứa các sheet `Thu chi`, `Income`, `Check tiền`, `Summary`).
+  4. App đã hỗ trợ tự động nhận diện tab `Summary` / `Tổng hợp`, `Income` / `Thu nhập` và `Check tiền`.
+
+---
+
+## 6. Bản đồ File dự án
 
 ```
 src/
 ├── App.tsx                              # Main layout, 5 KPI cards riêng biệt, Header bo cong, Filter bar
 ├── index.css                            # Palette màu mới, font tokens, scrollbar styling
 ├── components/
-│   ├── MultiMonthSummaryTable.tsx       # MỚI: Ma trận đối chiếu ngân sách đa tháng (Budget, Chi, Remaining)
+│   ├── MultiMonthSummaryTable.tsx       # Ma trận đối chiếu ngân sách đa tháng (Thu nhập Sheet Income, Chi, Remaining)
 │   ├── DashboardDualTables.tsx          # 2 bảng dữ liệu song song đáy Dashboard chuẩn ảnh mẫu
 │   ├── AnalyticsCharts.tsx              # Horizontal Cyan Bar Chart + Coral Donut Chart
 │   ├── TransactionLedgerTable.tsx       # Bảng sổ cái đầy đủ 6 cột chuẩn Google Sheet
@@ -112,7 +120,8 @@ src/
 ├── types/
 │   └── finance.ts                       # Định nghĩa TypeScript cho giao dịch, tài khoản, cấu hình chu kỳ
 └── utils/
-    ├── cycleUtils.ts                    # MỚI: Tính toán chu kỳ ngày riêng cho BE Corp (26-25) & Credit (20-19)
+    ├── cycleUtils.ts                    # Tính toán chu kỳ ngày riêng cho BE Corp (26-25) & Credit (25-24)
+    ├── seedData.ts                      # MỚI: Dữ liệu Income mẫu đa tháng cho chế độ offline
     ├── categoryIcons.tsx                # Mapping 20+ danh mục tiếng Việt với icon Lucide & màu
     ├── csvParser.ts                     # Parser CSV, format tiền tệ VNĐ, ngày tháng
     └── quickEntry.ts                    # Phân tích tần suất chi tiêu, gợi ý số tiền thông minh
@@ -120,7 +129,7 @@ src/
 
 ---
 
-## 6. Hướng dẫn tiếp tục làm việc & phối hợp với Hermes
+## 7. Hướng dẫn tiếp tục làm việc & phối hợp với Hermes
 
 - **Trên Windows (Antigravity):**
   - Node.js portable: `C:\Users\huynq\node-v20.18.0-win-x64`

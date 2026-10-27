@@ -27,6 +27,7 @@ import {
 import {
   getBillingCycleRange,
 } from './utils/cycleUtils';
+import { SEED_INCOME_RECORDS } from './utils/seedData';
 import {
   googleSignIn,
   initAuth,
@@ -112,8 +113,8 @@ export default function App() {
   // Cycle start/end day configuration for BE Corp and Credit
   const [beCorpStartDay, setBeCorpStartDay] = useState<number>(26);
   const [beCorpEndDay, setBeCorpEndDay] = useState<number>(25);
-  const [creditStartDay, setCreditStartDay] = useState<number>(20);
-  const [creditEndDay, setCreditEndDay] = useState<number>(19);
+  const [creditStartDay, setCreditStartDay] = useState<number>(25);
+  const [creditEndDay, setCreditEndDay] = useState<number>(24);
 
   // Add Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
@@ -200,7 +201,7 @@ export default function App() {
         const text = await res.text();
         const parsed = parseAttachedExpenseCsv(text);
         if (mounted) {
-          setAttachedRecords(parsed);
+          setAttachedRecords([...parsed, ...SEED_INCOME_RECORDS]);
         }
       } catch (err) {
         console.error('Error loading attached CSV:', err);
@@ -312,10 +313,8 @@ export default function App() {
       }
     }
 
-    const monthMultiplier =
-      selectedMonth === 'ALL' ? Math.max(1, availableMonths.length) : 1;
-    const effectiveIncome =
-      sheetIncome > 0 ? sheetIncome : monthlyBaseIncome * monthMultiplier;
+    // Thu nhập lấy trực tiếp từ các khoản ghi trong sheet Income của kỳ đang chọn
+    const effectiveIncome = sheetIncome;
     const netBalance = effectiveIncome - totalExpense;
 
     // Distinct cycle calculations for BE Corp and Credit
@@ -936,7 +935,11 @@ export default function App() {
                       {formatCurrency(kpiStats.effectiveIncome)}
                     </div>
                     <div className="text-xs text-white/70 font-medium">
-                      {formatMonthLabel(selectedMonth)}
+                      {selectedMonth === 'ALL'
+                        ? `Tất cả các tháng · ${kpiStats.incomeCount} khoản thu`
+                        : kpiStats.incomeCount > 0
+                          ? `${formatMonthLabel(selectedMonth)} · ${kpiStats.incomeCount} khoản thu (Sheet Income)`
+                          : `${formatMonthLabel(selectedMonth)} · Chưa có giao dịch`}
                     </div>
                   </div>
 

@@ -48,10 +48,10 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
   onUpdateOpeningOrBaseIncome,
 }) => {
   // Cycle filter state for BE Corp and Credit
-  const [beStartDate, setBeStartDate] = useState<string>('2026-10-01');
-  const [beEndDate, setBeEndDate] = useState<string>('2026-10-31');
-  const [creditStartDate, setCreditStartDate] = useState<string>('2026-09-20');
-  const [creditEndDate, setCreditEndDate] = useState<string>('2026-10-25');
+  const [beStartDate, setBeStartDate] = useState<string>('2026-09-26');
+  const [beEndDate, setBeEndDate] = useState<string>('2026-10-25');
+  const [creditStartDate, setCreditStartDate] = useState<string>('2026-09-25');
+  const [creditEndDate, setCreditEndDate] = useState<string>('2026-10-24');
 
   // Reconcile calculation options
   const [reconcilePeriodMode, setReconcilePeriodMode] = useState<'selected_month' | 'custom_range'>('selected_month');
@@ -79,10 +79,10 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
     }
   };
 
-  const applyCreditPreset = (preset: 'stmt_20_19' | 'stmt_15_14' | 'oct_full') => {
-    if (preset === 'stmt_20_19') {
-      setCreditStartDate('2026-09-20');
-      setCreditEndDate('2026-10-19');
+  const applyCreditPreset = (preset: 'stmt_25_24' | 'stmt_20_19' | 'stmt_15_14' | 'oct_full') => {
+    if (preset === 'stmt_25_24') {
+      setCreditStartDate('2026-09-25');
+      setCreditEndDate('2026-10-24');
     } else if (preset === 'stmt_15_14') {
       setCreditStartDate('2026-09-15');
       setCreditEndDate('2026-10-14');
@@ -715,10 +715,10 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
             <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => applyCreditPreset('stmt_20_19')}
+                onClick={() => applyCreditPreset('stmt_25_24')}
                 className="px-2 py-1 text-[11px] font-medium bg-indigo-50 hover:bg-indigo-100 text-indigo-800 rounded"
               >
-                Sao kê 20/9–19/10
+                Sao kê 25/9–24/10 (Chu kỳ chuẩn)
               </button>
               <button
                 type="button"
