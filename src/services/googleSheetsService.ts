@@ -295,6 +295,7 @@ export async function appendTransactionToSheet(
   spreadsheetId: string,
   tabName: string,
   record: {
+    sheetType?: SheetTabType;
     purchaseDate: string;
     category: string;
     purchaseItem: string;
@@ -305,19 +306,36 @@ export async function appendTransactionToSheet(
   },
   accessToken: string
 ): Promise<void> {
-  const rowValues = [
-    record.purchaseDate,
-    record.category,
-    record.purchaseItem,
-    formatNumberForSheet(record.amount, true),
-    record.beCorp !== 0 ? formatNumberForSheet(record.beCorp, false) : '',
-    record.credit !== 0 ? formatNumberForSheet(record.credit, false) : '',
-  ];
-  if (record.note && record.note.trim()) {
-    rowValues.push(record.note.trim());
-  }
+  const isIncome = record.sheetType === 'Income' || tabName.toLowerCase().includes('income');
 
-  const range = `'${tabName.replace(/'/g, "''")}'!A:F`;
+  let rowValues: string[];
+  let range: string;
+
+  if (isIncome) {
+    // Income tab columns: Date (A), Income Source (B), Description (C), Income Amount (D), Month (E)
+    rowValues = [
+      record.purchaseDate,
+      record.category,
+      record.purchaseItem,
+      formatNumberForSheet(record.amount, true),
+      '=DATE(YEAR(INDIRECT("A"&ROW())), MONTH(INDIRECT("A"&ROW())), 1)'
+    ];
+    range = `'${tabName.replace(/'/g, "''")}'!A:E`;
+  } else {
+    // Expenses tab columns: Date (A), Category (B), Purchase Item (C), Amount (D), BE Corp (E), Credit (F), Note (G)
+    rowValues = [
+      record.purchaseDate,
+      record.category,
+      record.purchaseItem,
+      formatNumberForSheet(record.amount, true),
+      record.beCorp !== 0 ? formatNumberForSheet(record.beCorp, false) : '',
+      record.credit !== 0 ? formatNumberForSheet(record.credit, false) : '',
+    ];
+    if (record.note && record.note.trim()) {
+      rowValues.push(record.note.trim());
+    }
+    range = `'${tabName.replace(/'/g, "''")}'!A:G`;
+  }
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 
   const res = await fetch(url, {

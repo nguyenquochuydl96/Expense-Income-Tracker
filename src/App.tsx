@@ -334,6 +334,10 @@ export default function App() {
         sheetIncome += r.amount;
         incomeCount += 1;
       } else {
+        // Exclude budget transfers between categories from living/total expense consumption
+        if (isBudgetTransferRecord(r)) {
+          continue;
+        }
         expenseCount += 1;
         totalExpense += r.amount;
         if (r.category === 'Tiết kiệm') {
@@ -658,6 +662,7 @@ export default function App() {
             sheetMeta.spreadsheetId,
             targetTab,
             {
+              sheetType: record.sheetType,
               purchaseDate: record.purchaseDate,
               category: record.category,
               purchaseItem: record.purchaseItem,
@@ -724,6 +729,7 @@ export default function App() {
           sheetMeta.spreadsheetId,
           targetTab,
           {
+            sheetType: rec.sheetType,
             purchaseDate: rec.purchaseDate,
             category: rec.category,
             purchaseItem: rec.purchaseItem,
@@ -947,7 +953,7 @@ export default function App() {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Google Sheet ({sheetRecords && sheetRecords.length > 0 ? 'Đã đồng bộ' : 'Chưa sync'})
+            Google Sheet ({sheetRecords && sheetRecords.length > 0 ? (accessToken ? 'Đã sync' : 'Đã lưu máy') : 'Chưa sync'})
           </button>
         </nav>
 
@@ -1187,7 +1193,7 @@ export default function App() {
                           setAddModalPreset({
                             sheetType: 'Income',
                             isoDate: selectedMonth !== 'ALL' ? `${selectedMonth}-01` : '2026-10-01',
-                            category: 'Lương Heo',
+                            category: 'Lương Yes4All',
                           });
                           setIsAddModalOpen(true);
                         }}
@@ -1362,6 +1368,7 @@ export default function App() {
                   setAddModalPreset(preset);
                   setIsAddModalOpen(true);
                 }}
+                checkTienData={checkTienData}
               />
             )}
 

@@ -27,6 +27,7 @@ import {
 } from '../utils/csvParser';
 import { getBillingCycleRange } from '../utils/cycleUtils';
 import { NewTransactionPayload } from './AddTransactionModal';
+import { CheckTienSheetData } from '../services/googleSheetsService';
 
 export interface WalletCategory {
   cash: number;       // Tiền mặt
@@ -44,6 +45,7 @@ interface ReconcileCheckTienViewProps {
   allRecords: TransactionRecord[];
   selectedMonth: string;
   onOpenAddWithPreset: (preset: Partial<NewTransactionPayload>) => void;
+  checkTienData?: CheckTienSheetData | null;
 }
 
 type ReconcileSubTab = 'reconcile' | 'accounts' | 'becorp' | 'credit';
@@ -54,16 +56,16 @@ const DEFAULT_BE_SUBSIDY = 2500000;
 
 const DEFAULT_WALLETS: HeoMeoWallets = {
   heo: {
-    cash: 1450000,
-    bank: 0,
-    ewallet: 0,
+    cash: 1949000,
+    bank: 2107000,
+    ewallet: -863000, // Momo (-949k) + Zalopay (86k)
     receivable: 0,
   },
   meo: {
-    cash: 1850000,
-    bank: 0,
-    ewallet: 0,
-    receivable: 0,
+    cash: 760000,
+    bank: 13954000,
+    ewallet: 2678000, // Momo (16k) + Zalopay (2,662k)
+    receivable: 390000,
   },
 };
 
@@ -71,6 +73,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
   allRecords,
   selectedMonth,
   onOpenAddWithPreset,
+  checkTienData,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<ReconcileSubTab>('reconcile');
 
@@ -115,6 +118,35 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
       // ignore
     }
   }, [wallets]);
+
+  // Sync wallets from live Google Sheet Check tiền data when synced
+  useEffect(() => {
+    if (checkTienData && checkTienData.formattedRows && checkTienData.formattedRows.length >= 3) {
+      const rows = checkTienData.formattedRows;
+      const heoRow = rows.find((r) => (r[1] || '').trim().toLowerCase() === 'heo');
+      const meoRow = rows.find(
+        (r) =>
+          (r[1] || '').trim().toLowerCase() === 'mèo' ||
+          (r[1] || '').trim().toLowerCase() === 'meo'
+      );
+      if (heoRow && meoRow) {
+        setWallets({
+          heo: {
+            cash: parseSheetNumber(heoRow[2]),
+            bank: parseSheetNumber(heoRow[3]),
+            ewallet: parseSheetNumber(heoRow[4]) + parseSheetNumber(heoRow[5]),
+            receivable: parseSheetNumber(heoRow[6]),
+          },
+          meo: {
+            cash: parseSheetNumber(meoRow[2]),
+            bank: parseSheetNumber(meoRow[3]),
+            ewallet: parseSheetNumber(meoRow[4]) + parseSheetNumber(meoRow[5]),
+            receivable: parseSheetNumber(meoRow[6]),
+          },
+        });
+      }
+    }
+  }, [checkTienData]);
 
   const handleWalletChange = (
     person: 'heo' | 'meo',
