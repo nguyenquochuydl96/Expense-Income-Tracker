@@ -117,7 +117,7 @@ export default function App() {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
   const [spreadsheetInput, setSpreadsheetInput] = useState<string>(() => {
-    return localStorage.getItem(SAVED_SHEET_URL_KEY) || '';
+    return localStorage.getItem(SAVED_SHEET_URL_KEY) || 'https://docs.google.com/spreadsheets/d/1CTSEC-J52yGD-VIxOuzyNZ8Qddg0bmOIzMSzRVM6ZTI/edit';
   });
   const [sheetMeta, setSheetMeta] = useState<SpreadsheetMetadata | null>(() => {
     try {
@@ -245,12 +245,16 @@ export default function App() {
     };
   }, []);
 
-  // Initialize Firebase Auth listener
+  // Initialize Firebase Auth listener with auto-sync on load
   useEffect(() => {
     const unsubscribe = initAuth(
       (loggedInUser, token) => {
         setUser(loggedInUser);
         setAccessToken(token);
+        const targetUrl = localStorage.getItem(SAVED_SHEET_URL_KEY) || 'https://docs.google.com/spreadsheets/d/1CTSEC-J52yGD-VIxOuzyNZ8Qddg0bmOIzMSzRVM6ZTI/edit';
+        if (targetUrl) {
+          handleConnectAndSyncSheet(targetUrl, token);
+        }
       },
       (maybeUser) => {
         setUser(maybeUser);
@@ -958,7 +962,17 @@ export default function App() {
             <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin text-emerald-600' : 'text-emerald-600'}`} />
             <span>Sheet: {sheetMeta.title}</span>
           </button>
-        ) : null}
+        ) : (
+          <button
+            type="button"
+            onClick={() => handleConnectAndSyncSheet()}
+            disabled={isSyncing}
+            className="text-[11px] font-semibold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2.5 py-1 rounded-md transition-colors flex items-center gap-1.5 shadow-xs"
+          >
+            <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin text-amber-700' : 'text-amber-700'}`} />
+            <span>{isSyncing ? 'Đang đồng bộ...' : 'Bấm để sync Google Sheet'}</span>
+          </button>
+        )}
       </div>
 
       {/* Toast Notification */}
@@ -1333,6 +1347,9 @@ export default function App() {
                   setAddModalPreset(null);
                   setIsAddModalOpen(true);
                 }}
+                isLiveSync={Boolean(sheetRecords && sheetRecords.length > 0 && accessToken)}
+                isSyncing={isSyncing}
+                onSyncClick={() => handleConnectAndSyncSheet(sheetMeta?.spreadsheetId || spreadsheetInput)}
               />
             )}
 

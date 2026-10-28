@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Search, Plus, ArrowUpDown, FilterX } from 'lucide-react';
+import { Search, Plus, ArrowUpDown, FilterX, RefreshCw, CheckCircle2 } from 'lucide-react';
 import {
   CATEGORY_COLORS,
   EXPENSE_CATEGORIES,

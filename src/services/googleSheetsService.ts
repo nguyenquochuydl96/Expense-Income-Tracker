@@ -118,7 +118,7 @@ export async function fetchTabTransactions(
   const rows: string[][] = data.values || [];
   if (rows.length <= 1) return [];
 
-  // Intelligent header and column detection
+  // Intelligent header and column detection separated by sheetType
   const header = (rows[0] || []).map((c) => (c || '').trim().toLowerCase());
 
   let dateIdx = -1;
@@ -129,20 +129,18 @@ export async function fetchTabTransactions(
   let creditIdx = -1;
   let noteIdx = -1;
 
-  for (let c = 0; c < header.length; c++) {
-    const h = header[c];
-    if (dateIdx === -1 && /date|ngày|time|thời gian|tháng|month/i.test(h)) dateIdx = c;
-    else if (beCorpIdx === -1 && /be corp|becorp|be\s*corp/i.test(h)) beCorpIdx = c;
-    else if (creditIdx === -1 && /credit|thẻ|tín dụng/i.test(h)) creditIdx = c;
-    else if (amountIdx === -1 && /amount|số tiền|tiền|thu nhập|income|lương|giá trị|thực nhận/i.test(h)) amountIdx = c;
-    else if (categoryIdx === -1 && /category|hạng mục|danh mục|loại|nguồn/i.test(h)) categoryIdx = c;
-    else if (itemIdx === -1 && /item|nội dung|khoản|mô tả|tên|chi tiết/i.test(h)) itemIdx = c;
-    else if (noteIdx === -1 && /note|ghi chú/i.test(h)) noteIdx = c;
-  }
-
-  // Fallbacks
-  if (dateIdx === -1) dateIdx = 0;
   if (sheetType === 'Expenses') {
+    for (let c = 0; c < header.length; c++) {
+      const h = header[c];
+      if (dateIdx === -1 && /date|ngày|time|thời gian/i.test(h) && !/month|tháng/i.test(h)) dateIdx = c;
+      else if (beCorpIdx === -1 && /be corp|becorp|be\s*corp/i.test(h)) beCorpIdx = c;
+      else if (creditIdx === -1 && /credit|thẻ|tín dụng/i.test(h)) creditIdx = c;
+      else if (amountIdx === -1 && /amount|số tiền|tiền|giá trị|thực nhận/i.test(h)) amountIdx = c;
+      else if (categoryIdx === -1 && /category|hạng mục|danh mục|loại/i.test(h)) categoryIdx = c;
+      else if (itemIdx === -1 && /item|nội dung|khoản|mô tả|tên|chi tiết/i.test(h)) itemIdx = c;
+      else if (noteIdx === -1 && /note|ghi chú|bảng/i.test(h)) noteIdx = c;
+    }
+    if (dateIdx === -1) dateIdx = 0;
     if (categoryIdx === -1) categoryIdx = 1;
     if (itemIdx === -1) itemIdx = 2;
     if (amountIdx === -1) amountIdx = 3;
@@ -150,24 +148,20 @@ export async function fetchTabTransactions(
     if (creditIdx === -1) creditIdx = 5;
     if (noteIdx === -1) noteIdx = 6;
   } else {
-    // For Income: inspect sample rows to find numeric column if amountIdx not in header
-    if (amountIdx === -1) {
-      for (let r = 1; r < Math.min(rows.length, 10); r++) {
-        const testRow = rows[r];
-        if (!testRow) continue;
-        for (let col = testRow.length - 1; col >= 0; col--) {
-          const val = parseSheetNumber(testRow[col]);
-          if (val > 10000) {
-            amountIdx = col;
-            break;
-          }
-        }
-        if (amountIdx !== -1) break;
-      }
+    // sheetType === 'Income'
+    // Header format: Date (0), Income Source (1), Description (2), Income Amount (3), Month (4)
+    for (let c = 0; c < header.length; c++) {
+      const h = header[c];
+      if (dateIdx === -1 && /date|ngày|time|thời gian/i.test(h) && !/month|tháng/i.test(h)) dateIdx = c;
+      else if (amountIdx === -1 && /income amount|amount|số tiền|tiền|giá trị|thực nhận/i.test(h)) amountIdx = c;
+      else if (categoryIdx === -1 && /source|income source|nguồn|category|danh mục|hạng mục|loại/i.test(h)) categoryIdx = c;
+      else if (itemIdx === -1 && /desc|description|item|mô tả|nội dung|khoản|chi tiết/i.test(h)) itemIdx = c;
+      else if (noteIdx === -1 && /note|ghi chú/i.test(h)) noteIdx = c;
     }
-    if (amountIdx === -1) amountIdx = rows[1]?.length === 3 ? 2 : 3;
-    if (categoryIdx === -1) categoryIdx = amountIdx > 1 ? 1 : 0;
-    if (itemIdx === -1) itemIdx = amountIdx > 2 ? 2 : categoryIdx;
+    if (dateIdx === -1) dateIdx = 0;
+    if (categoryIdx === -1) categoryIdx = 1;
+    if (itemIdx === -1) itemIdx = 2;
+    if (amountIdx === -1) amountIdx = 3;
   }
 
   const records: TransactionRecord[] = [];
@@ -203,7 +197,7 @@ export async function fetchTabTransactions(
       isoDate: parsedDate.isoDate,
       monthKey: parsedDate.monthKey,
       category: rawCategory || (sheetType === 'Income' ? 'Thu nhập' : 'Khác'),
-      purchaseItem: rawItem || (sheetType === 'Income' ? 'Khoản thu' : '(Không ghi nội dung)'),
+      purchaseItem: rawItem || (sheetType === 'Income' ? rawCategory || 'Khoản thu' : '(Không ghi nội dung)'),
       amount,
       beCorp,
       credit,
