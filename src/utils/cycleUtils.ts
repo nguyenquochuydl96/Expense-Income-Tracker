@@ -72,3 +72,25 @@ export function filterRecordsByDateRange<T extends { isoDate: string }>(
 ): T[] {
   return records.filter((r) => r.isoDate >= startDate && r.isoDate <= endDate);
 }
+
+/**
+ * Detects whether an expense record is a Budget Transfer record
+ * (either new standardized format "[Transfer] ..." or historical patterns like "Cho Mèo", "Heo cho", "Chuyển qua...", "Lấy từ...")
+ */
+export function isBudgetTransferRecord(r: {
+  sheetType?: string;
+  purchaseItem?: string;
+  note?: string;
+}): boolean {
+  if (r.sheetType !== 'Expenses') return false;
+  const item = (r.purchaseItem || '').toLowerCase().trim();
+  const note = (r.note || '').toLowerCase().trim();
+
+  if (item.startsWith('[transfer]') || note.includes('transfer budget') || note.startsWith('transfer:')) {
+    return true;
+  }
+  if (item.includes('chuyển qua') || item.includes('lấy từ')) return true;
+  if (item === 'cho mèo' || item === 'heo cho') return true;
+
+  return false;
+}

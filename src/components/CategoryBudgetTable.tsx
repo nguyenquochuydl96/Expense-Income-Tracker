@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { TransactionRecord, EXPENSE_CATEGORIES } from '../types/finance';
+import { isBudgetTransferRecord } from '../utils/cycleUtils';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { CategoryBadge } from '../utils/categoryIcons';
 import {
+  ArrowLeftRight,
   SlidersHorizontal,
   TrendingDown,
   TrendingUp,
@@ -67,6 +69,7 @@ interface CategoryBudgetTableProps {
   onSelectCategory: (cat: string) => void;
   onShowCharts?: () => void;
   showChartsButton?: boolean;
+  onOpenTransfer?: () => void;
 }
 
 export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
@@ -78,6 +81,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
   onSelectCategory,
   onShowCharts,
   showChartsButton = false,
+  onOpenTransfer,
 }) => {
   // Category percentage allocation map
   const [percentages, setPercentages] = useState<Record<string, number>>(() => {
@@ -166,20 +170,40 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
       totalMonthlyIncomes[mKey] = totSum;
     }
 
-    // 2. Calculate monthly expenses per category
+    // 2. Calculate monthly expenses per category & budget transfers
     const monthlyCategoryExpenses: Record<string, Record<string, { total: number; count: number }>> = {};
+    const monthlyTransfersIn: Record<string, Record<string, number>> = {};
+    const monthlyTransfersOut: Record<string, Record<string, number>> = {};
+
     for (const mKey of allChronologicalMonths) {
       monthlyCategoryExpenses[mKey] = {};
+      monthlyTransfersIn[mKey] = {};
+      monthlyTransfersOut[mKey] = {};
     }
 
     for (const r of allRecords) {
-      if (r.sheetType === 'Expenses' && r.monthKey && monthlyCategoryExpenses[r.monthKey]) {
+      if (r.sheetType === 'Expenses' && r.monthKey) {
         const cat = r.category || 'Khác';
-        if (!monthlyCategoryExpenses[r.monthKey][cat]) {
-          monthlyCategoryExpenses[r.monthKey][cat] = { total: 0, count: 0 };
+
+        if (isBudgetTransferRecord(r)) {
+          // It is a budget transfer between categories!
+          if (r.amount > 0) {
+            // Source category: transferring budget out
+            monthlyTransfersOut[r.monthKey][cat] =
+              (monthlyTransfersOut[r.monthKey][cat] || 0) + r.amount;
+          } else if (r.amount < 0) {
+            // Destination category: receiving budget in
+            monthlyTransfersIn[r.monthKey][cat] =
+              (monthlyTransfersIn[r.monthKey][cat] || 0) + Math.abs(r.amount);
+          }
+        } else {
+          // Real spending
+          if (!monthlyCategoryExpenses[r.monthKey][cat]) {
+            monthlyCategoryExpenses[r.monthKey][cat] = { total: 0, count: 0 };
+          }
+          monthlyCategoryExpenses[r.monthKey][cat].total += r.amount;
+          monthlyCategoryExpenses[r.monthKey][cat].count += 1;
         }
-        monthlyCategoryExpenses[r.monthKey][cat].total += r.amount;
-        monthlyCategoryExpenses[r.monthKey][cat].count += 1;
       }
     }
 
@@ -193,6 +217,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
           baseBudget: number;
           baseFromGeneral: number;
           dedicatedIncome: number;
+          transferIn: number;
+          transferOut: number;
+          netTransfer: number;
           carryover: number;
           effectiveBudget: number;
           spent: number;
@@ -227,6 +254,10 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
         const baseFromGeneral = Math.round((mGeneralIncome * pct) / 100);
         const baseBudget = baseFromGeneral + dedicatedForCat;
 
+        const transferIn = monthlyTransfersIn[mKey]?.[cat] || 0;
+        const transferOut = monthlyTransfersOut[mKey]?.[cat] || 0;
+        const netTransfer = transferIn - transferOut;
+
         let carryover = 0;
         if (rolloverMode === 'full') {
           carryover = cumulativeBalance;
@@ -236,7 +267,8 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
           carryover = 0;
         }
 
-        const effectiveBudget = baseBudget + carryover;
+        // Effective budget = Base budget + Carryover + Net budget transfer
+        const effectiveBudget = baseBudget + carryover + netTransfer;
         const spent = monthlyCategoryExpenses[mKey]?.[cat]?.total || 0;
         const count = monthlyCategoryExpenses[mKey]?.[cat]?.count || 0;
         const remaining = effectiveBudget - spent;
@@ -245,6 +277,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
           baseBudget,
           baseFromGeneral,
           dedicatedIncome: dedicatedForCat,
+          transferIn,
+          transferOut,
+          netTransfer,
           carryover,
           effectiveBudget,
           spent,
@@ -298,6 +333,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
 
       const baseBudget = mData?.baseBudget ?? Math.round((totalIncome * pct) / 100);
       const dedicatedIncome = mData?.dedicatedIncome ?? 0;
+      const transferIn = mData?.transferIn ?? 0;
+      const transferOut = mData?.transferOut ?? 0;
+      const netTransfer = mData?.netTransfer ?? 0;
       const carryover = mData?.carryover ?? 0;
       const effectiveBudget = mData?.effectiveBudget ?? baseBudget;
       const spent = mData?.spent ?? 0;
@@ -311,6 +349,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
         percentage: pct,
         baseBudget,
         dedicatedIncome,
+        transferIn,
+        transferOut,
+        netTransfer,
         carryover,
         effectiveBudget,
         spent,
@@ -690,9 +731,21 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                       )}
                     </td>
 
-                    {/* Ngân sách thực dụng khả dụng (Effective Budget = Base + Carryover) */}
+                    {/* Ngân sách thực dụng khả dụng (Effective Budget = Base + Carryover + Transfer) */}
                     <td className="py-2.5 px-3 text-right font-bold text-slate-900 bg-sky-50/40">
-                      {formatCurrency(item.effectiveBudget)}
+                      <div>{formatCurrency(item.effectiveBudget)}</div>
+                      {item.netTransfer !== 0 && (
+                        <div
+                          className={`text-[10px] font-medium whitespace-nowrap ${
+                            item.netTransfer > 0 ? 'text-emerald-700' : 'text-amber-700'
+                          }`}
+                          title={`Điều chuyển ngân sách: ${item.netTransfer > 0 ? '+' : ''}${formatCurrency(item.netTransfer)}`}
+                        >
+                          {item.netTransfer > 0
+                            ? `(+ ${formatCurrency(item.netTransfer)} nhận)`
+                            : `(- ${formatCurrency(Math.abs(item.netTransfer))} chuyển)`}
+                        </div>
+                      )}
                     </td>
 
                     {/* Đã chi tiêu */}

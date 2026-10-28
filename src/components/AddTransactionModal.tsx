@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, Check, ArrowRight, Sparkles } from 'lucide-react';
+import { X, Check, ArrowRight, Sparkles, ArrowLeftRight } from 'lucide-react';
 import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
@@ -28,7 +28,7 @@ export interface NewTransactionPayload {
 interface AddTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (payload: NewTransactionPayload) => Promise<void>;
+  onSave: (payload: NewTransactionPayload | NewTransactionPayload[]) => Promise<void>;
   suggestions: ItemSuggestion[];
   isSheetConnected: boolean;
   initialPreset?: Partial<NewTransactionPayload> | null;
@@ -43,9 +43,13 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   isSheetConnected,
   initialPreset,
 }) => {
+  type ModalMode = 'Expenses' | 'Income' | 'Transfer';
+  const [modalMode, setModalMode] = useState<ModalMode>('Expenses');
   const [sheetType, setSheetType] = useState<SheetTabType>('Expenses');
   const [isoDate, setIsoDate] = useState<string>('2026-10-25');
   const [category, setCategory] = useState<string>('Ăn uống');
+  const [fromCategory, setFromCategory] = useState<string>('Giải trí Heo');
+  const [toCategory, setToCategory] = useState<string>('Giải trí Mèo');
   const [customCategory, setCustomCategory] = useState<string>('');
   const [purchaseItem, setPurchaseItem] = useState<string>('');
   const [amountStr, setAmountStr] = useState<string>('');
@@ -60,8 +64,14 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     if (isOpen) {
       setErrorMsg(null);
       if (initialPreset) {
-        const targetSheet = initialPreset.sheetType || 'Expenses';
-        setSheetType(targetSheet);
+        if (initialPreset.note === 'TRANSFER_MODE') {
+          setModalMode('Transfer');
+          setSheetType('Expenses');
+        } else {
+          const targetSheet = initialPreset.sheetType || 'Expenses';
+          setModalMode(targetSheet === 'Income' ? 'Income' : 'Expenses');
+          setSheetType(targetSheet);
+        }
         setIsoDate(initialPreset.isoDate || '2026-10-25');
         setCategory(
           initialPreset.category ||
@@ -94,13 +104,20 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       : [...INCOME_CATEGORIES];
   }, [sheetType]);
 
-  const handleSheetTypeChange = (type: SheetTabType) => {
-    setSheetType(type);
-    setCategory(type === 'Expenses' ? 'Ăn uống' : 'Lương Heo');
-    setCustomCategory('');
-    if (type === 'Income') {
+  const handleModeChange = (mode: ModalMode) => {
+    setModalMode(mode);
+    if (mode === 'Transfer') {
+      setSheetType('Expenses');
       setBeCorpStr('');
       setCreditStr('');
+    } else {
+      setSheetType(mode);
+      setCategory(mode === 'Expenses' ? 'Ăn uống' : 'Lương Heo');
+      setCustomCategory('');
+      if (mode === 'Income') {
+        setBeCorpStr('');
+        setCreditStr('');
+      }
     }
   };
 
@@ -152,6 +169,55 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     e.preventDefault();
     setErrorMsg(null);
 
+    if (modalMode === 'Transfer') {
+      if (fromCategory === toCategory) {
+        setErrorMsg('Danh mục nguồn và danh mục đích không được trùng nhau.');
+        return;
+      }
+      if (parsedAmount <= 0) {
+        setErrorMsg('Vui lòng nhập số tiền chuyển lớn hơn 0.');
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        const transferNote = note.trim();
+        const payloadFrom: NewTransactionPayload = {
+          sheetType: 'Expenses',
+          purchaseDate: sheetDatePreview,
+          isoDate,
+          category: fromCategory,
+          purchaseItem: `[Transfer] Chuyển sang ${toCategory}${transferNote ? ': ' + transferNote : ''}`,
+          amount: parsedAmount,
+          beCorp: 0,
+          credit: 0,
+          note: transferNote ? `Transfer: ${transferNote}` : 'Transfer Budget',
+        };
+
+        const payloadTo: NewTransactionPayload = {
+          sheetType: 'Expenses',
+          purchaseDate: sheetDatePreview,
+          isoDate,
+          category: toCategory,
+          purchaseItem: `[Transfer] Nhận từ ${fromCategory}${transferNote ? ': ' + transferNote : ''}`,
+          amount: -parsedAmount,
+          beCorp: 0,
+          credit: 0,
+          note: transferNote ? `Transfer: ${transferNote}` : 'Transfer Budget',
+        };
+
+        await onSave([payloadFrom, payloadTo]);
+        setAmountStr('');
+        setNote('');
+        onClose();
+      } catch (err: any) {
+        setErrorMsg(err?.message || 'Có lỗi xảy ra khi chuyển ngân sách.');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     if (!purchaseItem.trim() && parsedAmount === 0) {
       setErrorMsg('Vui lòng nhập nội dung hoặc số tiền.');
       return;
@@ -170,7 +236,6 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         credit: sheetType === 'Expenses' ? parsedCredit : 0,
         note: note.trim() || undefined,
       });
-      // Reset fields for next entry
       setPurchaseItem('');
       setAmountStr('');
       setBeCorpStr('');
@@ -191,10 +256,16 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
           <div>
             <h2 className="text-base font-bold text-slate-900">
-              {sheetType === 'Expenses' ? 'Thêm khoản chi tiêu mới' : 'Thêm khoản thu nhập mới'}
+              {modalMode === 'Transfer'
+                ? 'Chuyển ngân sách giữa 2 danh mục'
+                : modalMode === 'Expenses'
+                ? 'Thêm khoản chi tiêu mới'
+                : 'Thêm khoản thu nhập mới'}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Ghi vào bảng <strong className="text-slate-700">{sheetType}</strong> trên Google Sheet
+              {modalMode === 'Transfer'
+                ? 'Điều chuyển hạn mức ngân sách mà không làm thay đổi tổng chi tiêu gia đình'
+                : `Ghi vào bảng ${sheetType} trên Google Sheet`}
             </p>
           </div>
           <button
@@ -208,34 +279,146 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Target Table Switcher */}
+          {/* Target Mode Switcher (3 Tabs) */}
           <div>
-            <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl">
+            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl">
               <button
                 type="button"
-                onClick={() => handleSheetTypeChange('Expenses')}
-                className={`py-2 px-3 text-xs font-semibold rounded-lg transition-all ${
-                  sheetType === 'Expenses'
+                onClick={() => handleModeChange('Expenses')}
+                className={`py-2 px-2.5 text-xs font-semibold rounded-lg transition-all truncate ${
+                  modalMode === 'Expenses'
                     ? 'bg-white text-rose-700 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                💸 Bảng Expenses (Chi tiêu)
+                💸 Chi tiêu
               </button>
               <button
                 type="button"
-                onClick={() => handleSheetTypeChange('Income')}
-                className={`py-2 px-3 text-xs font-semibold rounded-lg transition-all ${
-                  sheetType === 'Income'
+                onClick={() => handleModeChange('Income')}
+                className={`py-2 px-2.5 text-xs font-semibold rounded-lg transition-all truncate ${
+                  modalMode === 'Income'
                     ? 'bg-white text-emerald-700 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                💰 Bảng Income (Thu nhập)
+                💰 Thu nhập
+              </button>
+              <button
+                type="button"
+                onClick={() => handleModeChange('Transfer')}
+                className={`py-2 px-2.5 text-xs font-semibold rounded-lg transition-all truncate ${
+                  modalMode === 'Transfer'
+                    ? 'bg-white text-purple-700 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                🔄 Chuyển Budget
               </button>
             </div>
           </div>
 
+          {modalMode === 'Transfer' ? (
+            /* TRANSFER BUDGET FORM */
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Ngày chuyển ngân sách
+                </label>
+                <input
+                  type="date"
+                  value={isoDate}
+                  onChange={(e) => setIsoDate(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 text-sm font-mono-tabular border border-slate-300 rounded-lg focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-amber-900 mb-1">
+                    Trích từ danh mục (Nguồn -)
+                  </label>
+                  <select
+                    value={fromCategory}
+                    onChange={(e) => setFromCategory(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-amber-300 rounded-lg bg-amber-50/30 focus:outline-none focus:border-amber-600 font-medium"
+                  >
+                    {EXPENSE_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-emerald-900 mb-1">
+                    Chuyển sang danh mục (Đích +)
+                  </label>
+                  <select
+                    value={toCategory}
+                    onChange={(e) => setToCategory(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-emerald-300 rounded-lg bg-emerald-50/30 focus:outline-none focus:border-emerald-600 font-medium"
+                  >
+                    {EXPENSE_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Số tiền chuyển (₫) <span className="text-purple-600">*</span>
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="VD: 100,000"
+                  value={amountStr}
+                  onChange={(e) => setAmountStr(formatNumericInput(e.target.value))}
+                  required
+                  className="w-full px-3 py-2.5 text-base font-mono-tabular font-bold text-purple-900 border border-slate-300 rounded-lg focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Lý do / Ghi chú chuyển ngân sách
+                </label>
+                <input
+                  type="text"
+                  placeholder="VD: Cho Mèo, Nhường đi xem phim, Mượn tạm..."
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-purple-600"
+                />
+              </div>
+
+              {/* Transfer Preview Card */}
+              <div className="p-3 bg-purple-50/60 border border-purple-200 rounded-xl space-y-1.5 text-xs text-purple-900">
+                <div className="font-semibold flex items-center gap-1.5">
+                  <ArrowLeftRight className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Tóm tắt điều chuyển:</span>
+                </div>
+                <div className="flex items-center justify-between text-amber-800">
+                  <span>🔻 Giảm ngân sách {fromCategory}:</span>
+                  <span className="font-mono-tabular font-bold">-{amountStr ? amountStr + ' ₫' : '0 ₫'}</span>
+                </div>
+                <div className="flex items-center justify-between text-emerald-800">
+                  <span>🔺 Tăng ngân sách {toCategory}:</span>
+                  <span className="font-mono-tabular font-bold">+{amountStr ? amountStr + ' ₫' : '0 ₫'}</span>
+                </div>
+                <div className="text-[11px] text-purple-700 pt-1 border-t border-purple-200/50">
+                  ⚡ Sẽ tự động tạo 2 dòng đối ứng trên Google Sheet (Expenses) và không làm tăng tổng chi tiêu của gia đình.
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
           {/* Row 1: Purchase Date & Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
@@ -488,6 +671,9 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             </div>
           )}
 
+            </>
+          )}
+
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
             <button
@@ -501,18 +687,29 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               type="submit"
               disabled={isSubmitting}
               className={`px-5 py-2 text-xs font-semibold text-white disabled:opacity-50 rounded-lg transition-colors flex items-center gap-2 shadow-xs ${
-                sheetType === 'Expenses'
+                modalMode === 'Transfer'
+                  ? 'bg-purple-700 hover:bg-purple-800'
+                  : sheetType === 'Expenses'
                   ? 'bg-rose-700 hover:bg-rose-800'
                   : 'bg-emerald-700 hover:bg-emerald-800'
               }`}
             >
-              <Check className="w-4 h-4" />
-              <span>
-                {isSubmitting
-                  ? 'Đang ghi vào Sheet...'
-                  : `Lưu vào ${sheetType === 'Expenses' ? 'Chi tiêu' : 'Thu nhập'}`}
-              </span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              {modalMode === 'Transfer' ? (
+                <>
+                  <ArrowLeftRight className="w-4 h-4" />
+                  <span>{isSubmitting ? 'Đang chuyển...' : 'Xác nhận chuyển ngân sách'}</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>
+                    {isSubmitting
+                      ? 'Đang ghi vào Sheet...'
+                      : `Lưu vào ${sheetType === 'Expenses' ? 'Chi tiêu' : 'Thu nhập'}`}
+                  </span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </>
+              )}
             </button>
           </div>
         </form>

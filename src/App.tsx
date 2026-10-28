@@ -602,84 +602,104 @@ export default function App() {
     }
   };
 
-  // Save new transaction (Optimistic Update)
-  const handleSaveTransaction = async (payload: NewTransactionPayload) => {
-    const parsedDate = parseDateString(payload.purchaseDate);
-    const newRecord: TransactionRecord = {
-      id: `local-${payload.sheetType}-${Date.now()}`,
-      sheetType: payload.sheetType,
-      purchaseDate: payload.purchaseDate,
-      isoDate: parsedDate.isoDate,
-      monthKey: parsedDate.monthKey,
-      category: payload.category,
-      purchaseItem: payload.purchaseItem,
-      amount: payload.amount,
-      beCorp: payload.beCorp,
-      credit: payload.credit,
-      note: payload.note,
-      source: 'local_new',
-      syncedToSheet: false,
-      syncing: false,
-    };
+  // Save new transaction(s) (Optimistic Update)
+  const handleSaveTransaction = async (
+    payloadOrList: NewTransactionPayload | NewTransactionPayload[]
+  ) => {
+    const list = Array.isArray(payloadOrList) ? payloadOrList : [payloadOrList];
+    if (list.length === 0) return;
+
+    const createdRecords: TransactionRecord[] = [];
+
+    for (let i = 0; i < list.length; i++) {
+      const payload = list[i];
+      const parsedDate = parseDateString(payload.purchaseDate);
+      const newRecord: TransactionRecord = {
+        id: `local-${payload.sheetType}-${Date.now()}-${i}`,
+        sheetType: payload.sheetType,
+        purchaseDate: payload.purchaseDate,
+        isoDate: parsedDate.isoDate,
+        monthKey: parsedDate.monthKey,
+        category: payload.category,
+        purchaseItem: payload.purchaseItem,
+        amount: payload.amount,
+        beCorp: payload.beCorp,
+        credit: payload.credit,
+        note: payload.note,
+        source: 'local_new',
+        syncedToSheet: false,
+        syncing: false,
+      };
+      createdRecords.push(newRecord);
+    }
 
     if (sheetMeta && accessToken) {
-      newRecord.syncing = true;
-      setSheetRecords((prev) => (prev ? [...prev, newRecord] : [newRecord]));
-      showToast('success', `✓ Đã thêm "${payload.purchaseItem}" vào bảng!`);
-
-      const targetTab =
-        payload.sheetType === 'Expenses'
-          ? sheetMeta.expensesTab
-          : sheetMeta.incomeTab;
-
-      try {
-        await appendTransactionToSheet(
-          sheetMeta.spreadsheetId,
-          targetTab,
-          {
-            purchaseDate: payload.purchaseDate,
-            category: payload.category,
-            purchaseItem: payload.purchaseItem,
-            amount: payload.amount,
-            beCorp: payload.beCorp,
-            credit: payload.credit,
-            note: payload.note,
-          },
-          accessToken
-        );
-
-        setSheetRecords((prev) =>
-          prev
-            ? prev.map((r) =>
-                r.id === newRecord.id
-                  ? { ...r, syncedToSheet: true, syncing: false }
-                  : r
-              )
-            : prev
-        );
-      } catch (err: any) {
-        setSheetRecords((prev) =>
-          prev
-            ? prev.map((r) =>
-                r.id === newRecord.id ? { ...r, syncing: false } : r
-              )
-            : prev
-        );
-        showToast(
-          'warning',
-          `Không thể đẩy "${payload.purchaseItem}" lên Google Sheet. Dữ liệu vẫn lưu ở máy.`
-        );
-      }
-    } else {
-      setLocalNewRecords((prev) => [...prev, newRecord]);
+      createdRecords.forEach((r) => (r.syncing = true));
+      setSheetRecords((prev) => (prev ? [...prev, ...createdRecords] : [...createdRecords]));
       showToast(
         'success',
-        `Đã thêm "${payload.purchaseItem}" vào bảng ${payload.sheetType} (Sẵn sàng đẩy lên Google Sheet khi kết nối).`
+        createdRecords.length > 1
+          ? `✓ Đã ghi nhận chuyển ngân sách (${createdRecords.length} dòng)!`
+          : `✓ Đã thêm "${createdRecords[0].purchaseItem}" vào bảng!`
+      );
+
+      for (const record of createdRecords) {
+        const targetTab =
+          record.sheetType === 'Expenses'
+            ? sheetMeta.expensesTab
+            : sheetMeta.incomeTab;
+
+        try {
+          await appendTransactionToSheet(
+            sheetMeta.spreadsheetId,
+            targetTab,
+            {
+              purchaseDate: record.purchaseDate,
+              category: record.category,
+              purchaseItem: record.purchaseItem,
+              amount: record.amount,
+              beCorp: record.beCorp,
+              credit: record.credit,
+              note: record.note,
+            },
+            accessToken
+          );
+
+          setSheetRecords((prev) =>
+            prev
+              ? prev.map((r) =>
+                  r.id === record.id
+                    ? { ...r, syncedToSheet: true, syncing: false }
+                    : r
+                )
+              : prev
+          );
+        } catch (err: any) {
+          setSheetRecords((prev) =>
+            prev
+              ? prev.map((r) =>
+                  r.id === record.id ? { ...r, syncing: false } : r
+                )
+              : prev
+          );
+          showToast(
+            'warning',
+            `Không thể đẩy "${record.purchaseItem}" lên Google Sheet. Dữ liệu vẫn lưu ở máy.`
+          );
+        }
+      }
+    } else {
+      setLocalNewRecords((prev) => [...prev, ...createdRecords]);
+      showToast(
+        'success',
+        createdRecords.length > 1
+          ? `Đã ghi nhận ${createdRecords.length} dòng chuyển ngân sách (lưu trên máy).`
+          : `Đã thêm "${createdRecords[0].purchaseItem}" vào bảng ${createdRecords[0].sheetType} (Sẵn sàng đẩy lên Google Sheet khi kết nối).`
       );
     }
 
-    if (selectedMonth !== 'ALL' && selectedMonth !== parsedDate.monthKey) {
-      setSelectedMonth(parsedDate.monthKey);
+    if (createdRecords.length > 0 && selectedMonth !== 'ALL' && selectedMonth !== createdRecords[0].monthKey) {
+      setSelectedMonth(createdRecords[0].monthKey);
     }
   };
 
@@ -1269,6 +1289,10 @@ export default function App() {
                   onSelectCategory={setSelectedCategory}
                   showChartsButton={true}
                   onShowCharts={() => setShowCharts((prev) => !prev)}
+                  onOpenTransfer={() => {
+                    setAddModalPreset({ note: 'TRANSFER_MODE' });
+                    setIsAddModalOpen(true);
+                  }}
                 />
 
                 {/* ═══════ OPTIONAL: BIỂU ĐỒ BỔ TRỢ (TOP CHI TIÊU & TỶ TRỌNG) KHI BẬT ═══════ */}
