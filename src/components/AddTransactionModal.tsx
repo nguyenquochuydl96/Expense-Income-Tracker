@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, Check, ArrowRight, Sparkles, Zap } from 'lucide-react';
+import { X, Check, ArrowRight, Sparkles } from 'lucide-react';
 import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
@@ -12,7 +12,6 @@ import {
   isoToSheetDate,
   parseSheetNumber,
 } from '../utils/csvParser';
-import { getTopCategories, getSuggestedAmountsForCategory } from '../utils/quickEntry';
 
 export interface NewTransactionPayload {
   sheetType: SheetTabType;
@@ -33,7 +32,7 @@ interface AddTransactionModalProps {
   suggestions: ItemSuggestion[];
   isSheetConnected: boolean;
   initialPreset?: Partial<NewTransactionPayload> | null;
-  allRecords: TransactionRecord[]; // For analyzing history
+  allRecords: TransactionRecord[];
 }
 
 export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
@@ -43,7 +42,6 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   suggestions,
   isSheetConnected,
   initialPreset,
-  allRecords,
 }) => {
   const [sheetType, setSheetType] = useState<SheetTabType>('Expenses');
   const [isoDate, setIsoDate] = useState<string>('2026-10-25');
@@ -96,22 +94,14 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       : [...INCOME_CATEGORIES];
   }, [sheetType]);
 
-  // Top 6 frequently used categories (Expenses only)
-  const topCategories = useMemo(() => {
-    if (sheetType !== 'Expenses') return [];
-    return getTopCategories(allRecords, 6);
-  }, [allRecords, sheetType]);
-
-  // Smart amount suggestions for selected category
-  const smartAmounts = useMemo(() => {
-    if (sheetType !== 'Expenses') return [];
-    return getSuggestedAmountsForCategory(allRecords, category, 4);
-  }, [allRecords, category, sheetType]);
-
   const handleSheetTypeChange = (type: SheetTabType) => {
     setSheetType(type);
     setCategory(type === 'Expenses' ? 'Ăn uống' : 'Lương Heo');
     setCustomCategory('');
+    if (type === 'Income') {
+      setBeCorpStr('');
+      setCreditStr('');
+    }
   };
 
   const filteredSuggestions = useMemo(() => {
@@ -163,7 +153,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     setErrorMsg(null);
 
     if (!purchaseItem.trim() && parsedAmount === 0) {
-      setErrorMsg('Vui lòng nhập nội dung (Purchase Item) hoặc số tiền (Amount).');
+      setErrorMsg('Vui lòng nhập nội dung hoặc số tiền.');
       return;
     }
 
@@ -176,8 +166,8 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         category: finalCategory,
         purchaseItem: purchaseItem.trim(),
         amount: parsedAmount,
-        beCorp: parsedBeCorp,
-        credit: parsedCredit,
+        beCorp: sheetType === 'Expenses' ? parsedBeCorp : 0,
+        credit: sheetType === 'Expenses' ? parsedCredit : 0,
         note: note.trim() || undefined,
       });
       // Reset fields for next entry
@@ -195,16 +185,16 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 overflow-y-auto">
-      <div className="bg-white border border-slate-200 rounded-xl w-full max-w-xl shadow-lg overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto">
+      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden my-8 transition-all">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
           <div>
             <h2 className="text-base font-bold text-slate-900">
-              Thêm giao dịch mới vào sổ Google Sheet
+              {sheetType === 'Expenses' ? 'Thêm khoản chi tiêu mới' : 'Thêm khoản thu nhập mới'}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Tự động nối thêm 1 dòng vào cuối bảng <strong className="text-slate-700">{sheetType}</strong> · Giữ nguyên lịch sử cũ
+              Ghi vào bảng <strong className="text-slate-700">{sheetType}</strong> trên Google Sheet
             </p>
           </div>
           <button
@@ -217,66 +207,58 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Target Table Selector: Expenses vs Income */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Target Table Switcher */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Chọn bảng đích trên Google Sheet
-            </label>
-            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-lg">
+            <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl">
               <button
                 type="button"
                 onClick={() => handleSheetTypeChange('Expenses')}
-                className={`py-2 px-4 text-xs font-semibold rounded-md transition-colors ${
+                className={`py-2 px-3 text-xs font-semibold rounded-lg transition-all ${
                   sheetType === 'Expenses'
                     ? 'bg-white text-rose-700 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Bảng Expenses (Chi tiêu)
+                💸 Bảng Expenses (Chi tiêu)
               </button>
               <button
                 type="button"
                 onClick={() => handleSheetTypeChange('Income')}
-                className={`py-2 px-4 text-xs font-semibold rounded-md transition-colors ${
+                className={`py-2 px-3 text-xs font-semibold rounded-lg transition-all ${
                   sheetType === 'Income'
                     ? 'bg-white text-emerald-700 shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                Bảng Income (Thu nhập)
+                💰 Bảng Income (Thu nhập)
               </button>
             </div>
           </div>
 
           {/* Row 1: Purchase Date & Category */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-semibold text-slate-700">
-                  1. Purchase Date (Ngày)
-                </label>
-                <span className="text-[11px] font-mono-tabular text-teal-700">
-                  Ghi Sheet: {sheetDatePreview}
-                </span>
-              </div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Ngày giao dịch
+              </label>
               <input
                 type="date"
                 value={isoDate}
                 onChange={(e) => setIsoDate(e.target.value)}
                 required
-                className="w-full px-3 py-2 text-sm font-mono-tabular border border-slate-300 rounded-lg focus:outline-none focus:border-teal-600"
+                className="w-full px-3 py-2 text-sm font-mono-tabular border border-slate-300 rounded-lg focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                2. Category (Danh mục)
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Danh mục
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-teal-600"
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
               >
                 {categoriesList.map((cat) => (
                   <option key={cat} value={cat}>
@@ -297,47 +279,16 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             </div>
           </div>
 
-          {/* Quick Category Chips (Top 6 hay dùng nhất) */}
-          {sheetType === 'Expenses' && topCategories.length > 0 && (
-            <div className="bg-teal-50 border border-teal-200 rounded-lg p-3">
-              <div className="flex items-center gap-1.5 mb-2">
-                <Zap className="w-3.5 h-3.5 text-teal-700" />
-                <span className="text-[11px] font-semibold text-teal-900 uppercase tracking-wide">
-                  Danh mục hay dùng (Chọn nhanh)
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {topCategories.map((cat) => (
-                  <button
-                    key={cat.category}
-                    type="button"
-                    onClick={() => setCategory(cat.category)}
-                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                      category === cat.category
-                        ? 'bg-teal-600 text-white shadow-md'
-                        : 'bg-white text-slate-800 hover:bg-teal-100 border border-teal-200'
-                    }`}
-                  >
-                    {cat.category}
-                    <span className="ml-1.5 text-[10px] opacity-75">
-                      ({cat.count}x · ~{Math.round(cat.avgAmount / 1000)}k)
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Row 2: Purchase Item with Historical Autocomplete */}
+          {/* Row 2: Purchase Item with Autocomplete */}
           <div className="relative">
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center justify-between mb-1">
               <label className="text-xs font-semibold text-slate-700">
-                3. Purchase Item (Nội dung chi tiết)
+                {sheetType === 'Expenses' ? 'Nội dung chi tiêu' : 'Nội dung khoản thu'}
               </label>
               {sheetType === 'Expenses' && (
-                <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                <span className="text-[11px] text-slate-400 flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-teal-600" />
-                  Gợi ý thông minh từ lịch sử
+                  Gợi ý từ lịch sử
                 </span>
               )}
             </div>
@@ -345,35 +296,35 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               type="text"
               placeholder={
                 sheetType === 'Expenses'
-                  ? 'VD: Cafe boardgame, Bún nước tương, Cát mèo, Xe Heo...'
-                  : 'VD: Lương tháng 10, Thưởng dự án, Bán đồ...'
+                  ? 'VD: Cafe, Bún nước tương, Cát mèo, Grab...'
+                  : 'VD: Lương tháng 10 Heo, Thưởng dự án Mèo...'
               }
               value={purchaseItem}
               onFocus={() => setShowSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 180)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
               onChange={(e) => setPurchaseItem(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-teal-600"
+              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
             />
 
             {showSuggestions && filteredSuggestions.length > 0 && (
-              <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-md py-1 max-h-48 overflow-y-auto">
+              <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg py-1 max-h-48 overflow-y-auto">
                 <div className="px-3 py-1 text-[11px] text-slate-400 border-b border-slate-100">
-                  Chọn nhanh món thường nhập (tự điền Danh mục & Số tiền gần nhất):
+                  Món thường dùng gần đây:
                 </div>
                 {filteredSuggestions.map((s) => (
                   <button
                     key={`${s.category}-${s.item}`}
                     type="button"
                     onMouseDown={() => applySuggestion(s)}
-                    className="w-full px-3 py-1.5 text-left text-xs hover:bg-slate-50 flex items-center justify-between gap-2"
+                    className="w-full px-3 py-1.5 text-left text-xs hover:bg-slate-50 flex items-center justify-between gap-2 transition-colors"
                   >
                     <div className="truncate">
-                      <span className="font-medium text-slate-900">{s.item}</span>
+                      <span className="font-semibold text-slate-900">{s.item}</span>
                       <span className="text-slate-400 mx-1.5">·</span>
                       <span className="text-teal-700">{s.category}</span>
                     </div>
                     <span className="font-mono-tabular text-slate-500 shrink-0">
-                      {s.lastAmount > 0 ? `${formatNumberForSheet(s.lastAmount)} ₫` : ''} ({s.count}x)
+                      {s.lastAmount > 0 ? `${formatNumberForSheet(s.lastAmount)} ₫` : ''}
                     </span>
                   </button>
                 ))}
@@ -381,180 +332,127 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             )}
           </div>
 
-          {/* Row 3: Amount, BE Corp, Credit */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-semibold text-slate-700">
-                  4. Amount (Số tiền)
+          {/* Row 3: Amounts */}
+          {sheetType === 'Expenses' ? (
+            /* Khi là Chi tiêu: Hiện 3 cột (Số tiền chi, BE Corp, Credit) tối giản, KHÔNG có gợi ý số tiền */
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Số tiền chi (₫) <span className="text-rose-600">*</span>
                 </label>
-                <div className="flex items-center gap-1">
-                  {smartAmounts.length > 0 ? (
-                    smartAmounts.map((smart) => (
-                      <button
-                        key={smart.amount}
-                        type="button"
-                        onClick={() => setAmountStr(smart.amount.toLocaleString('en-US'))}
-                        className="text-[10px] font-mono-tabular px-1.5 py-0.5 bg-teal-100 hover:bg-teal-200 text-teal-800 rounded font-semibold"
-                        title={`Thường dùng cho ${category}`}
-                      >
-                        {smart.label}
-                      </button>
-                    ))
-                  ) : (
-                    [25000, 50000, 100000].map((quick) => (
-                      <button
-                        key={quick}
-                        type="button"
-                        onClick={() => setAmountStr(quick.toLocaleString('en-US'))}
-                        className="text-[10px] font-mono-tabular px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded"
-                      >
-                        {quick / 1000}k
-                      </button>
-                    ))
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="VD: 50,000"
+                  value={amountStr}
+                  onChange={(e) => setAmountStr(formatNumericInput(e.target.value))}
+                  required
+                  className="w-full px-3 py-2 text-sm font-mono-tabular font-bold border border-slate-300 rounded-lg focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-amber-800">
+                    BE Corp
+                  </label>
+                  {parsedAmount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setBeCorpStr(
+                          parsedBeCorp === parsedAmount
+                            ? ''
+                            : formatNumberForSheet(parsedAmount)
+                        )
+                      }
+                      className="text-[11px] text-amber-700 hover:underline font-medium"
+                    >
+                      {parsedBeCorp === parsedAmount ? 'Xóa' : '= Số tiền'}
+                    </button>
                   )}
                 </div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Để trống nếu không"
+                  value={beCorpStr}
+                  onChange={(e) => setBeCorpStr(formatNumericInput(e.target.value))}
+                  className="w-full px-3 py-2 text-sm font-mono-tabular border border-slate-300 rounded-lg focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600"
+                />
               </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-indigo-800">
+                    Quẹt thẻ Credit
+                  </label>
+                  {parsedAmount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCreditStr(
+                          parsedCredit === parsedAmount
+                            ? ''
+                            : formatNumberForSheet(parsedAmount)
+                        )
+                      }
+                      className="text-[11px] text-indigo-700 hover:underline font-medium"
+                    >
+                      {parsedCredit === parsedAmount ? 'Xóa' : '= Số tiền'}
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Để trống nếu không"
+                  value={creditStr}
+                  onChange={(e) => setCreditStr(formatNumericInput(e.target.value))}
+                  className="w-full px-3 py-2 text-sm font-mono-tabular border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                />
+              </div>
+            </div>
+          ) : (
+            /* Khi là Thu nhập: CHỈ CẦN 1 Ô SỐ TIỀN THU NHẬP (ẨN HOÀN TOÀN BE CORP VÀ CREDIT) */
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Số tiền thu nhập (₫) <span className="text-emerald-600">*</span>
+              </label>
               <input
                 type="text"
                 inputMode="numeric"
-                placeholder="VD: 50,000"
+                placeholder="VD: 25,000,000"
                 value={amountStr}
                 onChange={(e) => setAmountStr(formatNumericInput(e.target.value))}
                 required
-                className="w-full px-3 py-2 text-sm font-mono-tabular font-semibold border border-slate-300 rounded-lg focus:outline-none focus:border-teal-600"
+                className="w-full px-3 py-2.5 text-base font-mono-tabular font-bold text-emerald-800 border border-slate-300 rounded-lg focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
               />
             </div>
+          )}
 
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-semibold text-amber-800">
-                  5. BE Corp (Cột E)
-                </label>
-                {parsedAmount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setBeCorpStr(
-                        parsedBeCorp === parsedAmount
-                          ? ''
-                          : formatNumberForSheet(parsedAmount)
-                      )
-                    }
-                    className="text-[11px] text-amber-700 hover:underline font-medium"
-                  >
-                    {parsedBeCorp === parsedAmount ? 'Xóa' : '= Amount'}
-                  </button>
-                )}
-              </div>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="Để trống nếu không"
-                value={beCorpStr}
-                onChange={(e) => setBeCorpStr(formatNumericInput(e.target.value))}
-                className="w-full px-3 py-2 text-sm font-mono-tabular border border-slate-300 rounded-lg focus:outline-none focus:border-amber-600"
-              />
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-semibold text-indigo-800">
-                  6. Credit (Cột F)
-                </label>
-                {parsedAmount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setCreditStr(
-                        parsedCredit === parsedAmount
-                          ? ''
-                          : formatNumberForSheet(parsedAmount)
-                      )
-                    }
-                    className="text-[11px] text-indigo-700 hover:underline font-medium"
-                  >
-                    {parsedCredit === parsedAmount ? 'Xóa' : '= Amount'}
-                  </button>
-                )}
-              </div>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="Để trống nếu không"
-                value={creditStr}
-                onChange={(e) => setCreditStr(formatNumericInput(e.target.value))}
-                className="w-full px-3 py-2 text-sm font-mono-tabular border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600"
-              />
-            </div>
-          </div>
-
-          {/* Optional Column G Note */}
+          {/* Row 4: Ghi chú */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Ghi chú mở rộng (Cột G - không bắt buộc)
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Ghi chú thêm (không bắt buộc)
             </label>
             <input
               type="text"
-              placeholder="VD: Chị Sơn 40k, Thảo 50k, có phí ship..."
+              placeholder="VD: Mua chung với bạn, tiền thưởng dự án..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full px-3 py-1.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-teal-600"
+              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-teal-600"
             />
           </div>
 
-          {/* Exact Row Preview to guarantee column fidelity */}
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-            <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1.5">
-              <span>Xem trước dòng sẽ ghi nối vào cuối bảng {sheetType}:</span>
-              <span className="font-mono-tabular">
-                {isSheetConnected ? 'Đồng bộ trực tiếp Google Sheet' : 'Lưu bộ nhớ đệm & chờ đồng bộ'}
-              </span>
-            </div>
-            <div className="grid grid-cols-6 gap-2 text-xs font-mono-tabular bg-white border border-slate-200 rounded p-2 overflow-x-auto">
-              <div>
-                <div className="text-[10px] text-slate-400 font-sans">Purchase Date</div>
-                <div className="text-slate-900 truncate">{sheetDatePreview}</div>
-              </div>
-              <div>
-                <div className="text-[10px] text-slate-400 font-sans">Category</div>
-                <div className="text-slate-900 truncate font-sans">{finalCategory}</div>
-              </div>
-              <div>
-                <div className="text-[10px] text-slate-400 font-sans">Purchase Item</div>
-                <div className="text-slate-900 truncate font-sans">
-                  {purchaseItem || '—'}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] text-slate-400 font-sans">Amount</div>
-                <div className="text-slate-900 font-semibold">
-                  {formatNumberForSheet(parsedAmount, true)}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] text-amber-700 font-sans">BE Corp</div>
-                <div className="text-amber-800">
-                  {parsedBeCorp !== 0 ? formatNumberForSheet(parsedBeCorp) : '—'}
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-[10px] text-indigo-700 font-sans">Credit</div>
-                <div className="text-indigo-800">
-                  {parsedCredit !== 0 ? formatNumberForSheet(parsedCredit) : '—'}
-                </div>
-              </div>
-            </div>
-          </div>
-
           {errorMsg && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700">
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700 font-medium">
               {errorMsg}
             </div>
           )}
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
@@ -565,13 +463,17 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 disabled:opacity-50 rounded-lg transition-colors flex items-center gap-2"
+              className={`px-5 py-2 text-xs font-semibold text-white disabled:opacity-50 rounded-lg transition-colors flex items-center gap-2 shadow-xs ${
+                sheetType === 'Expenses'
+                  ? 'bg-rose-700 hover:bg-rose-800'
+                  : 'bg-emerald-700 hover:bg-emerald-800'
+              }`}
             >
               <Check className="w-4 h-4" />
               <span>
                 {isSubmitting
                   ? 'Đang ghi vào Sheet...'
-                  : `Lưu dòng mới vào ${sheetType}`}
+                  : `Lưu vào ${sheetType === 'Expenses' ? 'Chi tiêu' : 'Thu nhập'}`}
               </span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
