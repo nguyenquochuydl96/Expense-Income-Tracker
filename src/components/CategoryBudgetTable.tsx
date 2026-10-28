@@ -134,13 +134,36 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
 
   // Compute multi-month rollover chain for all months and all categories
   const multiMonthRolloverData = useMemo(() => {
-    // 1. Calculate monthly incomes
-    const monthlyIncomes: Record<string, number> = {};
+    // 1. Calculate monthly incomes: separated into general income and dedicated category income
+    const generalMonthlyIncomes: Record<string, number> = {};
+    const dedicatedMonthlyIncomes: Record<string, Record<string, number>> = {};
+    const totalMonthlyIncomes: Record<string, number> = {};
+    const expenseCatSet = new Set<string>(EXPENSE_CATEGORIES);
+
     for (const mKey of allChronologicalMonths) {
-      const inc = allRecords
-        .filter((r) => r.sheetType === 'Income' && r.monthKey === mKey)
-        .reduce((sum, r) => sum + r.amount, 0);
-      monthlyIncomes[mKey] = inc;
+      dedicatedMonthlyIncomes[mKey] = {};
+      let genSum = 0;
+      let totSum = 0;
+
+      const monthIncomes = allRecords.filter(
+        (r) => r.sheetType === 'Income' && r.monthKey === mKey
+      );
+
+      for (const r of monthIncomes) {
+        totSum += r.amount;
+        const trimmedCat = (r.category || '').trim();
+        if (expenseCatSet.has(trimmedCat)) {
+          // Dedicated to a specific expense category!
+          dedicatedMonthlyIncomes[mKey][trimmedCat] =
+            (dedicatedMonthlyIncomes[mKey][trimmedCat] || 0) + r.amount;
+        } else {
+          // General income to be distributed by %
+          genSum += r.amount;
+        }
+      }
+
+      generalMonthlyIncomes[mKey] = genSum;
+      totalMonthlyIncomes[mKey] = totSum;
     }
 
     // 2. Calculate monthly expenses per category
@@ -168,6 +191,8 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
         string,
         {
           baseBudget: number;
+          baseFromGeneral: number;
+          dedicatedIncome: number;
           carryover: number;
           effectiveBudget: number;
           spent: number;
@@ -183,7 +208,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
 
       for (let i = 0; i < allChronologicalMonths.length; i++) {
         const mKey = allChronologicalMonths[i];
-        const mIncome = monthlyIncomes[mKey] || 0;
+        const mGeneralIncome = generalMonthlyIncomes[mKey] || 0;
+        const dedicatedForCat = dedicatedMonthlyIncomes[mKey]?.[cat] || 0;
+
         const defaultPct =
           mKey <= '2026-07'
             ? (DEFAULT_CATEGORY_PERCENTAGES_T4_T7[cat] ?? 0)
@@ -195,7 +222,10 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
           // ignore
         }
         const pct = hasCustom ? (percentages[cat] ?? defaultPct) : defaultPct;
-        const baseBudget = Math.round((mIncome * pct) / 100);
+
+        // Base budget = (General Income * %) + Dedicated Category Income
+        const baseFromGeneral = Math.round((mGeneralIncome * pct) / 100);
+        const baseBudget = baseFromGeneral + dedicatedForCat;
 
         let carryover = 0;
         if (rolloverMode === 'full') {
@@ -213,6 +243,8 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
 
         chain[cat][mKey] = {
           baseBudget,
+          baseFromGeneral,
+          dedicatedIncome: dedicatedForCat,
           carryover,
           effectiveBudget,
           spent,
@@ -226,7 +258,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
 
     return {
       chain,
-      monthlyIncomes,
+      monthlyIncomes: totalMonthlyIncomes,
+      generalMonthlyIncomes,
+      dedicatedMonthlyIncomes,
       monthlyCategoryExpenses,
     };
   }, [allChronologicalMonths, allRecords, allCategories, percentages, rolloverMode]);
@@ -263,6 +297,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
       const mData = targetMonth ? multiMonthRolloverData.chain[cat]?.[targetMonth] : undefined;
 
       const baseBudget = mData?.baseBudget ?? Math.round((totalIncome * pct) / 100);
+      const dedicatedIncome = mData?.dedicatedIncome ?? 0;
       const carryover = mData?.carryover ?? 0;
       const effectiveBudget = mData?.effectiveBudget ?? baseBudget;
       const spent = mData?.spent ?? 0;
@@ -275,6 +310,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
         category: cat,
         percentage: pct,
         baseBudget,
+        dedicatedIncome,
         carryover,
         effectiveBudget,
         spent,
@@ -288,6 +324,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
     items.sort((a, b) => b.spent - a.spent);
 
     const totalBaseBudget = items.reduce((s, i) => s + i.baseBudget, 0);
+    const totalDedicatedIncome = items.reduce((s, i) => s + (i.dedicatedIncome || 0), 0);
     const totalCarryover = items.reduce((s, i) => s + i.carryover, 0);
     const totalEffectiveBudget = items.reduce((s, i) => s + i.effectiveBudget, 0);
     const totalSpent = items.reduce((s, i) => s + i.spent, 0);
@@ -297,6 +334,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
     return {
       items,
       totalBaseBudget,
+      totalDedicatedIncome,
       totalCarryover,
       totalEffectiveBudget,
       totalSpent,
@@ -627,9 +665,14 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                       )}
                     </td>
 
-                    {/* Định mức tháng (Base Budget = Income * %) */}
-                    <td className="py-2.5 px-3 text-right text-slate-600">
-                      {formatCurrency(item.baseBudget)}
+                    {/* Định mức tháng (Base Budget = Income * % + Dedicated) */}
+                    <td className="py-2.5 px-3 text-right">
+                      <div className="font-semibold text-slate-700">{formatCurrency(item.baseBudget)}</div>
+                      {item.dedicatedIncome > 0 && (
+                        <div className="text-[10px] text-teal-700 font-medium whitespace-nowrap" title={`Bao gồm +${formatCurrency(item.dedicatedIncome)} thu nhập dành riêng`}>
+                          (+{formatCurrency(item.dedicatedIncome)} thu riêng)
+                        </div>
+                      )}
                     </td>
 
                     {/* Lũy kế tháng trước chuyển sang (Carryover) */}
