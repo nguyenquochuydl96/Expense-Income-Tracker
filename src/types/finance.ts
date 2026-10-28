@@ -78,13 +78,15 @@ export const EXPENSE_CATEGORIES = [
 ] as const;
 
 export const INCOME_CATEGORIES = [
+  'Lương Yes4All',
+  'Lương BE',
+  'Công đoàn Yes4All',
+  'Công đoàn BE',
+  'Chứng khoán',
+  'Bán hàng',
   'Lương Heo',
   'Lương Mèo',
-  'Thưởng / Dự án',
-  'Trợ cấp BE Corp',
-  'Hoàn tiền / Bán đồ',
-  'Lãi tiết kiệm / Đầu tư',
-  'Quà tặng / Thu khác',
+  'Khác',
 ] as const;
 
 export const CATEGORY_COLORS: Record<string, string> = {

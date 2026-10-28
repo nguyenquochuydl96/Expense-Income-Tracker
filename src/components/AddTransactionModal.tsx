@@ -75,7 +75,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         setIsoDate(initialPreset.isoDate || '2026-10-25');
         setCategory(
           initialPreset.category ||
-            (targetSheet === 'Expenses' ? 'Khác' : 'Lương Heo')
+            (targetSheet === 'Expenses' ? 'Khác' : 'Lương Yes4All')
         );
         setPurchaseItem(initialPreset.purchaseItem || '');
         setAmountStr(
@@ -112,7 +112,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       setCreditStr('');
     } else {
       setSheetType(mode);
-      setCategory(mode === 'Expenses' ? 'Ăn uống' : 'Lương Heo');
+      setCategory(mode === 'Expenses' ? 'Ăn uống' : 'Lương Yes4All');
       setCustomCategory('');
       if (mode === 'Income') {
         setBeCorpStr('');
