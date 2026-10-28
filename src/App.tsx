@@ -14,7 +14,6 @@ import {
 import { User } from 'firebase/auth';
 import {
   CheckTienSheetData,
-  RealWorldAccount,
   TransactionRecord,
 } from './types/finance';
 import {
@@ -61,82 +60,13 @@ type ActiveTab = 'dashboard' | 'ledger' | 'reconcile' | 'sync';
 
 const LOCAL_NEW_ROWS_KEY = 'heomeo_local_new_rows_v1';
 const SAVED_SHEET_URL_KEY = 'heomeo_spreadsheet_url_v1';
-const SAVED_ACCOUNTS_KEY = 'heomeo_real_accounts_v1';
 const SAVED_BASE_INCOME_KEY = 'heomeo_base_income_v1';
 const SAVED_SHEET_RECORDS_KEY = 'heomeo_cached_sheet_records_v1';
 const SAVED_SHEET_META_KEY = 'heomeo_cached_sheet_meta_v1';
 const SAVED_CHECK_TIEN_KEY = 'heomeo_cached_check_tien_v1';
 const SAVED_LAST_SYNCED_KEY = 'heomeo_last_synced_at_v1';
 
-const DEFAULT_ACCOUNTS: RealWorldAccount[] = [
-  // Heo 🐷
-  {
-    id: 'acc-heo-cash',
-    name: 'Tiền mặt Heo',
-    owner: 'Heo',
-    type: 'cash',
-    balance: 1450000,
-    includedInReconcile: true,
-  },
-  {
-    id: 'acc-heo-bank',
-    name: 'Thẻ / Ngân hàng Heo (Techcombank / Vietin)',
-    owner: 'Heo',
-    type: 'bank',
-    balance: 8500000,
-    includedInReconcile: true,
-  },
-  {
-    id: 'acc-heo-ewallet',
-    name: 'Ví điện tử Heo (Momo / ZaloPay)',
-    owner: 'Heo',
-    type: 'ewallet',
-    balance: 500000,
-    includedInReconcile: true,
-  },
-  {
-    id: 'acc-heo-receivable',
-    name: 'Đang cho vay / Chờ chuyển trả Heo',
-    owner: 'Heo',
-    type: 'receivable',
-    balance: 350000,
-    includedInReconcile: true,
-  },
 
-  // Mèo 🐱
-  {
-    id: 'acc-meo-cash',
-    name: 'Tiền mặt Mèo',
-    owner: 'Mèo',
-    type: 'cash',
-    balance: 1850000,
-    includedInReconcile: true,
-  },
-  {
-    id: 'acc-meo-bank',
-    name: 'Thẻ / Ngân hàng Mèo',
-    owner: 'Mèo',
-    type: 'bank',
-    balance: 4000000,
-    includedInReconcile: true,
-  },
-  {
-    id: 'acc-meo-ewallet',
-    name: 'Ví điện tử Mèo (Momo / ShopeePay)',
-    owner: 'Mèo',
-    type: 'ewallet',
-    balance: 300000,
-    includedInReconcile: true,
-  },
-  {
-    id: 'acc-meo-receivable',
-    name: 'Đang cho vay / Chờ chuyển trả Mèo',
-    owner: 'Mèo',
-    type: 'receivable',
-    balance: 307000,
-    includedInReconcile: true,
-  },
-];
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
@@ -211,16 +141,6 @@ export default function App() {
     return localStorage.getItem(SAVED_LAST_SYNCED_KEY) || null;
   });
 
-  // Real-world accounts for "Check tiền" reconciliation
-  const [accounts, setAccounts] = useState<RealWorldAccount[]>(() => {
-    try {
-      const saved = localStorage.getItem(SAVED_ACCOUNTS_KEY);
-      return saved ? JSON.parse(saved) : DEFAULT_ACCOUNTS;
-    } catch {
-      return DEFAULT_ACCOUNTS;
-    }
-  });
-
   const [monthlyBaseIncome, setMonthlyBaseIncome] = useState<number>(() => {
     try {
       const saved = localStorage.getItem(SAVED_BASE_INCOME_KEY);
@@ -238,14 +158,6 @@ export default function App() {
       // ignore storage errors
     }
   }, [localNewRecords]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(accounts));
-    } catch {
-      // ignore
-    }
-  }, [accounts]);
 
   useEffect(() => {
     try {
@@ -1409,10 +1321,6 @@ export default function App() {
                   setAddModalPreset(preset);
                   setIsAddModalOpen(true);
                 }}
-                accounts={accounts}
-                onUpdateAccounts={setAccounts}
-                openingOrBaseIncome={monthlyBaseIncome}
-                onUpdateOpeningOrBaseIncome={setMonthlyBaseIncome}
               />
             )}
 
