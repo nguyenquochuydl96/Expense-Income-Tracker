@@ -304,9 +304,8 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
       .sort((a, b) => b.isoDate.localeCompare(a.isoDate) || ((b.rowIndex || 0) - (a.rowIndex || 0)));
 
     const totalCredit = items.reduce((sum, r) => sum + r.credit, 0);
-    const totalPersonalAmount = items.reduce((sum, r) => sum + r.amount, 0);
-    const diffPaidForOthers = totalCredit - totalPersonalAmount;
-    return { items, totalCredit, totalPersonalAmount, diffPaidForOthers };
+    const avgPerTransaction = items.length > 0 ? Math.round(totalCredit / items.length) : 0;
+    return { items, totalCredit, avgPerTransaction };
   }, [allRecords, creditStartDate, creditEndDate]);
 
   // Record discrepancy to sheet
@@ -1170,35 +1169,25 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
             </div>
           </div>
 
-          {/* 3 KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* KPI Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
-              <div className="text-xs text-indigo-800 font-medium">Tổng tiền quẹt cột Credit</div>
-              <div className="text-xl font-extrabold font-mono-tabular text-indigo-950 mt-2">
+              <div className="text-xs text-indigo-800 font-medium">Tổng tiền cần thanh toán sao kê Credit</div>
+              <div className="text-2xl font-extrabold font-mono-tabular text-indigo-950 mt-2">
                 {formatCurrency(creditCycleStats.totalCredit)}
               </div>
               <div className="text-[11px] text-indigo-700 mt-2 font-medium">
-                {creditCycleStats.items.length} giao dịch trong kỳ sao kê
+                Tổng phát sinh quẹt thẻ tín dụng cần thanh toán trong chu kỳ ({creditStartDate} → {creditEndDate})
               </div>
             </div>
 
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl">
-              <div className="text-xs text-slate-600 font-medium">Chi tiêu bản thân (Amount)</div>
-              <div className="text-xl font-extrabold font-mono-tabular text-slate-900 mt-2">
-                {formatCurrency(creditCycleStats.totalPersonalAmount)}
+              <div className="text-xs text-slate-600 font-medium">Số lượng giao dịch quẹt thẻ</div>
+              <div className="text-2xl font-extrabold font-mono-tabular text-slate-900 mt-2">
+                {creditCycleStats.items.length} <span className="text-sm font-normal text-slate-500">giao dịch</span>
               </div>
               <div className="text-[11px] text-slate-500 mt-2">
-                Đã tính vào ngân sách chi tiêu
-              </div>
-            </div>
-
-            <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl">
-              <div className="text-xs text-teal-800 font-medium">Quẹt hộ / Chờ thu hồi (Credit − Amount)</div>
-              <div className="text-xl font-extrabold font-mono-tabular text-teal-950 mt-2">
-                {formatCurrency(creditCycleStats.diffPaidForOthers, true)}
-              </div>
-              <div className="text-[11px] text-teal-700 mt-2 font-medium">
-                Khoản bạn bè / người thân gửi lại
+                Trung bình ~{formatCurrency(creditCycleStats.avgPerTransaction)} / giao dịch
               </div>
             </div>
           </div>
