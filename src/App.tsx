@@ -79,11 +79,14 @@ export default function App() {
       const saved = localStorage.getItem(SAVED_SHEET_RECORDS_KEY);
       if (!saved) return null;
       const parsed: TransactionRecord[] = JSON.parse(saved);
-      // Self-heal: purge cache if corrupted with 0-amount salaries from old parser
+      // Self-heal: purge cache if corrupted with 0-amount salaries from old parser or missing Luong BE in Oct 2026
       const invalidIncome = parsed.some(
         (r) => r.sheetType === 'Income' && (r.category?.includes('Lương') || r.category?.includes('Thu')) && r.amount === 0
       );
-      if (invalidIncome) {
+      const missingLuongBe = !parsed.some(
+        (r) => r.sheetType === 'Income' && r.monthKey === '2026-10' && (r.category?.includes('BE') || r.purchaseItem?.includes('Mèo'))
+      );
+      if (invalidIncome || missingLuongBe) {
         localStorage.removeItem(SAVED_SHEET_RECORDS_KEY);
         return null;
       }

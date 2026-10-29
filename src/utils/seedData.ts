@@ -362,7 +362,7 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     "isoDate": "2026-10-01",
     "monthKey": "2026-10",
     "category": "Lương Yes4All",
-    "purchaseItem": "Lương Yes4All",
+    "purchaseItem": "Lương Heo",
     "amount": 31087000,
     "beCorp": 0,
     "credit": 0,
@@ -371,6 +371,20 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
   },
   {
     "id": "seed-income-27",
+    "sheetType": "Income",
+    "purchaseDate": "10/1/2026",
+    "isoDate": "2026-10-01",
+    "monthKey": "2026-10",
+    "category": "Lương BE",
+    "purchaseItem": "Lương Mèo",
+    "amount": 22740000,
+    "beCorp": 0,
+    "credit": 0,
+    "source": "attached_csv",
+    "syncedToSheet": true
+  },
+  {
+    "id": "seed-income-28",
     "sheetType": "Income",
     "purchaseDate": "5/27/2026",
     "isoDate": "2026-05-27",
@@ -384,7 +398,7 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     "syncedToSheet": true
   },
   {
-    "id": "seed-income-28",
+    "id": "seed-income-29",
     "sheetType": "Income",
     "purchaseDate": "6/24/2026",
     "isoDate": "2026-06-24",
@@ -398,7 +412,7 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     "syncedToSheet": true
   },
   {
-    "id": "seed-income-29",
+    "id": "seed-income-30",
     "sheetType": "Income",
     "purchaseDate": "7/17/2026",
     "isoDate": "2026-07-17",
@@ -412,7 +426,7 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     "syncedToSheet": true
   },
   {
-    "id": "seed-income-30",
+    "id": "seed-income-31",
     "sheetType": "Income",
     "purchaseDate": "8/10/2026",
     "isoDate": "2026-08-10",
@@ -426,7 +440,7 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     "syncedToSheet": true
   },
   {
-    "id": "seed-income-31",
+    "id": "seed-income-32",
     "sheetType": "Income",
     "purchaseDate": "9/11/2026",
     "isoDate": "2026-09-11",
@@ -440,7 +454,7 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     "syncedToSheet": true
   },
   {
-    "id": "seed-income-32",
+    "id": "seed-income-33",
     "sheetType": "Income",
     "purchaseDate": "9/22/2026",
     "isoDate": "2026-09-22",
@@ -454,7 +468,7 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     "syncedToSheet": true
   },
   {
-    "id": "seed-income-33",
+    "id": "seed-income-34",
     "sheetType": "Income",
     "purchaseDate": "10/20/2026",
     "isoDate": "2026-10-20",
@@ -468,7 +482,7 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     "syncedToSheet": true
   },
   {
-    "id": "seed-income-34",
+    "id": "seed-income-35",
     "sheetType": "Income",
     "purchaseDate": "10/21/2026",
     "isoDate": "2026-10-21",
