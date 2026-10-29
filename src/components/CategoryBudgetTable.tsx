@@ -157,15 +157,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
 
       for (const r of monthIncomes) {
         totSum += r.amount;
-        const trimmedCat = (r.category || '').trim();
-        if (expenseCatSet.has(trimmedCat)) {
-          // Dedicated to a specific expense category!
-          dedicatedMonthlyIncomes[mKey][trimmedCat] =
-            (dedicatedMonthlyIncomes[mKey][trimmedCat] || 0) + r.amount;
-        } else {
-          // General income to be distributed by %
-          genSum += r.amount;
-        }
+        // In Google Sheet Monthly Overview (Section 2), all rows in Income tab are allocated by category %
+        // Dedicated top-ups/transfers are handled via 'Budget Transfers' tab
+        genSum += r.amount;
       }
 
       generalMonthlyIncomes[mKey] = genSum;
