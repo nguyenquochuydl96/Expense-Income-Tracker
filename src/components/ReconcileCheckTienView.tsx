@@ -18,7 +18,7 @@ import {
   TrendingUp,
   RefreshCw,
 } from 'lucide-react';
-import { TransactionRecord } from '../types/finance';
+import { CheckTienSheetData, TransactionRecord } from '../types/finance';
 import {
   formatCurrency,
   formatNumberForSheet,
@@ -27,7 +27,6 @@ import {
 } from '../utils/csvParser';
 import { getBillingCycleRange } from '../utils/cycleUtils';
 import { NewTransactionPayload } from './AddTransactionModal';
-import { CheckTienSheetData } from '../services/googleSheetsService';
 
 export interface WalletCategory {
   cash: number;       // Tiền mặt
@@ -123,9 +122,9 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
   useEffect(() => {
     if (checkTienData && checkTienData.formattedRows && checkTienData.formattedRows.length >= 3) {
       const rows = checkTienData.formattedRows;
-      const heoRow = rows.find((r) => (r[1] || '').trim().toLowerCase() === 'heo');
+      const heoRow = rows.find((r: string[]) => (r[1] || '').trim().toLowerCase() === 'heo');
       const meoRow = rows.find(
-        (r) =>
+        (r: string[]) =>
           (r[1] || '').trim().toLowerCase() === 'mèo' ||
           (r[1] || '').trim().toLowerCase() === 'meo'
       );

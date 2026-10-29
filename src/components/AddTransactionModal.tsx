@@ -64,11 +64,11 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     if (isOpen) {
       setErrorMsg(null);
       if (initialPreset) {
+        const targetSheet = initialPreset.sheetType || 'Expenses';
         if (initialPreset.note === 'TRANSFER_MODE') {
           setModalMode('Transfer');
           setSheetType('Expenses');
         } else {
-          const targetSheet = initialPreset.sheetType || 'Expenses';
           setModalMode(targetSheet === 'Income' ? 'Income' : 'Expenses');
           setSheetType(targetSheet);
         }

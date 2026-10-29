@@ -27,6 +27,7 @@ import {
 } from './utils/csvParser';
 import {
   getBillingCycleRange,
+  isBudgetTransferRecord,
 } from './utils/cycleUtils';
 import { SEED_INCOME_RECORDS } from './utils/seedData';
 import {
@@ -1366,9 +1367,6 @@ export default function App() {
                   setAddModalPreset(null);
                   setIsAddModalOpen(true);
                 }}
-                isLiveSync={Boolean(sheetRecords && sheetRecords.length > 0 && accessToken)}
-                isSyncing={isSyncing}
-                onSyncClick={() => handleConnectAndSyncSheet(sheetMeta?.spreadsheetId || spreadsheetInput)}
               />
             )}
 
