@@ -3,6 +3,7 @@ import { TransactionRecord, EXPENSE_CATEGORIES, BudgetTransferRecord } from '../
 import { isBudgetTransferRecord } from '../utils/cycleUtils';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { CategoryBadge } from '../utils/categoryIcons';
+import { DailyLivingRunwayWidget } from './DailyLivingRunwayWidget';
 import {
   ArrowLeftRight,
   SlidersHorizontal,
@@ -661,7 +662,16 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
 
       {/* VIEW TAB 1: CHI TIẾT THÁNG (KÈM CẤN TRỪ LŨY KẾ) */}
       {viewTab === 'month_detail' && (
-        <div className="overflow-x-auto -mx-5 px-5">
+        <>
+          {/* Smart Living Runway Forecast Widget */}
+          <DailyLivingRunwayWidget
+            selectedMonth={selectedMonth}
+            items={currentViewStats.items}
+            onSelectCategory={onSelectCategory}
+            selectedCategory={selectedCategory}
+          />
+
+          <div className="overflow-x-auto -mx-5 px-5">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-100/90 text-xs font-bold text-slate-700">
@@ -1007,6 +1017,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
             </div>
           )}
         </div>
+        </>
       )}
 
       {/* VIEW TAB 2: MA TRẬN LŨY KẾ ĐA THÁNG (CẤN TRỪ LIÊN TỤC QUA CÁC THÁNG) */}
