@@ -6,10 +6,30 @@ import { ItemSuggestion, TransactionRecord } from '../types/finance';
 export function parseSheetNumber(raw: string | number | undefined | null): number {
   if (raw === undefined || raw === null || raw === '') return 0;
   if (typeof raw === 'number') return Number.isFinite(raw) ? raw : 0;
-  const cleaned = raw.toString().replace(/,/g, '').replace(/\s+/g, '').replace(/₫|đ|VND/gi, '');
+
+  const str = raw.toString().trim();
+  if (!str) return 0;
+
+  let isNegative = false;
+  if (str.includes('-')) {
+    isNegative = true;
+  }
+  if (/^\(?\s*[$₫đ]?\s*\([^)]+\)\s*\)?$/.test(str) || /^\([^)]+\)$/.test(str)) {
+    isNegative = true;
+  }
+
+  const cleaned = str
+    .replace(/,/g, '')
+    .replace(/\s+/g, '')
+    .replace(/[$₫đ]/g, '')
+    .replace(/VND/gi, '')
+    .replace(/[()]/g, '')
+    .replace(/-/g, '');
+
   if (!cleaned) return 0;
   const parsed = Number(cleaned);
-  return Number.isFinite(parsed) ? parsed : 0;
+  if (!Number.isFinite(parsed)) return 0;
+  return isNegative ? -parsed : parsed;
 }
 
 /**

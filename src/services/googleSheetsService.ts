@@ -185,7 +185,7 @@ export async function fetchTabTransactions(
     const beCorp = parseSheetNumber(rawBeCorp);
     const credit = parseSheetNumber(rawCredit);
 
-    if (!rawItem && amount === 0 && beCorp === 0 && credit === 0 && !rawNote) {
+    if (!rawItem && amount === 0 && beCorp === 0 && credit === 0 && !rawNote && !rawCategory) {
       continue;
     }
 

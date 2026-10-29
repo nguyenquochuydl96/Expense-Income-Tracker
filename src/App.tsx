@@ -77,7 +77,17 @@ export default function App() {
   const [sheetRecords, setSheetRecords] = useState<TransactionRecord[] | null>(() => {
     try {
       const saved = localStorage.getItem(SAVED_SHEET_RECORDS_KEY);
-      return saved ? JSON.parse(saved) : null;
+      if (!saved) return null;
+      const parsed: TransactionRecord[] = JSON.parse(saved);
+      // Self-heal: purge cache if corrupted with 0-amount salaries from old parser
+      const invalidIncome = parsed.some(
+        (r) => r.sheetType === 'Income' && (r.category?.includes('Lương') || r.category?.includes('Thu')) && r.amount === 0
+      );
+      if (invalidIncome) {
+        localStorage.removeItem(SAVED_SHEET_RECORDS_KEY);
+        return null;
+      }
+      return parsed;
     } catch {
       return null;
     }
