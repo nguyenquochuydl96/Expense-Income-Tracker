@@ -1,4 +1,4 @@
-import { TransactionRecord } from '../types/finance';
+import { TransactionRecord, BudgetTransferRecord } from '../types/finance';
 
 /**
  * Seed Income records synced 100% to the user's actual Google Sheet "Income" tab.
@@ -382,5 +382,117 @@ export const SEED_INCOME_RECORDS: TransactionRecord[] = [
     "credit": 0,
     "source": "attached_csv",
     "syncedToSheet": true
+  }
+];
+
+/**
+ * Seed Budget Transfer records matching Google Sheet tab "Budget Transfers".
+ * Dynamically updates Allocated Budget in Monthly Overview (Section 2)
+ * without negative expense rows or distorting Income.
+ */
+export const SEED_BUDGET_TRANSFERS: BudgetTransferRecord[] = [
+  {
+    id: "seed-bt-1",
+    rowIndex: 2,
+    date: "5/27/2026",
+    isoDate: "2026-05-27",
+    monthKey: "2026-05",
+    fromCategory: "Thu nhập riêng",
+    toCategory: "Giải trí Mèo",
+    amount: 2300000,
+    description: "Bán Nyota",
+    source: "seed",
+    syncedToSheet: true
+  },
+  {
+    id: "seed-bt-2",
+    rowIndex: 3,
+    date: "6/24/2026",
+    isoDate: "2026-06-24",
+    monthKey: "2026-06",
+    fromCategory: "Thu nhập riêng",
+    toCategory: "Giải trí Mèo",
+    amount: 500000,
+    description: "Anh DA cho",
+    source: "seed",
+    syncedToSheet: true
+  },
+  {
+    id: "seed-bt-3",
+    rowIndex: 4,
+    date: "7/17/2026",
+    isoDate: "2026-07-17",
+    monthKey: "2026-07",
+    fromCategory: "Thu nhập riêng",
+    toCategory: "Giải trí Heo",
+    amount: 4000000,
+    description: "Bán PS4",
+    source: "seed",
+    syncedToSheet: true
+  },
+  {
+    id: "seed-bt-4",
+    rowIndex: 5,
+    date: "8/10/2026",
+    isoDate: "2026-08-10",
+    monthKey: "2026-08",
+    fromCategory: "Thu nhập riêng",
+    toCategory: "Thuê nhà",
+    amount: 4598000,
+    description: "Hoàn cọc nhà cũ",
+    source: "seed",
+    syncedToSheet: true
+  },
+  {
+    id: "seed-bt-5",
+    rowIndex: 6,
+    date: "9/11/2026",
+    isoDate: "2026-09-11",
+    monthKey: "2026-09",
+    fromCategory: "Thu nhập riêng",
+    toCategory: "Giải trí Heo",
+    amount: 4100000,
+    description: "Bán Rising Sun",
+    source: "seed",
+    syncedToSheet: true
+  },
+  {
+    id: "seed-bt-6",
+    rowIndex: 7,
+    date: "9/22/2026",
+    isoDate: "2026-09-22",
+    monthKey: "2026-09",
+    fromCategory: "Thu nhập riêng",
+    toCategory: "Ăn uống",
+    amount: 500000,
+    description: "Công đoàn Yes4All",
+    source: "seed",
+    syncedToSheet: true
+  },
+  {
+    id: "seed-bt-7",
+    rowIndex: 8,
+    date: "10/20/2026",
+    isoDate: "2026-10-20",
+    monthKey: "2026-10",
+    fromCategory: "Thu nhập riêng",
+    toCategory: "Giải trí Mèo",
+    amount: 300000,
+    description: "20/10 Be",
+    source: "seed",
+    syncedToSheet: true
+  },
+  {
+    id: "seed-bt-8",
+    rowIndex: 9,
+    date: "10/21/2026",
+    isoDate: "2026-10-21",
+    monthKey: "2026-10",
+    fromCategory: "Thu nhập riêng",
+    toCategory: "Giải trí Heo",
+    amount: 3200000,
+    description: "Bán Slay the Spire",
+    source: "seed",
+    syncedToSheet: true
   }
 ];

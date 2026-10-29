@@ -29,6 +29,14 @@ interface AddTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (payload: NewTransactionPayload | NewTransactionPayload[]) => Promise<void>;
+  onSaveTransfer?: (transfer: {
+    date: string;
+    fromCategory: string;
+    toCategory: string;
+    amount: number;
+    description: string;
+    isoDate: string;
+  }) => Promise<void>;
   suggestions: ItemSuggestion[];
   isSheetConnected: boolean;
   initialPreset?: Partial<NewTransactionPayload> | null;
@@ -42,6 +50,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   suggestions,
   isSheetConnected,
   initialPreset,
+  onSaveTransfer,
 }) => {
   type ModalMode = 'Expenses' | 'Income' | 'Transfer';
   const [modalMode, setModalMode] = useState<ModalMode>('Expenses');
@@ -206,7 +215,18 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           note: transferNote ? `Transfer: ${transferNote}` : 'Transfer Budget',
         };
 
-        await onSave([payloadFrom, payloadTo]);
+        if (onSaveTransfer) {
+          await onSaveTransfer({
+            date: sheetDatePreview,
+            fromCategory,
+            toCategory,
+            amount: parsedAmount,
+            description: transferNote,
+            isoDate,
+          });
+        } else {
+          await onSave([payloadFrom, payloadTo]);
+        }
         setAmountStr('');
         setNote('');
         onClose();
@@ -344,11 +364,14 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                     onChange={(e) => setFromCategory(e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-amber-300 rounded-lg bg-amber-50/30 focus:outline-none focus:border-amber-600 font-medium"
                   >
-                    {EXPENSE_CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
+                    <option value="Thu nhập riêng">✨ Thu nhập riêng / Nạp thêm ngoài</option>
+                    <optgroup label="Danh mục chi tiêu">
+                      {EXPENSE_CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </optgroup>
                   </select>
                 </div>
 

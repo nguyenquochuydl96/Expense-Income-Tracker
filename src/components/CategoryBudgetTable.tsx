@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { TransactionRecord, EXPENSE_CATEGORIES } from '../types/finance';
+import { TransactionRecord, EXPENSE_CATEGORIES, BudgetTransferRecord } from '../types/finance';
 import { isBudgetTransferRecord } from '../utils/cycleUtils';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { CategoryBadge } from '../utils/categoryIcons';
@@ -70,6 +70,7 @@ interface CategoryBudgetTableProps {
   onShowCharts?: () => void;
   showChartsButton?: boolean;
   onOpenTransfer?: () => void;
+  budgetTransfers?: BudgetTransferRecord[];
 }
 
 export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
@@ -82,6 +83,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
   onShowCharts,
   showChartsButton = false,
   onOpenTransfer,
+  budgetTransfers = [],
 }) => {
   // Category percentage allocation map
   const [percentages, setPercentages] = useState<Record<string, number>>(() => {
@@ -181,18 +183,37 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
       monthlyTransfersOut[mKey] = {};
     }
 
+    // Process dedicated budgetTransfers (from Google Sheet 'Budget Transfers' tab)
+    if (budgetTransfers && budgetTransfers.length > 0) {
+      for (const bt of budgetTransfers) {
+        if (!bt.monthKey) continue;
+        if (!monthlyTransfersIn[bt.monthKey]) monthlyTransfersIn[bt.monthKey] = {};
+        if (!monthlyTransfersOut[bt.monthKey]) monthlyTransfersOut[bt.monthKey] = {};
+
+        const toCat = (bt.toCategory || '').trim();
+        const fromCat = (bt.fromCategory || '').trim();
+
+        if (toCat && toCat !== 'Thu nhập riêng') {
+          monthlyTransfersIn[bt.monthKey][toCat] =
+            (monthlyTransfersIn[bt.monthKey][toCat] || 0) + bt.amount;
+        }
+        if (fromCat && fromCat !== 'Thu nhập riêng') {
+          monthlyTransfersOut[bt.monthKey][fromCat] =
+            (monthlyTransfersOut[bt.monthKey][fromCat] || 0) + bt.amount;
+        }
+      }
+    }
+
     for (const r of allRecords) {
       if (r.sheetType === 'Expenses' && r.monthKey) {
         const cat = r.category || 'Khác';
 
         if (isBudgetTransferRecord(r)) {
-          // It is a budget transfer between categories!
+          // Legacy transfers in Expenses if any
           if (r.amount > 0) {
-            // Source category: transferring budget out
             monthlyTransfersOut[r.monthKey][cat] =
               (monthlyTransfersOut[r.monthKey][cat] || 0) + r.amount;
           } else if (r.amount < 0) {
-            // Destination category: receiving budget in
             monthlyTransfersIn[r.monthKey][cat] =
               (monthlyTransfersIn[r.monthKey][cat] || 0) + Math.abs(r.amount);
           }
@@ -298,7 +319,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
       dedicatedMonthlyIncomes,
       monthlyCategoryExpenses,
     };
-  }, [allChronologicalMonths, allRecords, allCategories, percentages, rolloverMode]);
+  }, [allChronologicalMonths, allRecords, allCategories, percentages, rolloverMode, budgetTransfers]);
 
   // Previous month key for the selectedMonth
   const prevMonthKey = useMemo(() => {

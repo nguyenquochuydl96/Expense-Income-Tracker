@@ -18,6 +18,21 @@ export interface TransactionRecord {
   syncing?: boolean; // true while background sync is in progress
 }
 
+
+export interface BudgetTransferRecord {
+  id: string;
+  rowIndex?: number;
+  date: string; // M/D/YYYY format
+  isoDate: string; // YYYY-MM-DD
+  monthKey: string; // YYYY-MM
+  fromCategory: string; // e.g. "Thu nhập riêng" or an Expense category
+  toCategory: string; // Target category e.g. "Giải trí Heo"
+  amount: number;
+  description: string;
+  source: 'google_sheet' | 'seed' | 'local_new';
+  syncedToSheet?: boolean;
+}
+
 export interface CheckTienSheetData {
   sheetName: string;
   formattedRows: string[][];

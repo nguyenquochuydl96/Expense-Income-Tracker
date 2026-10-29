@@ -1,4 +1,4 @@
-import { CheckTienSheetData, SheetTabType, TransactionRecord } from '../types/finance';
+import { BudgetTransferRecord, CheckTienSheetData, SheetTabType, TransactionRecord } from '../types/finance';
 import { formatNumberForSheet, parseDateString, parseSheetNumber } from '../utils/csvParser';
 
 export interface SpreadsheetMetadata {
@@ -9,6 +9,7 @@ export interface SpreadsheetMetadata {
   incomeTab: string;
   checkTienTab: string | null;
   summaryTab: string | null;
+  budgetTransfersTab: string | null;
 }
 
 export interface SummarySheetData {
@@ -84,6 +85,7 @@ export async function fetchSpreadsheetMetadata(
     incomeTab,
     checkTienTab: checkTienMatch || null,
     summaryTab: summaryMatch || null,
+    budgetTransfersTab: sheetNames.find((n) => /budget transfer|transfer/i.test(n)) || null,
   };
 }
 
@@ -337,6 +339,110 @@ export async function appendTransactionToSheet(
     range = `'${tabName.replace(/'/g, "''")}'!A:G`;
   }
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      majorDimension: 'ROWS',
+      values: [rowValues],
+    }),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    const msg = errBody?.error?.message || `HTTP ${res.status}`;
+    if (res.status === 401) {
+      throw new Error(`TOKEN_EXPIRED: Token Google OAuth đã hết hạn (${msg})`);
+    }
+    throw new Error(`Không thể ghi dòng mới vào bảng ${tabName}: ${msg}`);
+  }
+}
+
+export async function fetchBudgetTransfersSheet(
+  spreadsheetId: string,
+  tabName: string,
+  accessToken: string
+): Promise<BudgetTransferRecord[]> {
+  const range = `'${tabName.replace(/'/g, "''")}'!A2:F`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
+    spreadsheetId
+  )}/values/${encodeURIComponent(range)}?valueRenderOption=FORMATTED_VALUE`;
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!res.ok) {
+    if (res.status === 404 || res.status === 400) {
+      return [];
+    }
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error(`Không thể đọc bảng ${tabName}: ${errBody?.error?.message || res.status}`);
+  }
+
+  const data = await res.json();
+  const rows: string[][] = data.values || [];
+  const records: BudgetTransferRecord[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const rawDate = row[0]?.trim();
+    const rawFrom = row[1]?.trim() || '';
+    const rawTo = row[2]?.trim() || '';
+    const rawAmount = row[3];
+    const rawDesc = row[4]?.trim() || '';
+
+    if (!rawDate && !rawFrom && !rawTo && !rawAmount) continue;
+
+    const amount = parseSheetNumber(rawAmount);
+    const parsedDate = parseDateString(rawDate);
+
+    records.push({
+      id: `bt-${i + 2}-${rawDate || 'undated'}`,
+      rowIndex: i + 2,
+      date: rawDate,
+      isoDate: parsedDate.isoDate,
+      monthKey: parsedDate.monthKey,
+      fromCategory: rawFrom,
+      toCategory: rawTo,
+      amount,
+      description: rawDesc,
+      source: 'google_sheet',
+      syncedToSheet: true,
+    });
+  }
+
+  return records;
+}
+
+export async function appendBudgetTransferToSheet(
+  spreadsheetId: string,
+  tabName: string,
+  transfer: {
+    date: string;
+    fromCategory: string;
+    toCategory: string;
+    amount: number;
+    description: string;
+  },
+  accessToken: string
+): Promise<void> {
+  const rowValues = [
+    transfer.date,
+    transfer.fromCategory,
+    transfer.toCategory,
+    formatNumberForSheet(transfer.amount, true),
+    transfer.description,
+    '=DATE(YEAR(INDIRECT("A"&ROW())), MONTH(INDIRECT("A"&ROW())), 1)'
+  ];
+  const range = `'${tabName.replace(/'/g, "''")}'!A:F`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
+    spreadsheetId
+  )}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 
   const res = await fetch(url, {
     method: 'POST',

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import {
+  BudgetTransferRecord,
   CheckTienSheetData,
   TransactionRecord,
 } from './types/finance';
@@ -29,14 +30,16 @@ import {
   getBillingCycleRange,
   isBudgetTransferRecord,
 } from './utils/cycleUtils';
-import { SEED_INCOME_RECORDS } from './utils/seedData';
+import { SEED_INCOME_RECORDS, SEED_BUDGET_TRANSFERS } from './utils/seedData';
 import {
   googleSignIn,
   initAuth,
   logout,
 } from './services/firebaseAuth';
 import {
+  appendBudgetTransferToSheet,
   appendTransactionToSheet,
+  fetchBudgetTransfersSheet,
   fetchCheckTienSheet,
   fetchSpreadsheetMetadata,
   fetchTabTransactions,
@@ -68,6 +71,7 @@ const SAVED_SHEET_RECORDS_KEY = 'heomeo_cached_sheet_records_v1';
 const SAVED_SHEET_META_KEY = 'heomeo_cached_sheet_meta_v1';
 const SAVED_CHECK_TIEN_KEY = 'heomeo_cached_check_tien_v1';
 const SAVED_LAST_SYNCED_KEY = 'heomeo_last_synced_at_v1';
+const SAVED_BUDGET_TRANSFERS_KEY = 'heomeo_cached_budget_transfers_v1';
 
 
 
@@ -105,6 +109,19 @@ export default function App() {
     } catch {
       return [];
     }
+  });
+
+  const [budgetTransfers, setBudgetTransfers] = useState<BudgetTransferRecord[]>(() => {
+    try {
+      const saved = localStorage.getItem(SAVED_BUDGET_TRANSFERS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // fallback
+    }
+    return SEED_BUDGET_TRANSFERS;
   });
 
   const [isLoadingInitial, setIsLoadingInitial] = useState<boolean>(true);
@@ -561,17 +578,24 @@ export default function App() {
         if (savedExpensesTab && meta.sheetNames.includes(savedExpensesTab)) {
           meta.expensesTab = savedExpensesTab;
         }
-        const [expensesRows, incomeRows, checkTien] = await Promise.all([
+        const [expensesRows, incomeRows, checkTien, liveTransfers] = await Promise.all([
           fetchTabTransactions(meta.spreadsheetId, meta.expensesTab, 'Expenses', activeToken),
           fetchTabTransactions(meta.spreadsheetId, meta.incomeTab, 'Income', activeToken),
           meta.checkTienTab
             ? fetchCheckTienSheet(meta.spreadsheetId, meta.checkTienTab, activeToken)
             : Promise.resolve(null),
+          meta.budgetTransfersTab
+            ? fetchBudgetTransfersSheet(meta.spreadsheetId, meta.budgetTransfersTab, activeToken)
+            : Promise.resolve([]),
         ]);
 
         setSheetRecords([...expensesRows, ...incomeRows]);
         if (checkTien) {
           setCheckTienData(checkTien);
+        }
+        if (liveTransfers && liveTransfers.length > 0) {
+          setBudgetTransfers(liveTransfers);
+          localStorage.setItem(SAVED_BUDGET_TRANSFERS_KEY, JSON.stringify(liveTransfers));
         }
 
         const nowStr = new Date().toLocaleTimeString('vi-VN', {
@@ -599,17 +623,24 @@ export default function App() {
           setSheetMeta(meta);
           localStorage.setItem(SAVED_SHEET_URL_KEY, targetInput);
 
-          const [expensesRows, incomeRows, checkTien] = await Promise.all([
+          const [expensesRows, incomeRows, checkTien, liveTransfers] = await Promise.all([
             fetchTabTransactions(meta.spreadsheetId, meta.expensesTab, 'Expenses', activeToken),
             fetchTabTransactions(meta.spreadsheetId, meta.incomeTab, 'Income', activeToken),
             meta.checkTienTab
               ? fetchCheckTienSheet(meta.spreadsheetId, meta.checkTienTab, activeToken)
               : Promise.resolve(null),
+            meta.budgetTransfersTab
+              ? fetchBudgetTransfersSheet(meta.spreadsheetId, meta.budgetTransfersTab, activeToken)
+              : Promise.resolve([]),
           ]);
 
           setSheetRecords([...expensesRows, ...incomeRows]);
           if (checkTien) {
             setCheckTienData(checkTien);
+          }
+          if (liveTransfers && liveTransfers.length > 0) {
+            setBudgetTransfers(liveTransfers);
+            localStorage.setItem(SAVED_BUDGET_TRANSFERS_KEY, JSON.stringify(liveTransfers));
           }
 
           const nowStr = new Date().toLocaleTimeString('vi-VN', {
@@ -627,6 +658,59 @@ export default function App() {
       setSyncError(err?.message || 'Không thể đồng bộ dữ liệu từ Google Sheet.');
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleSaveTransfer = async (transfer: {
+    date: string;
+    fromCategory: string;
+    toCategory: string;
+    amount: number;
+    description: string;
+    isoDate: string;
+  }) => {
+    const parts = transfer.date.split('/');
+    const monthKey = parts.length === 3 ? `${parts[2]}-${parts[0].padStart(2, '0')}` : selectedMonth;
+    const newTransfer: BudgetTransferRecord = {
+      id: `local-bt-${Date.now()}`,
+      date: transfer.date,
+      isoDate: transfer.isoDate,
+      monthKey,
+      fromCategory: transfer.fromCategory,
+      toCategory: transfer.toCategory,
+      amount: transfer.amount,
+      description: transfer.description,
+      source: 'local_new',
+      syncedToSheet: false,
+    };
+
+    setBudgetTransfers((prev) => [newTransfer, ...prev]);
+
+    if (accessToken && sheetMeta?.spreadsheetId) {
+      const tabName = sheetMeta.budgetTransfersTab || 'Budget Transfers';
+      try {
+        await appendBudgetTransferToSheet(
+          sheetMeta.spreadsheetId,
+          tabName,
+          {
+            date: transfer.date,
+            fromCategory: transfer.fromCategory,
+            toCategory: transfer.toCategory,
+            amount: transfer.amount,
+            description: transfer.description,
+          },
+          accessToken
+        );
+        setBudgetTransfers((prev) =>
+          prev.map((t) => (t.id === newTransfer.id ? { ...t, syncedToSheet: true } : t))
+        );
+        showToast('success', `Đã chuyển ngân sách thành công vào tab "${tabName}" trên Google Sheet!`);
+      } catch (err: any) {
+        console.error('Failed to append budget transfer to sheet:', err);
+        showToast('warning', `Đã lưu tạm điều chuyển vào máy (Google Sheet: ${err.message})`);
+      }
+    } else {
+      showToast('success', 'Đã lưu điều chuyển ngân sách (offline)!');
     }
   };
 
@@ -1343,6 +1427,7 @@ export default function App() {
                     setAddModalPreset({ note: 'TRANSFER_MODE' });
                     setIsAddModalOpen(true);
                   }}
+                  budgetTransfers={budgetTransfers}
                 />
 
                 {/* ═══════ OPTIONAL: BIỂU ĐỒ BỔ TRỢ (TOP CHI TIÊU & TỶ TRỌNG) KHI BẬT ═══════ */}
@@ -1432,6 +1517,7 @@ export default function App() {
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSave={handleSaveTransaction}
+        onSaveTransfer={handleSaveTransfer}
         suggestions={itemSuggestions}
         isSheetConnected={Boolean(sheetMeta && accessToken)}
         initialPreset={addModalPreset}
