@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   CalendarRange,
   Filter,
+  Bot,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import {
@@ -55,6 +56,7 @@ import {
 } from './components/CategoryBudgetTable';
 import { ReconcileCheckTienView } from './components/ReconcileCheckTienView';
 import { SheetSyncPanel } from './components/SheetSyncPanel';
+import { TelegramBotModal } from './components/TelegramBotModal';
 
 type ActiveTab = 'dashboard' | 'ledger' | 'reconcile' | 'sync';
 
@@ -105,6 +107,7 @@ export default function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [addModalPreset, setAddModalPreset] =
     useState<Partial<NewTransactionPayload> | null>(null);
+  const [isTelegramModalOpen, setIsTelegramModalOpen] = useState<boolean>(false);
 
   // Toast notification
   const [toast, setToast] = useState<{
@@ -955,6 +958,16 @@ export default function App() {
           >
             Google Sheet ({sheetRecords && sheetRecords.length > 0 ? (accessToken ? 'Đã sync' : 'Đã lưu máy') : 'Chưa sync'})
           </button>
+          <button
+            type="button"
+            onClick={() => setIsTelegramModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100 border border-indigo-200/70 transition-all shadow-2xs font-semibold"
+            title="Mở hướng dẫn & cú pháp Telegram Bot Quick-Add"
+          >
+            <Bot className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Bot Telegram</span>
+            <span className="hidden sm:inline-block px-1.5 py-0.2 rounded text-[10px] bg-indigo-200 text-indigo-800 font-bold">Mới</span>
+          </button>
         </nav>
 
         {/* Sync status badge */}
@@ -1409,6 +1422,13 @@ export default function App() {
         isSheetConnected={Boolean(sheetMeta && accessToken)}
         initialPreset={addModalPreset}
         allRecords={allRecords}
+      />
+
+      {/* TELEGRAM BOT QUICK-ADD MODAL */}
+      <TelegramBotModal
+        isOpen={isTelegramModalOpen}
+        onClose={() => setIsTelegramModalOpen(false)}
+        spreadsheetUrl={spreadsheetInput}
       />
     </div>
   );
