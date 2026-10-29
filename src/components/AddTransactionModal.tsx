@@ -422,22 +422,40 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               </div>
 
               {/* Transfer Preview Card */}
-              <div className="p-3 bg-purple-50/60 border border-purple-200 rounded-xl space-y-1.5 text-xs text-purple-900">
+              <div className="p-3.5 bg-purple-50/70 border border-purple-200 rounded-xl space-y-2 text-xs text-purple-950">
                 <div className="font-semibold flex items-center gap-1.5">
                   <ArrowLeftRight className="w-3.5 h-3.5 text-purple-600" />
-                  <span>Tóm tắt điều chuyển:</span>
+                  <span>Tóm tắt điều chuyển (Tab Budget Transfers):</span>
                 </div>
-                <div className="flex items-center justify-between text-amber-800">
-                  <span>🔻 Giảm ngân sách {fromCategory}:</span>
-                  <span className="font-mono-tabular font-bold">-{amountStr ? amountStr + ' ₫' : '0 ₫'}</span>
-                </div>
-                <div className="flex items-center justify-between text-emerald-800">
-                  <span>🔺 Tăng ngân sách {toCategory}:</span>
-                  <span className="font-mono-tabular font-bold">+{amountStr ? amountStr + ' ₫' : '0 ₫'}</span>
-                </div>
-                <div className="text-[11px] text-purple-700 pt-1 border-t border-purple-200/50">
-                  ⚡ Sẽ tự động tạo 2 dòng đối ứng trên Google Sheet (Expenses) và không làm tăng tổng chi tiêu của gia đình.
-                </div>
+                {fromCategory === 'Thu nhập riêng' ? (
+                  <>
+                    <div className="flex items-center justify-between text-teal-800">
+                      <span>✨ Nguồn tiền:</span>
+                      <span className="font-semibold">Thu nhập riêng / Tiền túi ngoài</span>
+                    </div>
+                    <div className="flex items-center justify-between text-emerald-800 font-bold">
+                      <span>🔺 Bổ sung ngân sách {toCategory}:</span>
+                      <span className="font-mono-tabular">+{amountStr ? amountStr + ' ₫' : '0 ₫'}</span>
+                    </div>
+                    <div className="text-[11px] text-purple-700 pt-1.5 border-t border-purple-200/60 leading-relaxed">
+                      ⚡ Sẽ ghi trực tiếp vào bảng <strong>Budget Transfers</strong> trên Google Sheet, tăng thẳng hạn mức tiêu xài của <strong>{toCategory}</strong> mà không trừ bất kỳ danh mục nào khác.
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between text-amber-800 font-semibold">
+                      <span>🔻 Giảm ngân sách {fromCategory}:</span>
+                      <span className="font-mono-tabular">-{amountStr ? amountStr + ' ₫' : '0 ₫'}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-emerald-800 font-bold">
+                      <span>🔺 Tăng ngân sách {toCategory}:</span>
+                      <span className="font-mono-tabular">+{amountStr ? amountStr + ' ₫' : '0 ₫'}</span>
+                    </div>
+                    <div className="text-[11px] text-purple-700 pt-1.5 border-t border-purple-200/60 leading-relaxed">
+                      ⚡ Sẽ ghi trực tiếp vào bảng <strong>Budget Transfers</strong> trên Google Sheet, điều chuyển hạn mức giữa 2 danh mục mà không làm thay đổi tổng ngân sách gia đình.
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           ) : (

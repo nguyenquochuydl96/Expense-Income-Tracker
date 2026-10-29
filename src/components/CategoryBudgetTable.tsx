@@ -423,6 +423,19 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
       .sort((a, b) => b.isoDate.localeCompare(a.isoDate));
   }, [recordsInPeriod, selectedCategory]);
 
+  // Relevant budget transfers affecting this category in this month
+  const categoryTransfers = useMemo(() => {
+    if (selectedCategory === 'ALL' || !budgetTransfers) return [];
+    return budgetTransfers
+      .filter((bt) => {
+        const matchesCategory = bt.toCategory === selectedCategory || bt.fromCategory === selectedCategory;
+        if (!matchesCategory) return false;
+        if (selectedMonth === 'ALL') return true;
+        return bt.monthKey === selectedMonth;
+      })
+      .sort((a, b) => b.isoDate.localeCompare(a.isoDate));
+  }, [budgetTransfers, selectedCategory, selectedMonth]);
+
   // Handlers for editing percentages
   const handleStartEdit = () => {
     setTempPercentages({ ...percentages });
@@ -904,6 +917,50 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
           {/* Drill-down transactions for selected category */}
           {selectedCategory !== 'ALL' && (
             <div className="mt-5 border-t border-slate-200 pt-4">
+              {/* Category Transfers Card (Bổ sung / Điều chuyển quỹ trong kỳ) */}
+              {categoryTransfers.length > 0 && (
+                <div className="mb-4 p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl">
+                  <div className="text-xs font-bold text-indigo-950 mb-2 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Điều chuyển / Bổ sung quỹ trong kỳ ({categoryTransfers.length} khoản):</span>
+                    </span>
+                    <span className="text-[11px] font-normal text-indigo-700 bg-white/80 px-2 py-0.5 rounded border border-indigo-200/50">
+                      Đã ghi vào Google Sheet "Budget Transfers"
+                    </span>
+                  </div>
+                  <div className="space-y-1.5 text-xs font-mono-tabular">
+                    {categoryTransfers.map((bt) => {
+                      const isReceiving = bt.toCategory === selectedCategory;
+                      return (
+                        <div
+                          key={bt.id}
+                          className="flex items-center justify-between py-1.5 px-3 bg-white rounded-lg border border-indigo-100 shadow-2xs"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                                isReceiving
+                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                  : 'bg-amber-100 text-amber-800 border border-amber-200'
+                              }`}
+                            >
+                              {isReceiving ? '+ Nhận' : '- Chuyển'}
+                            </span>
+                            <span className="font-semibold text-slate-800">{bt.date}</span>
+                            <span className="text-slate-600 font-sans">
+                              {bt.description || (isReceiving ? `Nhận từ ${bt.fromCategory}` : `Chuyển sang ${bt.toCategory}`)}
+                            </span>
+                          </div>
+                          <div className={`font-bold ${isReceiving ? 'text-emerald-700' : 'text-amber-700'}`}>
+                            {isReceiving ? '+' : '-'}{formatCurrency(bt.amount)}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                 <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                   <span>Chi tiết giao dịch phát sinh trong kỳ của:</span>

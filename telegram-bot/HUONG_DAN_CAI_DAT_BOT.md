@@ -100,7 +100,13 @@ Bạn có thể chat trực tiếp 1-1 với bot, hoặc **tạo 1 nhóm Telegra
 ### 4. Chuyển ngân sách giữa các danh mục (Transfer Budget):
 * `transfer 100k giai tri heo sang giai tri meo`
 * `chuyen 200k an uong sang shopping`
-➔ Bot sẽ tự động tạo **cặp 2 dòng đối ứng** (âm ở nguồn, dương ở đích) giống hệt tính năng Chuyển Budget trên Web App!
+➔ Bot sẽ tự động ghi 1 dòng vào tab `Budget Transfers`, tự động điều chuyển hạn mức trên Google Sheet và Web App mà không làm ảnh hưởng đến bảng Chi tiêu `Expenses`!
+
+### 5. Bổ sung quỹ / Nạp thêm từ thu nhập riêng (Top-up):
+* `nap 500k vao giai tri heo`
+* `ban do 3.2tr vao giai tri heo`
+* `thu rieng 1.5tr vao giai tri meo`
+➔ Bot sẽ tự động ghi vào tab `Budget Transfers` với nguồn là `Thu nhập riêng`, giúp tăng thẳng ngân sách danh mục mong muốn mà không trừ vào bất kỳ quỹ chi tiêu nào khác!
 
 ### 5. Ghi nhận Thu nhập (Income):
 * `income luong heo 28tr`

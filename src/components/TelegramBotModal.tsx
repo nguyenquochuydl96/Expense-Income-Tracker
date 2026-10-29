@@ -73,11 +73,13 @@ export const TelegramBotModal: React.FC<TelegramBotModalProps> = ({
       ],
     },
     {
-      group: 'Chuyển ngân sách (Budget Transfer)',
+      group: 'Chuyển ngân sách & Bổ sung quỹ (Budget Transfers)',
       icon: <ArrowRightLeft className="w-4 h-4 text-indigo-600" />,
       examples: [
-        { cmd: 'transfer 100k giai tri heo sang giai tri meo', note: 'Tự tạo 2 dòng đối ứng (-100k Heo, +100k Mèo)' },
+        { cmd: 'transfer 100k giai tri heo sang giai tri meo', note: 'Ghi tab Budget Transfers (-100k Heo, +100k Mèo)' },
         { cmd: 'chuyen 200k an uong sang shopping', note: 'Chuyển 200k từ Ăn uống sang Shopping' },
+        { cmd: 'nap 500k vao giai tri heo', note: 'Nạp quỹ: Thu nhập riêng ➔ Giải trí Heo +500k' },
+        { cmd: 'ban do 3.2tr vao giai tri heo', note: 'Nạp quỹ: Bán đồ ➔ Giải trí Heo +3.2M' },
       ],
     },
     {

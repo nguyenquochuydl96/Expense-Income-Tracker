@@ -148,58 +148,48 @@ function handleTransactionMessage(chatId, text, senderName) {
   const today = new Date();
   const dateStr = formatDateMdy(today);
 
-  // XỬ LÝ TRƯỜNG HỢP 1: CHUYỂN BUDGET (TRANSFER)
+  // XỬ LÝ TRƯỜNG HỢP 1: CHUYỂN BUDGET HOẶC THU NHẬP RIÊNG (BUDGET TRANSFERS)
   if (record.type === 'Transfer') {
-    const expenseSheet = ss.getSheetByName('Expenses');
-    if (!expenseSheet) {
-      sendMessage(chatId, '❌ Không tìm thấy tab `Expenses` trong Google Sheet.');
-      return;
+    let transferSheet = ss.getSheetByName('Budget Transfers');
+    if (!transferSheet) {
+      transferSheet = ss.insertSheet('Budget Transfers');
+      transferSheet.appendRow(['Date', 'From Category', 'To Category', 'Amount', 'Description', 'Month']);
     }
 
     const fromCat = record.fromCategory || 'Khác';
     const toCat = record.toCategory || 'Khác';
     const amount = record.amount;
+    const isTopUp = fromCat === 'Thu nhập riêng';
+    const desc = record.description || (isTopUp ? `Nạp vào ${toCat} (Bot)` : `Chuyển từ ${fromCat} sang ${toCat} (Bot)`);
 
-    // Dòng 1: Giảm ở danh mục nguồn (-amount)
-    const row1 = [
+    // Ghi vào tab Budget Transfers: Date (A), From Category (B), To Category (C), Amount (D), Description (E), Month (F)
+    const rowData = [
       dateStr,
       fromCat,
-      `[Transfer Out] Chuyển sang ${toCat}`,
-      -amount,
-      '',
-      '',
-      'Chuyển Budget (Bot)'
-    ];
-    expenseSheet.appendRow(row1);
-    const lastRow1 = expenseSheet.getLastRow();
-
-    // Dòng 2: Tăng ở danh mục đích (+amount)
-    const row2 = [
-      dateStr,
       toCat,
-      `[Transfer In] Nhận từ ${fromCat}`,
       amount,
-      '',
-      '',
-      'Chuyển Budget (Bot)'
+      desc,
+      '=DATE(YEAR(INDIRECT("A"&ROW())), MONTH(INDIRECT("A"&ROW())), 1)'
     ];
-    expenseSheet.appendRow(row2);
-    const lastRow2 = expenseSheet.getLastRow();
+    transferSheet.appendRow(rowData);
+    const lastRow = transferSheet.getLastRow();
 
     // Lưu vết để Undo
     saveLastAction({
-      sheetName: 'Expenses',
+      sheetName: 'Budget Transfers',
       type: 'Transfer',
-      rows: [lastRow1, lastRow2],
-      description: `Chuyển ${formatVND(amount)} từ ${fromCat} sang ${toCat}`
+      rows: [lastRow],
+      description: `${isTopUp ? 'Nạp' : 'Chuyển'} ${formatVND(amount)} ${isTopUp ? 'vào' : 'từ ' + fromCat + ' sang'} ${toCat}`
     });
 
-    const replyMsg = `🔄 *ĐÃ CHUYỂN BUDGET THÀNH CÔNG!*
+    const replyMsg = `🔄 *ĐÃ ${isTopUp ? 'BỔ SUNG QUỸ' : 'CHUYỂN NGÂN SÁCH'} THÀNH CÔNG!*
 ━━━━━━━━━━━━━━━━━━
 💰 *Số tiền:* \`${formatVND(amount)}\`
-📤 *Từ danh mục:* \`${fromCat}\` (-${formatVND(amount)})
-📥 *Sang danh mục:* \`${toCat}\` (+${formatVND(amount)})
+${isTopUp ? `✨ *Nguồn:* \`Thu nhập riêng\`
+📥 *Đích đến:* \`${toCat}\` (+${formatVND(amount)})` : `📤 *Từ danh mục:* \`${fromCat}\` (-${formatVND(amount)})
+📥 *Sang danh mục:* \`${toCat}\` (+${formatVND(amount)})`}
 📅 *Ngày ghi nhận:* ${dateStr}
+📊 *Tab Google Sheet:* \`Budget Transfers\`
 ━━━━━━━━━━━━━━━━━━
 💡 *Mẹo:* Nếu nhập nhầm, gõ \`/undo\` để hoàn tác tức thì.`;
 
@@ -312,6 +302,22 @@ function parseWithRules(text) {
         amount: amtInfo.amount,
         fromCategory: fromCat,
         toCategory: toCat
+      };
+    }
+  }
+
+  // 1b. Bổ sung quỹ / Thu nhập riêng: e.g. "nap 500k vao giai tri heo", "ban do 3.2tr vao giai tri heo", "thu rieng 1.5tr vao giai tri meo"
+  const topUpMatch = norm.match(/(?:nap|ban do|thu rieng|hoan coc|thuong ngoai)\s+([^\s]+)\s+(?:vao|cho|sang)\s+(.+)/i);
+  if (topUpMatch) {
+    const amtInfo = parseAmount(topUpMatch[1]);
+    if (amtInfo) {
+      const toCat = matchCategory(topUpMatch[2].trim(), false);
+      return {
+        type: 'Transfer',
+        amount: amtInfo.amount,
+        fromCategory: 'Thu nhập riêng',
+        toCategory: toCat,
+        description: `Bổ sung quỹ: ${trimmed}`
       };
     }
   }
