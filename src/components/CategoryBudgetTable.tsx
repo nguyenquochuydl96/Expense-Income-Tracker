@@ -369,21 +369,21 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
             <button
               type="button"
               onClick={() => handleRolloverModeChange('full')}
-              className={`px-2 py-1 text-[11px] font-medium transition-colors ${
+              className={`px-2.5 py-1 text-[11px] font-medium transition-colors ${
                 rolloverMode === 'full'
-                  ? 'bg-teal-50 text-teal-800 font-bold border-r border-teal-200'
+                  ? 'bg-teal-600 text-white font-bold shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900 border-r border-slate-100'
               }`}
-              title="Cấn trừ toàn bộ số dư (+ dư / - bội chi) từ tháng trước sang tháng sau"
+              title="Cấn trừ toàn bộ số dư (+ dư / - bội chi) từ tháng trước sang tháng sau theo chuẩn Google Sheets"
             >
-              Lũy kế đầy đủ
+              Lũy kế đầy đủ (Chuẩn Sheet)
             </button>
             <button
               type="button"
               onClick={() => handleRolloverModeChange('deficit_only')}
               className={`px-2 py-1 text-[11px] font-medium transition-colors ${
                 rolloverMode === 'deficit_only'
-                  ? 'bg-amber-50 text-amber-800 font-bold border-r border-amber-200'
+                  ? 'bg-amber-500 text-white font-bold shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900 border-r border-slate-100'
               }`}
               title="Chỉ cấn trừ khi tháng trước bị BỘI CHI (âm tiền), không cộng dồn tiền dư"
@@ -395,7 +395,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
               onClick={() => handleRolloverModeChange('none')}
               className={`px-2 py-1 text-[11px] font-medium transition-colors ${
                 rolloverMode === 'none'
-                  ? 'bg-slate-200 text-slate-800 font-bold'
+                  ? 'bg-slate-700 text-white font-bold shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
               title="Không cấn trừ qua các tháng (tính độc lập từng tháng)"
@@ -457,6 +457,30 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
           )}
         </div>
       </div>
+
+      {/* Notice Banner when not in 'full' rollover mode */}
+      {rolloverMode !== 'full' && (
+        <div className="mb-4 p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs text-amber-900 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <span className="text-base">⚠️</span>
+            <div>
+              <div className="font-bold text-amber-950">
+                Bạn đang xem ở chế độ "{rolloverMode === 'none' ? 'Độc lập (Không lũy kế)' : 'Chỉ trừ bội chi'}":
+              </div>
+              <div className="text-[11px] text-amber-800">
+                Chế độ này không cộng dồn tiền dư từ tháng trước (Giải trí Heo không được cộng +2.68M dư từ T9 và Tiết kiệm không cấn trừ nợ T9).
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleRolloverModeChange('full')}
+            className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-xs shadow-2xs transition-colors cursor-pointer"
+          >
+            ✓ Bấm để bật "Lũy kế đầy đủ" (Chuẩn Google Sheets)
+          </button>
+        </div>
+      )}
 
       {/* Selected Category Notice Banner */}
       {selectedCategory !== 'ALL' && (
