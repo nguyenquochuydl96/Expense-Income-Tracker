@@ -57,6 +57,10 @@ import {
   CategoryBudgetTable,
   DEFAULT_CATEGORY_PERCENTAGES,
   DEFAULT_CATEGORY_PERCENTAGES_T4_T7,
+  computeMultiMonthRollover,
+  SAVED_CATEGORY_PERCENTAGES_KEY,
+  SAVED_ROLLOVER_MODE_KEY,
+  RolloverMode,
 } from './components/CategoryBudgetTable';
 import { ReconcileCheckTienView } from './components/ReconcileCheckTienView';
 import { SheetSyncPanel } from './components/SheetSyncPanel';
@@ -116,10 +120,21 @@ export default function App() {
       const saved = localStorage.getItem(SAVED_BUDGET_TRANSFERS_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (
+          Array.isArray(parsed) &&
+          parsed.length >= 8 &&
+          parsed.some((b: any) => b.description?.includes('Slay the Spire'))
+        ) {
+          return parsed;
+        }
       }
     } catch {
       // fallback
+    }
+    try {
+      localStorage.removeItem(SAVED_BUDGET_TRANSFERS_KEY);
+    } catch {
+      // ignore
     }
     return SEED_BUDGET_TRANSFERS;
   });
@@ -467,42 +482,73 @@ export default function App() {
   const categoryKpiStats = useMemo(() => {
     if (selectedCategory === 'ALL') return null;
 
-    const catRecords = periodRecords.filter(
-      (r) => r.category === selectedCategory && r.sheetType === 'Expenses'
-    );
-    const spent = catRecords.reduce((s, r) => s + r.amount, 0);
-    const beCorp = catRecords.reduce((s, r) => s + r.beCorp, 0);
-    const credit = catRecords.reduce((s, r) => s + r.credit, 0);
-    const count = catRecords.length;
+    const targetMonth = selectedMonth !== 'ALL' ? selectedMonth : '2026-10';
 
-    const defaultPct =
-      selectedMonth !== 'ALL' && selectedMonth <= '2026-07'
-        ? (DEFAULT_CATEGORY_PERCENTAGES_T4_T7[selectedCategory] ?? 0)
-        : (DEFAULT_CATEGORY_PERCENTAGES[selectedCategory] ?? 0);
-    let pct = defaultPct;
+    let hasCustomPercentages = false;
+    let customPercentages: Record<string, number> = {};
     try {
-      const saved = localStorage.getItem('heomeo_category_percentages_v1');
+      const saved = localStorage.getItem(SAVED_CATEGORY_PERCENTAGES_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed[selectedCategory] !== undefined) pct = parsed[selectedCategory];
+        customPercentages = JSON.parse(saved);
+        hasCustomPercentages = true;
       }
     } catch {
       // ignore
     }
-    const budget = Math.round((kpiStats.effectiveIncome * pct) / 100);
-    const remaining = budget - spent;
+
+    let rolloverMode: RolloverMode = 'full';
+    try {
+      const saved = localStorage.getItem(SAVED_ROLLOVER_MODE_KEY) as RolloverMode;
+      if (saved && ['full', 'deficit_only', 'none'].includes(saved)) {
+        rolloverMode = saved;
+      }
+    } catch {
+      // ignore
+    }
+
+    const rolloverResult = computeMultiMonthRollover(
+      allRecords,
+      budgetTransfers,
+      customPercentages,
+      rolloverMode,
+      hasCustomPercentages
+    );
+
+    const catStats = rolloverResult.chain[selectedCategory]?.[targetMonth];
+
+    const catRecords = periodRecords.filter(
+      (r) => r.category === selectedCategory && r.sheetType === 'Expenses' && !isBudgetTransferRecord(r)
+    );
+    const spent = catStats ? catStats.spent : catRecords.reduce((s, r) => s + r.amount, 0);
+    const beCorp = catRecords.reduce((s, r) => s + r.beCorp, 0);
+    const credit = catRecords.reduce((s, r) => s + r.credit, 0);
+    const count = catStats ? catStats.txCount : catRecords.length;
+
+    const baseBudget = catStats
+      ? catStats.baseBudget
+      : Math.round((kpiStats.effectiveIncome * (DEFAULT_CATEGORY_PERCENTAGES[selectedCategory] ?? 0)) / 100);
+    const carryover = catStats ? catStats.carryover : 0;
+    const netTransfer = catStats ? catStats.netTransfer : 0;
+    const effectiveBudget = catStats ? catStats.effectiveBudget : baseBudget;
+    const remaining = catStats ? catStats.remaining : effectiveBudget - spent;
+    const percentage = catStats
+      ? catStats.percentage
+      : (DEFAULT_CATEGORY_PERCENTAGES[selectedCategory] ?? 0);
 
     return {
       category: selectedCategory,
-      budget,
+      budget: effectiveBudget,
+      baseBudget,
+      carryover,
+      netTransfer,
       spent,
       remaining,
       beCorp,
       credit,
       count,
-      percentage: pct,
+      percentage,
     };
-  }, [selectedCategory, periodRecords, kpiStats.effectiveIncome, selectedMonth]);
+  }, [selectedCategory, allRecords, budgetTransfers, periodRecords, selectedMonth, kpiStats.effectiveIncome]);
 
   // Google Sign-In handler
   const handleGoogleLogin = async () => {
@@ -1222,13 +1268,19 @@ export default function App() {
                         style={{ backgroundColor: '#0B4B8A' }}
                       >
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
-                          Ngân sách · {categoryKpiStats.category}
+                          Ngân sách khả dụng · {categoryKpiStats.category}
                         </div>
                         <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
                           {formatCurrency(categoryKpiStats.budget)}
                         </div>
-                        <div className="text-xs text-white/70 font-medium truncate">
-                          Chiếm {categoryKpiStats.percentage.toFixed(1)}% thu nhập ({formatCurrency(kpiStats.effectiveIncome)})
+                        <div className="text-[11px] text-white/80 font-medium truncate flex items-center gap-1.5 flex-wrap">
+                          <span>Định mức: {formatCurrency(categoryKpiStats.baseBudget)}</span>
+                          {categoryKpiStats.carryover !== 0 && (
+                            <span>· Lũy kế: {categoryKpiStats.carryover > 0 ? '+' : ''}{formatCurrency(categoryKpiStats.carryover)}</span>
+                          )}
+                          {categoryKpiStats.netTransfer !== 0 && (
+                            <span>· Chuyển quỹ: {categoryKpiStats.netTransfer > 0 ? '+' : ''}{formatCurrency(categoryKpiStats.netTransfer)}</span>
+                          )}
                         </div>
                       </div>
 
@@ -1258,10 +1310,10 @@ export default function App() {
                           {categoryKpiStats.remaining >= 0 ? 'Còn lại (Dư)' : 'Bội chi (Âm)'}
                         </div>
                         <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          {formatCurrency(categoryKpiStats.remaining)}
+                          {categoryKpiStats.remaining >= 0 ? '+' : ''}{formatCurrency(categoryKpiStats.remaining)}
                         </div>
                         <div className="text-xs text-white/80 font-medium truncate">
-                          {categoryKpiStats.remaining >= 0 ? 'Trong hạn mức ngân sách' : 'Vượt quá định mức tháng!'}
+                          {categoryKpiStats.remaining >= 0 ? 'Trong hạn mức khả dụng' : 'Vượt quá định mức tháng!'}
                         </div>
                       </div>
 

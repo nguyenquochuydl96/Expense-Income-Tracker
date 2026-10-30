@@ -5,6 +5,15 @@ import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { CategoryBadge } from '../utils/categoryIcons';
 import { DailyLivingRunwayWidget } from './DailyLivingRunwayWidget';
 import {
+  computeMultiMonthRollover,
+  SAVED_CATEGORY_PERCENTAGES_KEY,
+  SAVED_ROLLOVER_MODE_KEY,
+  RolloverMode,
+  DEFAULT_CATEGORY_PERCENTAGES_T4_T7,
+  DEFAULT_CATEGORY_PERCENTAGES,
+} from '../utils/budgetUtils';
+
+import {
   ArrowLeftRight,
   SlidersHorizontal,
   TrendingDown,
@@ -22,44 +31,14 @@ import {
   Layers,
 } from 'lucide-react';
 
-const SAVED_CATEGORY_PERCENTAGES_KEY = 'heomeo_category_percentages_v1';
-const SAVED_ROLLOVER_MODE_KEY = 'heomeo_rollover_mode_v1';
-
-export type RolloverMode = 'full' | 'deficit_only' | 'none';
-
-// T4-T7 base percentages matching Google Sheet (sum = 100%)
-export const DEFAULT_CATEGORY_PERCENTAGES_T4_T7: Record<string, number> = {
-  'Tiết kiệm': 42.1053,
-  'Thuê nhà': 13.6842,
-  'Ăn uống': 14.7368,
-  'Quà tặng/Cưới hỏi': 7.3684,
-  'Hóa/Mỹ phẩm': 6.3158,
-  'Thú cưng': 4.2105,
-  'Giải trí Heo': 2.1053,
-  'Giải trí Mèo': 2.1053,
-  'Shopping': 2.1053,
-  'Điện thoại/Xăng xe': 2.1053,
-  'Sức khỏe': 1.0526,
-  'Du lịch': 1.0526,
-  'Khác': 1.0526,
+export {
+  SAVED_CATEGORY_PERCENTAGES_KEY,
+  SAVED_ROLLOVER_MODE_KEY,
+  DEFAULT_CATEGORY_PERCENTAGES_T4_T7,
+  DEFAULT_CATEGORY_PERCENTAGES,
+  computeMultiMonthRollover,
 };
-
-// Current phase (T8-T10) base percentages matching Google Sheet (sum = 100%)
-export const DEFAULT_CATEGORY_PERCENTAGES: Record<string, number> = {
-  'Tiết kiệm': 39.2157,
-  'Thuê nhà': 16.6667,
-  'Ăn uống': 13.7255,
-  'Quà tặng/Cưới hỏi': 7.8431,
-  'Hóa/Mỹ phẩm': 4.9020,
-  'Thú cưng': 3.9216,
-  'Shopping': 2.9412,
-  'Điện thoại/Xăng xe': 1.9608,
-  'Giải trí Heo': 1.9608,
-  'Giải trí Mèo': 1.9608,
-  'Du lịch': 1.9608,
-  'Sức khỏe': 1.9608,
-  'Khác': 0.9804,
-};
+export type { RolloverMode };
 
 interface CategoryBudgetTableProps {
   recordsInPeriod: TransactionRecord[];
@@ -139,182 +118,24 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
     return Array.from(set);
   }, [allRecords]);
 
+  const hasCustomPercentages = useMemo(() => {
+    try {
+      return Boolean(localStorage.getItem(SAVED_CATEGORY_PERCENTAGES_KEY));
+    } catch {
+      return false;
+    }
+  }, [percentages]);
+
   // Compute multi-month rollover chain for all months and all categories
   const multiMonthRolloverData = useMemo(() => {
-    // 1. Calculate monthly incomes: separated into general income and dedicated category income
-    const generalMonthlyIncomes: Record<string, number> = {};
-    const dedicatedMonthlyIncomes: Record<string, Record<string, number>> = {};
-    const totalMonthlyIncomes: Record<string, number> = {};
-    const expenseCatSet = new Set<string>(EXPENSE_CATEGORIES);
-
-    for (const mKey of allChronologicalMonths) {
-      dedicatedMonthlyIncomes[mKey] = {};
-      let genSum = 0;
-      let totSum = 0;
-
-      const monthIncomes = allRecords.filter(
-        (r) => r.sheetType === 'Income' && r.monthKey === mKey
-      );
-
-      for (const r of monthIncomes) {
-        totSum += r.amount;
-        // In Google Sheet Monthly Overview (Section 2), all rows in Income tab are allocated by category %
-        // Dedicated top-ups/transfers are handled via 'Budget Transfers' tab
-        genSum += r.amount;
-      }
-
-      generalMonthlyIncomes[mKey] = genSum;
-      totalMonthlyIncomes[mKey] = totSum;
-    }
-
-    // 2. Calculate monthly expenses per category & budget transfers
-    const monthlyCategoryExpenses: Record<string, Record<string, { total: number; count: number }>> = {};
-    const monthlyTransfersIn: Record<string, Record<string, number>> = {};
-    const monthlyTransfersOut: Record<string, Record<string, number>> = {};
-
-    for (const mKey of allChronologicalMonths) {
-      monthlyCategoryExpenses[mKey] = {};
-      monthlyTransfersIn[mKey] = {};
-      monthlyTransfersOut[mKey] = {};
-    }
-
-    // Process dedicated budgetTransfers (from Google Sheet 'Budget Transfers' tab)
-    if (budgetTransfers && budgetTransfers.length > 0) {
-      for (const bt of budgetTransfers) {
-        if (!bt.monthKey) continue;
-        if (!monthlyTransfersIn[bt.monthKey]) monthlyTransfersIn[bt.monthKey] = {};
-        if (!monthlyTransfersOut[bt.monthKey]) monthlyTransfersOut[bt.monthKey] = {};
-
-        const toCat = (bt.toCategory || '').trim();
-        const fromCat = (bt.fromCategory || '').trim();
-
-        if (toCat && toCat !== 'Thu nhập riêng') {
-          monthlyTransfersIn[bt.monthKey][toCat] =
-            (monthlyTransfersIn[bt.monthKey][toCat] || 0) + bt.amount;
-        }
-        if (fromCat && fromCat !== 'Thu nhập riêng') {
-          monthlyTransfersOut[bt.monthKey][fromCat] =
-            (monthlyTransfersOut[bt.monthKey][fromCat] || 0) + bt.amount;
-        }
-      }
-    }
-
-    for (const r of allRecords) {
-      if (r.sheetType === 'Expenses' && r.monthKey) {
-        const cat = r.category || 'Khác';
-
-        if (isBudgetTransferRecord(r)) {
-          // Legacy transfers in Expenses if any
-          if (r.amount > 0) {
-            monthlyTransfersOut[r.monthKey][cat] =
-              (monthlyTransfersOut[r.monthKey][cat] || 0) + r.amount;
-          } else if (r.amount < 0) {
-            monthlyTransfersIn[r.monthKey][cat] =
-              (monthlyTransfersIn[r.monthKey][cat] || 0) + Math.abs(r.amount);
-          }
-        } else {
-          // Real spending
-          if (!monthlyCategoryExpenses[r.monthKey][cat]) {
-            monthlyCategoryExpenses[r.monthKey][cat] = { total: 0, count: 0 };
-          }
-          monthlyCategoryExpenses[r.monthKey][cat].total += r.amount;
-          monthlyCategoryExpenses[r.monthKey][cat].count += 1;
-        }
-      }
-    }
-
-    // 3. Chain rollover chronologically
-    // map: category -> monthKey -> { baseBudget, carryover, effectiveBudget, spent, remaining, txCount }
-    const chain: Record<
-      string,
-      Record<
-        string,
-        {
-          baseBudget: number;
-          baseFromGeneral: number;
-          dedicatedIncome: number;
-          transferIn: number;
-          transferOut: number;
-          netTransfer: number;
-          carryover: number;
-          effectiveBudget: number;
-          spent: number;
-          remaining: number;
-          txCount: number;
-        }
-      >
-    > = {};
-
-    for (const cat of allCategories) {
-      chain[cat] = {};
-      let cumulativeBalance = 0;
-
-      for (let i = 0; i < allChronologicalMonths.length; i++) {
-        const mKey = allChronologicalMonths[i];
-        const mGeneralIncome = generalMonthlyIncomes[mKey] || 0;
-        const dedicatedForCat = dedicatedMonthlyIncomes[mKey]?.[cat] || 0;
-
-        const defaultPct =
-          mKey <= '2026-07'
-            ? (DEFAULT_CATEGORY_PERCENTAGES_T4_T7[cat] ?? 0)
-            : (DEFAULT_CATEGORY_PERCENTAGES[cat] ?? 0);
-        let hasCustom = false;
-        try {
-          hasCustom = Boolean(localStorage.getItem(SAVED_CATEGORY_PERCENTAGES_KEY));
-        } catch {
-          // ignore
-        }
-        const pct = hasCustom ? (percentages[cat] ?? defaultPct) : defaultPct;
-
-        // Base budget = (General Income * %) + Dedicated Category Income
-        const baseFromGeneral = Math.round((mGeneralIncome * pct) / 100);
-        const baseBudget = baseFromGeneral + dedicatedForCat;
-
-        const transferIn = monthlyTransfersIn[mKey]?.[cat] || 0;
-        const transferOut = monthlyTransfersOut[mKey]?.[cat] || 0;
-        const netTransfer = transferIn - transferOut;
-
-        let carryover = 0;
-        if (rolloverMode === 'full') {
-          carryover = cumulativeBalance;
-        } else if (rolloverMode === 'deficit_only') {
-          carryover = Math.min(0, cumulativeBalance); // only carry over negative (bội chi)
-        } else {
-          carryover = 0;
-        }
-
-        // Effective budget = Base budget + Carryover + Net budget transfer
-        const effectiveBudget = baseBudget + carryover + netTransfer;
-        const spent = monthlyCategoryExpenses[mKey]?.[cat]?.total || 0;
-        const count = monthlyCategoryExpenses[mKey]?.[cat]?.count || 0;
-        const remaining = effectiveBudget - spent;
-
-        chain[cat][mKey] = {
-          baseBudget,
-          baseFromGeneral,
-          dedicatedIncome: dedicatedForCat,
-          transferIn,
-          transferOut,
-          netTransfer,
-          carryover,
-          effectiveBudget,
-          spent,
-          remaining,
-          txCount: count,
-        };
-
-        cumulativeBalance = remaining;
-      }
-    }
-
-    return {
-      chain,
-      monthlyIncomes: totalMonthlyIncomes,
-      generalMonthlyIncomes,
-      dedicatedMonthlyIncomes,
-      monthlyCategoryExpenses,
-    };
-  }, [allChronologicalMonths, allRecords, allCategories, percentages, rolloverMode, budgetTransfers]);
+    return computeMultiMonthRollover(
+      allRecords,
+      budgetTransfers,
+      percentages,
+      rolloverMode,
+      hasCustomPercentages
+    );
+  }, [allRecords, budgetTransfers, percentages, rolloverMode, hasCustomPercentages]);
 
   // Previous month key for the selectedMonth
   const prevMonthKey = useMemo(() => {
