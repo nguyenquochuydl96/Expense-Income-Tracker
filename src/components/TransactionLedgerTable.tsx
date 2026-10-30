@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Search, Plus, ArrowUpDown, FilterX, RefreshCw, CheckCircle2, Edit3, Trash2 } from 'lucide-react';
+import { Search, Plus, ArrowUpDown, FilterX, RefreshCw, CheckCircle2, Edit3, Trash2, UploadCloud, AlertCircle } from 'lucide-react';
 import {
   CATEGORY_COLORS,
   EXPENSE_CATEGORIES,
@@ -16,6 +16,8 @@ interface TransactionLedgerTableProps {
   onOpenAddModal: () => void;
   onEditTransaction?: (record: TransactionRecord) => void;
   onDeleteTransaction?: (record: TransactionRecord) => void;
+  onPushPendingToSheet?: () => Promise<void>;
+  isSyncing?: boolean;
 }
 
 type QuickLedgerFilter = 'all' | 'expenses' | 'income' | 'becorp' | 'credit' | 'savings';
@@ -27,6 +29,8 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
   onOpenAddModal,
   onEditTransaction,
   onDeleteTransaction,
+  onPushPendingToSheet,
+  isSyncing,
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [quickFilter, setQuickFilter] = useState<QuickLedgerFilter>('all');
@@ -124,6 +128,32 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
             <span>Thêm dòng giao dịch mới</span>
           </button>
         </div>
+
+        {/* Pending Offline Transactions Alert */}
+        {records.some((r) => r.source === 'local_new' && !r.syncedToSheet) && (
+          <div className="p-3 bg-amber-50 border border-amber-200/90 rounded-xl flex flex-wrap items-center justify-between gap-2.5 text-xs text-amber-900 shadow-2xs">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+              </span>
+              <span>
+                Có <strong>{records.filter((r) => r.source === 'local_new' && !r.syncedToSheet).length} giao dịch</strong> mới nhập đang lưu trên máy (Chờ đồng bộ lên Google Sheet).
+              </span>
+            </div>
+            {onPushPendingToSheet && (
+              <button
+                type="button"
+                onClick={onPushPendingToSheet}
+                disabled={isSyncing}
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-semibold rounded-lg flex items-center gap-1.5 transition-colors shrink-0 shadow-2xs"
+              >
+                <UploadCloud className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span>{isSyncing ? 'Đang đồng bộ...' : `Đồng bộ lên Google Sheet ngay`}</span>
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Filter Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3">

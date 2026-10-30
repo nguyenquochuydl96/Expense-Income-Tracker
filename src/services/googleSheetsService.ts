@@ -82,17 +82,23 @@ export async function fetchSpreadsheetMetadata(
   const incomeTab = findMatchingTab(
     sheetNames,
     ['income', 'thu nhập', 'thu nhap', 'thu', 'lương', 'salary', 'incomes', 'sheet income'],
-    sheetNames.find((s) => /income|thu|lương/i.test(s)) || (sheetNames.length > 1 ? sheetNames[1] : 'Income')
+    sheetNames.find((s) => /income|thu|lương/i.test(s)) || (sheetNames.includes('Income') ? 'Income' : (sheetNames.includes('Thu nhập') ? 'Thu nhập' : 'Income'))
   );
   const checkTienMatch = findMatchingTab(sheetNames, ['check tiền', 'check tien', 'đối soát', 'reconcile', 'check'], '');
   const summaryMatch = findMatchingTab(sheetNames, ['summary', 'tổng hợp', 'tong hop', 'báo cáo', 'overview'], '');
+
+  const savedIncomeTab = typeof window !== 'undefined' ? localStorage.getItem('heomeo_custom_income_tab_v1') : null;
+  const finalIncomeTab = savedIncomeTab && sheetNames.includes(savedIncomeTab) ? savedIncomeTab : incomeTab;
+
+  const savedExpensesTab = typeof window !== 'undefined' ? localStorage.getItem('heomeo_custom_expenses_tab_v1') : null;
+  const finalExpensesTab = savedExpensesTab && sheetNames.includes(savedExpensesTab) ? savedExpensesTab : expensesTab;
 
   return {
     spreadsheetId: data.spreadsheetId || spreadsheetId,
     title: data.properties?.title || 'Expense & Income Tracker',
     sheetNames,
-    expensesTab,
-    incomeTab,
+    expensesTab: finalExpensesTab,
+    incomeTab: finalIncomeTab,
     checkTienTab: checkTienMatch || null,
     summaryTab: summaryMatch || null,
     budgetTransfersTab: sheetNames.find((n) => /budget transfer|transfer/i.test(n)) || null,
@@ -304,6 +310,62 @@ export async function fetchSummarySheet(
   };
 }
 
+export const INCOME_TAB_HEADERS = ['Date', 'Income Source', 'Description', 'Income Amount', 'Month'];
+export const EXPENSE_TAB_HEADERS = ['Purchase Date', 'Category', 'Purchase Item', 'Amount', 'BE Corp', 'Credit', 'Note'];
+export const BUDGET_TRANSFER_HEADERS = ['Date', 'From Category', 'To Category', 'Amount', 'Description', 'Month'];
+
+export async function createSheetTab(
+  spreadsheetId: string,
+  tabName: string,
+  headerRow: string[],
+  accessToken: string
+): Promise<void> {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}:batchUpdate`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      requests: [
+        {
+          addSheet: {
+            properties: {
+              title: tabName,
+            },
+          },
+        },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    if (!errBody?.error?.message?.includes('already exists')) {
+      throw new Error(errBody?.error?.message || `Không thể tạo tab "${tabName}"`);
+    }
+  }
+
+  // Write header row if newly created or empty
+  const safeTab = `'${tabName.replace(/'/g, "''")}'`;
+  const writeHeaderUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
+    spreadsheetId
+  )}/values/${encodeURIComponent(safeTab + '!A1:Z1')}?valueInputOption=USER_ENTERED`;
+
+  await fetch(writeHeaderUrl, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      majorDimension: 'ROWS',
+      values: [headerRow],
+    }),
+  }).catch(() => null);
+}
+
 export async function appendTransactionToSheet(
   spreadsheetId: string,
   tabName: string,
@@ -320,48 +382,61 @@ export async function appendTransactionToSheet(
   accessToken: string
 ): Promise<void> {
   const isIncome = record.sheetType === 'Income' || tabName.toLowerCase().includes('income');
+  const safeTab = `'${tabName.replace(/'/g, "''")}'`;
 
-  let rowValues: string[];
+  let rowValues: any[];
   let range: string;
 
   if (isIncome) {
+    const parsedDate = parseDateString(record.purchaseDate);
+    const monthDateStr = parsedDate.monthKey
+      ? `${parseInt(parsedDate.monthKey.split('-')[1], 10)}/1/${parsedDate.monthKey.split('-')[0]}`
+      : record.purchaseDate;
+
     // Income tab columns: Date (A), Income Source (B), Description (C), Income Amount (D), Month (E)
     rowValues = [
       record.purchaseDate,
       record.category,
       record.purchaseItem,
-      formatNumberForSheet(record.amount, true),
-      '=DATE(YEAR(INDIRECT("A"&ROW())), MONTH(INDIRECT("A"&ROW())), 1)'
+      record.amount,
+      monthDateStr,
     ];
-    range = `'${tabName.replace(/'/g, "''")}'!A:E`;
+    range = `${safeTab}!A:E`;
   } else {
     // Expenses tab columns: Date (A), Category (B), Purchase Item (C), Amount (D), BE Corp (E), Credit (F), Note (G)
     rowValues = [
       record.purchaseDate,
       record.category,
       record.purchaseItem,
-      formatNumberForSheet(record.amount, true),
-      record.beCorp !== 0 ? formatNumberForSheet(record.beCorp, false) : '',
-      record.credit !== 0 ? formatNumberForSheet(record.credit, false) : '',
+      record.amount,
+      record.beCorp !== 0 ? record.beCorp : '',
+      record.credit !== 0 ? record.credit : '',
     ];
     if (record.note && record.note.trim()) {
       rowValues.push(record.note.trim());
     }
-    range = `'${tabName.replace(/'/g, "''")}'!A:G`;
+    range = `${safeTab}!A:G`;
   }
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      majorDimension: 'ROWS',
-      values: [rowValues],
-    }),
-  });
+  const sendAppend = async () => {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
+      spreadsheetId
+    )}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=OVERWRITE`;
+
+    return await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        majorDimension: 'ROWS',
+        values: [rowValues],
+      }),
+    });
+  };
+
+  let res = await sendAppend();
 
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
@@ -369,7 +444,24 @@ export async function appendTransactionToSheet(
     if (res.status === 401) {
       throw new Error(`TOKEN_EXPIRED: Token Google OAuth đã hết hạn (${msg})`);
     }
-    throw new Error(`Không thể ghi dòng mới vào bảng ${tabName}: ${msg}`);
+
+    if (
+      msg.includes('Unable to parse range') ||
+      msg.includes('not found') ||
+      res.status === 400 ||
+      res.status === 404
+    ) {
+      // Auto-create missing tab with standard headers and retry
+      const defaultHeaders = isIncome ? INCOME_TAB_HEADERS : EXPENSE_TAB_HEADERS;
+      await createSheetTab(spreadsheetId, tabName, defaultHeaders, accessToken);
+      res = await sendAppend();
+    }
+
+    if (!res.ok) {
+      const retryErr = await res.json().catch(() => ({}));
+      const retryMsg = retryErr?.error?.message || `HTTP ${res.status}`;
+      throw new Error(`Không thể ghi dòng mới vào bảng ${tabName}: ${retryMsg}`);
+    }
   }
 }
 
@@ -442,30 +534,41 @@ export async function appendBudgetTransferToSheet(
   },
   accessToken: string
 ): Promise<void> {
+  const parsedDate = parseDateString(transfer.date);
+  const monthDateStr = parsedDate.monthKey
+    ? `${parseInt(parsedDate.monthKey.split('-')[1], 10)}/1/${parsedDate.monthKey.split('-')[0]}`
+    : transfer.date;
+
   const rowValues = [
     transfer.date,
     transfer.fromCategory,
     transfer.toCategory,
-    formatNumberForSheet(transfer.amount, true),
+    transfer.amount,
     transfer.description,
-    '=DATE(YEAR(INDIRECT("A"&ROW())), MONTH(INDIRECT("A"&ROW())), 1)'
+    monthDateStr,
   ];
-  const range = `'${tabName.replace(/'/g, "''")}'!A:F`;
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
-    spreadsheetId
-  )}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+  const safeTab = `'${tabName.replace(/'/g, "''")}'`;
+  const range = `${safeTab}!A:F`;
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      majorDimension: 'ROWS',
-      values: [rowValues],
-    }),
-  });
+  const sendAppend = async () => {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
+      spreadsheetId
+    )}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=OVERWRITE`;
+
+    return await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        majorDimension: 'ROWS',
+        values: [rowValues],
+      }),
+    });
+  };
+
+  let res = await sendAppend();
 
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
@@ -473,7 +576,22 @@ export async function appendBudgetTransferToSheet(
     if (res.status === 401) {
       throw new Error(`TOKEN_EXPIRED: Token Google OAuth đã hết hạn (${msg})`);
     }
-    throw new Error(`Không thể ghi dòng mới vào bảng ${tabName}: ${msg}`);
+
+    if (
+      msg.includes('Unable to parse range') ||
+      msg.includes('not found') ||
+      res.status === 400 ||
+      res.status === 404
+    ) {
+      await createSheetTab(spreadsheetId, tabName, BUDGET_TRANSFER_HEADERS, accessToken);
+      res = await sendAppend();
+    }
+
+    if (!res.ok) {
+      const retryErr = await res.json().catch(() => ({}));
+      const retryMsg = retryErr?.error?.message || `HTTP ${res.status}`;
+      throw new Error(`Không thể ghi chuyển ngân sách vào bảng ${tabName}: ${retryMsg}`);
+    }
   }
 }
 
@@ -508,7 +626,7 @@ export async function updateTransactionOnSheet(
       record.purchaseDate,
       record.category,
       record.purchaseItem,
-      formatNumberForSheet(record.amount, true),
+      record.amount,
     ];
   } else {
     range = `${safeTab}!A${rowIndex}:G${rowIndex}`;
@@ -516,9 +634,9 @@ export async function updateTransactionOnSheet(
       record.purchaseDate,
       record.category,
       record.purchaseItem,
-      formatNumberForSheet(record.amount, true),
-      record.beCorp > 0 ? formatNumberForSheet(record.beCorp, false) : '',
-      record.credit > 0 ? formatNumberForSheet(record.credit, false) : '',
+      record.amount,
+      record.beCorp > 0 ? record.beCorp : '',
+      record.credit > 0 ? record.credit : '',
       record.note || '',
     ];
   }

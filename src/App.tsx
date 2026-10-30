@@ -1065,10 +1065,10 @@ export default function App() {
     } else {
       setLocalNewRecords((prev) => [...prev, ...createdRecords]);
       showToast(
-        'success',
+        'warning',
         createdRecords.length > 1
-          ? `Đã thêm ${createdRecords.length} giao dịch vào bảng ${createdRecords[0].sheetType} (Sẽ tự động đẩy lên Google Sheet khi kết nối).`
-          : `Đã thêm "${createdRecords[0].purchaseItem}" vào bảng ${createdRecords[0].sheetType} (Sẽ tự động đẩy lên Google Sheet khi kết nối).`
+          ? `Đã lưu tạm ${createdRecords.length} giao dịch trên máy (Chưa kết nối Google Sheet). Bấm đồng bộ để đẩy lên Sheet.`
+          : `Đã lưu tạm "${createdRecords[0].purchaseItem}" trên máy (Chưa kết nối Google Sheet). Bấm đồng bộ để đẩy lên Sheet.`
       );
     }
 
@@ -1195,18 +1195,23 @@ export default function App() {
   };
 
   const handleSelectIncomeTab = async (tabName: string) => {
-    if (!sheetMeta || !accessToken) return;
+    if (!sheetMeta) return;
+    const token = accessToken || getStoredAccessToken();
     try {
       localStorage.setItem('heomeo_custom_income_tab_v1', tabName);
       const updatedMeta = { ...sheetMeta, incomeTab: tabName };
       setSheetMeta(updatedMeta);
-      setIsSyncing(true);
-      const incomeRows = await fetchTabTransactions(sheetMeta.spreadsheetId, tabName, 'Income', accessToken);
-      setSheetRecords((prev) => {
-        const expenses = (prev || []).filter((r) => r.sheetType === 'Expenses');
-        return [...expenses, ...incomeRows];
-      });
-      showToast('success', `Đã chuyển sang Bảng Thu nhập "${tabName}": tìm thấy ${incomeRows.length} dòng.`);
+      if (token) {
+        setIsSyncing(true);
+        const incomeRows = await fetchTabTransactions(sheetMeta.spreadsheetId, tabName, 'Income', token);
+        setSheetRecords((prev) => {
+          const expenses = (prev || []).filter((r) => r.sheetType === 'Expenses');
+          return [...expenses, ...incomeRows];
+        });
+        showToast('success', `Đã chuyển sang Bảng Thu nhập "${tabName}": tìm thấy ${incomeRows.length} dòng.`);
+      } else {
+        showToast('warning', `Đã chọn Bảng Thu nhập "${tabName}". Vui lòng kết nối Google Sheet để tải dữ liệu.`);
+      }
     } catch (err: any) {
       showToast('warning', `Lỗi đọc tab "${tabName}": ${err?.message}`);
     } finally {
@@ -1215,18 +1220,23 @@ export default function App() {
   };
 
   const handleSelectExpensesTab = async (tabName: string) => {
-    if (!sheetMeta || !accessToken) return;
+    if (!sheetMeta) return;
+    const token = accessToken || getStoredAccessToken();
     try {
       localStorage.setItem('heomeo_custom_expenses_tab_v1', tabName);
       const updatedMeta = { ...sheetMeta, expensesTab: tabName };
       setSheetMeta(updatedMeta);
-      setIsSyncing(true);
-      const expenseRows = await fetchTabTransactions(sheetMeta.spreadsheetId, tabName, 'Expenses', accessToken);
-      setSheetRecords((prev) => {
-        const incomes = (prev || []).filter((r) => r.sheetType === 'Income');
-        return [...expenseRows, ...incomes];
-      });
-      showToast('success', `Đã chuyển sang Bảng Chi tiêu "${tabName}": tìm thấy ${expenseRows.length} dòng.`);
+      if (token) {
+        setIsSyncing(true);
+        const expenseRows = await fetchTabTransactions(sheetMeta.spreadsheetId, tabName, 'Expenses', token);
+        setSheetRecords((prev) => {
+          const incomes = (prev || []).filter((r) => r.sheetType === 'Income');
+          return [...expenseRows, ...incomes];
+        });
+        showToast('success', `Đã chuyển sang Bảng Chi tiêu "${tabName}": tìm thấy ${expenseRows.length} dòng.`);
+      } else {
+        showToast('warning', `Đã chọn Bảng Chi tiêu "${tabName}". Vui lòng kết nối Google Sheet để tải dữ liệu.`);
+      }
     } catch (err: any) {
       showToast('warning', `Lỗi đọc tab "${tabName}": ${err?.message}`);
     } finally {
@@ -1809,6 +1819,8 @@ export default function App() {
                 }}
                 onEditTransaction={setEditingTransaction}
                 onDeleteTransaction={setDeletingTransaction}
+                onPushPendingToSheet={handlePushPendingToSheet}
+                isSyncing={isSyncing}
               />
             )}
 
@@ -1863,6 +1875,9 @@ export default function App() {
         isSheetConnected={Boolean((sheetMeta || spreadsheetInput) && (accessToken || getStoredAccessToken()))}
         initialPreset={addModalPreset}
         allRecords={allRecords}
+        onGoogleLogin={handleGoogleLogin}
+        expensesTabName={sheetMeta?.expensesTab || 'Expenses'}
+        incomeTabName={sheetMeta?.incomeTab || 'Income'}
       />
 
       {/* TELEGRAM BOT QUICK-ADD MODAL */}

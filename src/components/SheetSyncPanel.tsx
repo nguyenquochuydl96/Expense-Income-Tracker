@@ -8,6 +8,7 @@ import {
   LogOut,
   UploadCloud,
   FileSpreadsheet,
+  ExternalLink,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { SpreadsheetMetadata } from '../services/googleSheetsService';
@@ -219,11 +220,21 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = ({
               )}
 
               {sheetMeta && (
-                <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                <div className="mt-4 p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-900">
-                      <FileSpreadsheet className="w-4 h-4 text-teal-700" />
-                      <span>File đang kết nối: {sheetMeta.title}</span>
+                      <FileSpreadsheet className="w-4 h-4 text-teal-700 shrink-0" />
+                      <span>File đang kết nối: <strong>{sheetMeta.title}</strong></span>
+                      <a
+                        href={`https://docs.google.com/spreadsheets/d/${sheetMeta.spreadsheetId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-teal-700 hover:text-teal-900 hover:underline inline-flex items-center gap-0.5 text-[11px] font-normal"
+                        title="Mở Google Sheet trên tab mới"
+                      >
+                        <span>Mở Sheet</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
                     </div>
                     {lastSyncedAt && (
                       <span className="text-[11px] font-mono-tabular text-slate-500">
@@ -231,20 +242,56 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = ({
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 pt-1">
+
+                  {/* Tab Selector Dropdowns */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200/80">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Bảng Chi tiêu (Expenses): <span className="text-slate-500 font-normal">({totalExpensesCount} dòng)</span>
+                      </label>
+                      <select
+                        value={sheetMeta.expensesTab}
+                        onChange={(e) => onSelectExpensesTab?.(e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-teal-600 font-medium text-slate-900"
+                      >
+                        {sheetMeta.sheetNames.map((name) => (
+                          <option key={name} value={name}>
+                            {name} {name === sheetMeta.expensesTab ? '✓' : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        Bảng Thu nhập (Income): <span className="text-slate-500 font-normal">({totalIncomeCount} dòng)</span>
+                      </label>
+                      <select
+                        value={sheetMeta.incomeTab}
+                        onChange={(e) => onSelectIncomeTab?.(e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-teal-600 font-medium text-slate-900"
+                      >
+                        {sheetMeta.sheetNames.map((name) => (
+                          <option key={name} value={name}>
+                            {name} {name === sheetMeta.incomeTab ? '✓' : ''}
+                          </option>
+                        ))}
+                        {!sheetMeta.sheetNames.includes(sheetMeta.incomeTab) && (
+                          <option value={sheetMeta.incomeTab}>
+                            {sheetMeta.incomeTab} (Sẽ tự động tạo trên Sheet khi lưu)
+                          </option>
+                        )}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 pt-1 text-[11px]">
                     <span>
-                      Bảng Chi tiêu: <strong className="text-slate-900">{sheetMeta.expensesTab}</strong> ({totalExpensesCount} dòng)
+                      Bảng Đối soát: <strong className="text-slate-900">{sheetMeta.checkTienTab || 'Chưa phát hiện'}</strong>
                     </span>
                     <span aria-hidden="true">·</span>
                     <span>
-                      Bảng Thu nhập: <strong className="text-slate-900">{sheetMeta.incomeTab}</strong> ({totalIncomeCount} dòng)
-                    </span>
-                    <span aria-hidden="true">·</span>
-                    <span>
-                      Bảng Đối soát:{' '}
-                      <strong className="text-slate-900">
-                        {sheetMeta.checkTienTab || 'Chưa phát hiện'}
-                      </strong>
+                      Bảng Chuyển Budget: <strong className="text-slate-900">{sheetMeta.budgetTransfersTab || 'Tự động tạo khi chuyển'}</strong>
                     </span>
                   </div>
                 </div>

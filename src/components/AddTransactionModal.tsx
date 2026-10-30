@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { X, Check, ArrowRight, Sparkles, ArrowLeftRight } from 'lucide-react';
+import { X, Check, ArrowRight, Sparkles, ArrowLeftRight, CheckCircle2, AlertCircle } from 'lucide-react';
 import { MoneyCalculatorInput } from './MoneyCalculatorInput';
 import {
   EXPENSE_CATEGORIES,
@@ -42,6 +42,9 @@ interface AddTransactionModalProps {
   isSheetConnected: boolean;
   initialPreset?: Partial<NewTransactionPayload> | null;
   allRecords: TransactionRecord[];
+  onGoogleLogin?: () => Promise<void>;
+  expensesTabName?: string;
+  incomeTabName?: string;
 }
 
 const getTodayIsoDate = (): string => {
@@ -60,6 +63,9 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   isSheetConnected,
   initialPreset,
   onSaveTransfer,
+  onGoogleLogin,
+  expensesTabName,
+  incomeTabName,
 }) => {
   type ModalMode = 'Expenses' | 'Income' | 'Transfer';
   const [modalMode, setModalMode] = useState<ModalMode>('Expenses');
@@ -359,6 +365,32 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Connection Status Banner */}
+          {isSheetConnected ? (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-lg text-xs text-emerald-800">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+              <span>
+                Đang kết nối Google Sheet · Ghi vào bảng <strong>{modalMode === 'Expenses' ? (expensesTabName || 'Expenses') : modalMode === 'Income' ? (incomeTabName || 'Income') : 'Budget Transfers'}</strong>
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+              <div className="flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Chưa kết nối Google Sheet (Dữ liệu sẽ lưu tạm trên máy).</span>
+              </div>
+              {onGoogleLogin && (
+                <button
+                  type="button"
+                  onClick={onGoogleLogin}
+                  className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-medium rounded-md text-[11px] shrink-0 transition-colors"
+                >
+                  Đăng nhập để đồng bộ
+                </button>
+              )}
+            </div>
+          )}
 
           {modalMode === 'Transfer' ? (
             /* TRANSFER BUDGET FORM */
