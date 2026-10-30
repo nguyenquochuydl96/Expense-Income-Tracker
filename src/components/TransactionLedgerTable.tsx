@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Search, Plus, ArrowUpDown, FilterX, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Search, Plus, ArrowUpDown, FilterX, RefreshCw, CheckCircle2, Edit3, Trash2 } from 'lucide-react';
 import {
   CATEGORY_COLORS,
   EXPENSE_CATEGORIES,
@@ -14,6 +14,8 @@ interface TransactionLedgerTableProps {
   selectedCategory: string;
   onSelectCategory: (cat: string) => void;
   onOpenAddModal: () => void;
+  onEditTransaction?: (record: TransactionRecord) => void;
+  onDeleteTransaction?: (record: TransactionRecord) => void;
 }
 
 type QuickLedgerFilter = 'all' | 'expenses' | 'income' | 'becorp' | 'credit' | 'savings';
@@ -23,6 +25,8 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
   selectedCategory,
   onSelectCategory,
   onOpenAddModal,
+  onEditTransaction,
+  onDeleteTransaction,
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [quickFilter, setQuickFilter] = useState<QuickLedgerFilter>('all');
@@ -238,12 +242,13 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
               <th className="py-2.5 px-4 text-right w-32 text-amber-800">BE Corp</th>
               <th className="py-2.5 px-4 text-right w-32 text-indigo-800">Credit</th>
               <th className="py-2.5 px-4 w-36">Bảng / Ghi chú</th>
+              <th className="py-2.5 px-3 text-center w-20">Thao tác</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 text-xs">
             {displayedRows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-12 text-center text-slate-500">
+                <td colSpan={8} className="py-12 text-center text-slate-500">
                   Không tìm thấy dòng giao dịch nào khớp với bộ lọc hiện tại.
                 </td>
               </tr>
@@ -319,6 +324,30 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                           )}
                         </>
                       )}
+                    </td>
+                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                      <div className="flex items-center justify-center gap-1">
+                        {onEditTransaction && (
+                          <button
+                            type="button"
+                            title="Chỉnh sửa giao dịch này"
+                            onClick={() => onEditTransaction(rec)}
+                            className="p-1.5 text-slate-500 hover:text-sky-700 hover:bg-sky-50 rounded-lg transition-colors"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {onDeleteTransaction && (
+                          <button
+                            type="button"
+                            title="Xóa giao dịch này"
+                            onClick={() => onDeleteTransaction(rec)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );

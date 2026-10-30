@@ -11,6 +11,7 @@ import {
   CalendarRange,
   Filter,
   Bot,
+  Trash2,
 } from 'lucide-react';
 import { User } from 'firebase/auth';
 import {
@@ -41,18 +42,21 @@ import {
 import {
   appendBudgetTransferToSheet,
   appendTransactionToSheet,
+  deleteTransactionFromSheet,
   extractSpreadsheetId,
   fetchBudgetTransfersSheet,
   fetchCheckTienSheet,
   fetchSpreadsheetMetadata,
   fetchTabTransactions,
   SpreadsheetMetadata,
+  updateTransactionOnSheet,
 } from './services/googleSheetsService';
 import { AnalyticsCharts } from './components/AnalyticsCharts';
 import {
   AddTransactionModal,
   NewTransactionPayload,
 } from './components/AddTransactionModal';
+import { EditTransactionModal } from './components/EditTransactionModal';
 import { TransactionLedgerTable } from './components/TransactionLedgerTable';
 import { DashboardDualTables } from './components/DashboardDualTables';
 import { MultiMonthSummaryTable } from './components/MultiMonthSummaryTable';
@@ -160,6 +164,11 @@ export default function App() {
   const [addModalPreset, setAddModalPreset] =
     useState<Partial<NewTransactionPayload> | null>(null);
   const [isTelegramModalOpen, setIsTelegramModalOpen] = useState<boolean>(false);
+
+  // Edit & Delete Transaction modal state
+  const [editingTransaction, setEditingTransaction] = useState<TransactionRecord | null>(null);
+  const [deletingTransaction, setDeletingTransaction] = useState<TransactionRecord | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // Toast notification
   const [toast, setToast] = useState<{
@@ -894,6 +903,114 @@ export default function App() {
     }
   };
 
+  // Edit transaction handler
+  const handleSaveEditedTransaction = async (updated: TransactionRecord) => {
+    const effectiveToken = accessToken || getStoredAccessToken();
+    const effectiveSheetId = sheetMeta?.spreadsheetId || extractSpreadsheetId(spreadsheetInput);
+
+    // 1. Optimistic update
+    setSheetRecords((prev) =>
+      prev ? prev.map((r) => (r.id === updated.id ? updated : r)) : prev
+    );
+    setLocalNewRecords((prev) =>
+      prev.map((r) => (r.id === updated.id ? updated : r))
+    );
+
+    // 2. If already on Google Sheet
+    if (updated.rowIndex && effectiveSheetId && effectiveToken) {
+      const expensesTab = sheetMeta?.expensesTab || 'Expenses';
+      const incomeTab = sheetMeta?.incomeTab || 'Income';
+      const originalRecord = (sheetRecords || []).find((r) => r.id === updated.id);
+      const originalTab = originalRecord?.sheetType === 'Income' ? incomeTab : expensesTab;
+      const targetTab = updated.sheetType === 'Income' ? incomeTab : expensesTab;
+
+      if (originalTab !== targetTab) {
+        // Tab changed: delete from old tab and append to new tab
+        const oldSheetId =
+          sheetMeta?.sheetIdsByName?.[originalTab] ??
+          (originalRecord?.sheetType === 'Income' ? 392215035 : 1528073380);
+        await deleteTransactionFromSheet(effectiveSheetId, oldSheetId, updated.rowIndex, effectiveToken);
+        await appendTransactionToSheet(
+          effectiveSheetId,
+          targetTab,
+          {
+            sheetType: updated.sheetType,
+            purchaseDate: updated.purchaseDate,
+            category: updated.category,
+            purchaseItem: updated.purchaseItem,
+            amount: updated.amount,
+            beCorp: updated.beCorp,
+            credit: updated.credit,
+            note: updated.note,
+          },
+          effectiveToken
+        );
+      } else {
+        await updateTransactionOnSheet(
+          effectiveSheetId,
+          targetTab,
+          updated.rowIndex,
+          {
+            sheetType: updated.sheetType,
+            purchaseDate: updated.purchaseDate,
+            category: updated.category,
+            purchaseItem: updated.purchaseItem,
+            amount: updated.amount,
+            beCorp: updated.beCorp,
+            credit: updated.credit,
+            note: updated.note,
+          },
+          effectiveToken
+        );
+      }
+
+      showToast('success', `✓ Đã cập nhật "${updated.purchaseItem}" trên Google Sheet!`);
+      // Background sync to refresh overviews and recalculate balances
+      handleConnectAndSyncSheet(effectiveSheetId, effectiveToken).catch(console.error);
+    } else {
+      showToast('success', `✓ Đã cập nhật giao dịch "${updated.purchaseItem}"!`);
+    }
+  };
+
+  // Delete transaction handler
+  const handleConfirmDelete = async () => {
+    if (!deletingTransaction) return;
+    const target = deletingTransaction;
+    const effectiveToken = accessToken || getStoredAccessToken();
+    const effectiveSheetId = sheetMeta?.spreadsheetId || extractSpreadsheetId(spreadsheetInput);
+
+    setIsDeleting(true);
+    try {
+      // 1. Optimistic remove
+      setSheetRecords((prev) => (prev ? prev.filter((r) => r.id !== target.id) : prev));
+      setLocalNewRecords((prev) => prev.filter((r) => r.id !== target.id));
+      setAttachedRecords((prev) => prev.filter((r) => r.id !== target.id));
+
+      // 2. If it is on Google Sheet
+      if (target.rowIndex && effectiveSheetId && effectiveToken) {
+        const expensesTab = sheetMeta?.expensesTab || 'Expenses';
+        const incomeTab = sheetMeta?.incomeTab || 'Income';
+        const tabName = target.sheetType === 'Income' ? incomeTab : expensesTab;
+        const sheetId =
+          sheetMeta?.sheetIdsByName?.[tabName] ??
+          (target.sheetType === 'Income' ? 392215035 : 1528073380);
+
+        await deleteTransactionFromSheet(effectiveSheetId, sheetId, target.rowIndex, effectiveToken);
+        showToast('success', `✓ Đã xóa vĩnh viễn dòng #${target.rowIndex} ("${target.purchaseItem}") khỏi Google Sheet!`);
+        // Background sync to re-index all rows
+        handleConnectAndSyncSheet(effectiveSheetId, effectiveToken).catch(console.error);
+      } else {
+        showToast('success', `✓ Đã xóa giao dịch "${target.purchaseItem}"!`);
+      }
+
+      setDeletingTransaction(null);
+    } catch (err: any) {
+      showToast('warning', `Không thể xóa giao dịch: ${err?.message || 'Lỗi không xác định'}`);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Push pending to sheet
   const handlePushPendingToSheet = async () => {
     const effectiveToken = accessToken || getStoredAccessToken();
@@ -1557,6 +1674,8 @@ export default function App() {
                   setAddModalPreset(null);
                   setIsAddModalOpen(true);
                 }}
+                onEditTransaction={setEditingTransaction}
+                onDeleteTransaction={setDeletingTransaction}
               />
             )}
 
@@ -1619,6 +1738,89 @@ export default function App() {
         onClose={() => setIsTelegramModalOpen(false)}
         spreadsheetUrl={spreadsheetInput}
       />
+
+      {/* EDIT TRANSACTION MODAL */}
+      <EditTransactionModal
+        isOpen={Boolean(editingTransaction)}
+        onClose={() => setEditingTransaction(null)}
+        record={editingTransaction}
+        onSave={handleSaveEditedTransaction}
+        onDeleteRequest={(rec) => {
+          setEditingTransaction(null);
+          setDeletingTransaction(rec);
+        }}
+      />
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deletingTransaction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Xác nhận xóa giao dịch</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Bạn có chắc chắn muốn xóa vĩnh viễn giao dịch này?
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Mục chi tiêu:</span>
+                <span className="font-semibold text-slate-900">{deletingTransaction.purchaseItem}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Ngày:</span>
+                <span className="font-mono-tabular text-slate-700">{deletingTransaction.purchaseDate}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Danh mục:</span>
+                <span className="text-slate-700">{deletingTransaction.category}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Số tiền:</span>
+                <span className="font-mono-tabular font-bold text-rose-700">
+                  {formatCurrency(deletingTransaction.amount)}
+                </span>
+              </div>
+              {deletingTransaction.rowIndex && (
+                <div className="flex justify-between border-t border-slate-200/80 pt-1.5 mt-1.5">
+                  <span className="text-slate-500">Google Sheet:</span>
+                  <span className="font-mono-tabular text-teal-700 font-medium">
+                    {deletingTransaction.sheetType} · Dòng #{deletingTransaction.rowIndex}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs text-rose-600 bg-rose-50/80 border border-rose-200 rounded-lg p-2.5">
+              ⚠️ Thao tác này sẽ xóa trực tiếp dòng tương ứng trên Google Sheet (nếu đã kết nối) và cập nhật lại toàn bộ ngân sách. Không thể hoàn tác.
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={() => setDeletingTransaction(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+              >
+                {isDeleting ? 'Đang xóa...' : 'Xóa vĩnh viễn'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,6 +10,7 @@ export interface SpreadsheetMetadata {
   checkTienTab: string | null;
   summaryTab: string | null;
   budgetTransfersTab: string | null;
+  sheetIdsByName?: Record<string, number>;
 }
 
 export interface SummarySheetData {
@@ -46,7 +47,7 @@ export async function fetchSpreadsheetMetadata(
 ): Promise<SpreadsheetMetadata> {
   const spreadsheetId = extractSpreadsheetId(spreadsheetIdOrUrl);
   const res = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}?fields=spreadsheetId,properties.title,sheets.properties.title`,
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}?fields=spreadsheetId,properties.title,sheets.properties(title,sheetId)`,
     {
       headers: { Authorization: `Bearer ${accessToken}` },
     }
@@ -63,6 +64,15 @@ export async function fetchSpreadsheetMetadata(
 
   const data = await res.json();
   const sheetNames: string[] = (data.sheets || []).map((s: any) => s.properties?.title || '');
+  const sheetIdsByName: Record<string, number> = {
+    'Expenses': 1528073380,
+    'Income': 392215035,
+  };
+  (data.sheets || []).forEach((s: any) => {
+    if (s.properties?.title && s.properties?.sheetId !== undefined) {
+      sheetIdsByName[s.properties.title] = s.properties.sheetId;
+    }
+  });
 
   const expensesTab = findMatchingTab(
     sheetNames,
@@ -86,6 +96,7 @@ export async function fetchSpreadsheetMetadata(
     checkTienTab: checkTienMatch || null,
     summaryTab: summaryMatch || null,
     budgetTransfersTab: sheetNames.find((n) => /budget transfer|transfer/i.test(n)) || null,
+    sheetIdsByName,
   };
 }
 
@@ -463,5 +474,119 @@ export async function appendBudgetTransferToSheet(
       throw new Error(`TOKEN_EXPIRED: Token Google OAuth đã hết hạn (${msg})`);
     }
     throw new Error(`Không thể ghi dòng mới vào bảng ${tabName}: ${msg}`);
+  }
+}
+
+/**
+ * Updates an existing transaction row in Google Sheet by rowIndex
+ */
+export async function updateTransactionOnSheet(
+  spreadsheetId: string,
+  tabName: string,
+  rowIndex: number,
+  record: {
+    sheetType?: SheetTabType;
+    purchaseDate: string;
+    category: string;
+    purchaseItem: string;
+    amount: number;
+    beCorp: number;
+    credit: number;
+    note?: string;
+  },
+  accessToken: string
+): Promise<void> {
+  const isIncome = record.sheetType === 'Income' || tabName.toLowerCase().includes('income');
+  const safeTab = `'${tabName.replace(/'/g, "''")}'`;
+
+  let rowValues: any[];
+  let range: string;
+
+  if (isIncome) {
+    range = `${safeTab}!A${rowIndex}:D${rowIndex}`;
+    rowValues = [
+      record.purchaseDate,
+      record.category,
+      record.purchaseItem,
+      record.amount,
+    ];
+  } else {
+    range = `${safeTab}!A${rowIndex}:G${rowIndex}`;
+    rowValues = [
+      record.purchaseDate,
+      record.category,
+      record.purchaseItem,
+      record.amount,
+      record.beCorp > 0 ? record.beCorp : '',
+      record.credit > 0 ? record.credit : '',
+      record.note || '',
+    ];
+  }
+
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
+    spreadsheetId
+  )}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`;
+
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      values: [rowValues],
+    }),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    if (res.status === 401) {
+      throw new Error(`TOKEN_EXPIRED: Token Google OAuth đã hết hạn (${errBody?.error?.message || ''})`);
+    }
+    throw new Error(errBody?.error?.message || `Không thể cập nhật dòng #${rowIndex} trên bảng ${tabName}`);
+  }
+}
+
+/**
+ * Deletes a row permanently from Google Sheet by rowIndex
+ */
+export async function deleteTransactionFromSheet(
+  spreadsheetId: string,
+  sheetId: number,
+  rowIndex: number,
+  accessToken: string
+): Promise<void> {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
+    spreadsheetId
+  )}:batchUpdate`;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId,
+              dimension: 'ROWS',
+              startIndex: rowIndex - 1, // 0-based index
+              endIndex: rowIndex,
+            },
+          },
+        },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    if (res.status === 401) {
+      throw new Error(`TOKEN_EXPIRED: Token Google OAuth đã hết hạn (${errBody?.error?.message || ''})`);
+    }
+    throw new Error(errBody?.error?.message || `Không thể xóa dòng #${rowIndex} trên Google Sheet`);
   }
 }
