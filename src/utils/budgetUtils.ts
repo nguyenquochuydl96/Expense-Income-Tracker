@@ -99,6 +99,7 @@ export interface MultiMonthRolloverResult {
   allCategories: string[];
   generalMonthlyIncomes: Record<string, number>;
   totalMonthlyIncomes: Record<string, number>;
+  dedicatedMonthlyIncomes?: Record<string, Record<string, number>>;
   monthlyCategoryExpenses: Record<string, Record<string, { total: number; count: number }>>;
   monthlyTransfersIn: Record<string, Record<string, number>>;
   monthlyTransfersOut: Record<string, Record<string, number>>;
@@ -133,18 +134,37 @@ export function computeMultiMonthRollover(
   }
   const allCategories = Array.from(cSet);
 
-  // 3. Monthly Incomes
+  // 3. Monthly Incomes: Partition into General Income vs Dedicated Category Income
   const generalMonthlyIncomes: Record<string, number> = {};
   const totalMonthlyIncomes: Record<string, number> = {};
+  const dedicatedMonthlyIncomes: Record<string, Record<string, number>> = {};
 
   for (const mKey of allChronologicalMonths) {
-    let sum = 0;
+    let generalSum = 0;
+    let totalSum = 0;
+    dedicatedMonthlyIncomes[mKey] = {};
+
     const mIncomes = allRecords.filter((r) => r.sheetType === 'Income' && r.monthKey === mKey);
     for (const r of mIncomes) {
-      sum += r.amount;
+      totalSum += r.amount;
+      const rawCat = (r.category || '').trim();
+
+      // Check if income is designated specifically for an expense category
+      const matchedExpenseCat = allCategories.find(
+        (c) => c.toLowerCase() === rawCat.toLowerCase() || rawCat.toLowerCase().startsWith(c.toLowerCase())
+      );
+
+      if (matchedExpenseCat) {
+        // Dedicated 100% directly to this category's budget
+        dedicatedMonthlyIncomes[mKey][matchedExpenseCat] =
+          (dedicatedMonthlyIncomes[mKey][matchedExpenseCat] || 0) + r.amount;
+      } else {
+        // General household salary/income to be split according to percentages
+        generalSum += r.amount;
+      }
     }
-    generalMonthlyIncomes[mKey] = sum;
-    totalMonthlyIncomes[mKey] = sum;
+    generalMonthlyIncomes[mKey] = generalSum;
+    totalMonthlyIncomes[mKey] = totalSum;
   }
 
   // 4. Monthly Transfers
@@ -227,9 +247,11 @@ export function computeMultiMonthRollover(
       }
 
       // Base budget calculation:
-      // Uses exact formula ratio matching Google Sheet (=SUMIFS(...) * XLOOKUP(...))
+      // Uses exact formula ratio matching Google Sheet (=SUMIFS(...) * XLOOKUP(...)) for general income,
+      // PLUS 100% of any dedicated income designated specifically for this category!
       const baseFromGeneral = Math.round(mGeneralIncome * ratio);
-      const baseBudget = baseFromGeneral;
+      const dedicatedIncome = dedicatedMonthlyIncomes[mKey]?.[cat] || 0;
+      const baseBudget = baseFromGeneral + dedicatedIncome;
 
       const transferIn = monthlyTransfersIn[mKey]?.[cat] || 0;
       const transferOut = monthlyTransfersOut[mKey]?.[cat] || 0;
@@ -257,7 +279,7 @@ export function computeMultiMonthRollover(
         percentage: pct,
         baseBudget,
         baseFromGeneral,
-        dedicatedIncome: 0,
+        dedicatedIncome,
         transferIn,
         transferOut,
         netTransfer,
@@ -280,6 +302,7 @@ export function computeMultiMonthRollover(
     allCategories,
     generalMonthlyIncomes,
     totalMonthlyIncomes,
+    dedicatedMonthlyIncomes,
     monthlyCategoryExpenses,
     monthlyTransfersIn,
     monthlyTransfersOut,
