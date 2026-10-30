@@ -74,6 +74,41 @@ export const DEFAULT_CATEGORY_RATIOS: Record<string, number> = {
   'Khác': 0.5 / 51.0,
 };
 
+// General income categories (salary / shared household income split by %):
+export const GENERAL_INCOME_CATEGORIES = new Set([
+  'lương yes4all',
+  'lương be',
+  'công đoàn yes4all',
+  'công đoàn be',
+  'lương heo',
+  'lương mèo',
+  'chứng khoán',
+  'bán hàng',
+  'khác',
+  'thu nhập chung',
+]);
+
+/**
+ * Determines whether an income category is dedicated to a specific expense category.
+ * Returns the matching expense category name if dedicated, or null if it's general shared income.
+ */
+export function getDedicatedExpenseCategory(
+  rawCategory: string | undefined,
+  allCategories: string[] = Array.from(EXPENSE_CATEGORIES)
+): string | null {
+  if (!rawCategory) return null;
+  const clean = rawCategory.trim().toLowerCase();
+  if (GENERAL_INCOME_CATEGORIES.has(clean)) return null;
+
+  for (const cat of allCategories) {
+    if (cat === 'Khác') continue;
+    if (cat.toLowerCase() === clean || clean.startsWith(cat.toLowerCase())) {
+      return cat;
+    }
+  }
+  return null;
+}
+
 export interface CategoryMonthBudgetStats {
   category: string;
   monthKey: string;
@@ -150,9 +185,7 @@ export function computeMultiMonthRollover(
       const rawCat = (r.category || '').trim();
 
       // Check if income is designated specifically for an expense category
-      const matchedExpenseCat = allCategories.find(
-        (c) => c.toLowerCase() === rawCat.toLowerCase() || rawCat.toLowerCase().startsWith(c.toLowerCase())
-      );
+      const matchedExpenseCat = getDedicatedExpenseCategory(rawCat, allCategories);
 
       if (matchedExpenseCat) {
         // Dedicated 100% directly to this category's budget
