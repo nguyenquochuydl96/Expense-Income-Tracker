@@ -45,14 +45,15 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
     if (isOpen && record) {
       setErrorMsg(null);
       setSheetType(record.sheetType || 'Expenses');
-      setIsoDate(record.isoDate || '');
+      const safeIso = record.isoDate || parseDateString(record.purchaseDate || '').isoDate || '';
+      setIsoDate(safeIso);
       
-      const isCustom =
+      const isKnown =
         record.sheetType === 'Expenses'
-          ? !EXPENSE_CATEGORIES.includes(record.category as any)
-          : !INCOME_CATEGORIES.includes(record.category as any);
+          ? EXPENSE_CATEGORIES.includes(record.category as any)
+          : INCOME_CATEGORIES.includes(record.category as any) || EXPENSE_CATEGORIES.includes(record.category as any);
 
-      if (isCustom && record.category) {
+      if (!isKnown && record.category) {
         setCategory('__CUSTOM__');
         setCustomCategory(record.category);
       } else {
@@ -233,12 +234,34 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
               >
-                {categoriesList.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-                <option value="__CUSTOM__">+ Danh mục tùy biến...</option>
+                {sheetType === 'Expenses' ? (
+                  <>
+                    {EXPENSE_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                    <option value="__CUSTOM__">+ Danh mục tùy biến...</option>
+                  </>
+                ) : (
+                  <>
+                    <optgroup label="💼 Thu nhập chung (Chia theo % ngân sách)">
+                      {INCOME_CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="🎯 Dành riêng cho 1 mục (Cộng thẳng 100% vào mục đó)">
+                      {EXPENSE_CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <option value="__CUSTOM__">+ Danh mục tùy biến...</option>
+                  </>
+                )}
               </select>
             </div>
           </div>

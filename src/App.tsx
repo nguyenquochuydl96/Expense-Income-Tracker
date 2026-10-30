@@ -921,7 +921,8 @@ export default function App() {
       const expensesTab = sheetMeta?.expensesTab || 'Expenses';
       const incomeTab = sheetMeta?.incomeTab || 'Income';
       const originalRecord = (sheetRecords || []).find((r) => r.id === updated.id);
-      const originalTab = originalRecord?.sheetType === 'Income' ? incomeTab : expensesTab;
+      const originalSheetType = originalRecord?.sheetType ?? updated.sheetType;
+      const originalTab = originalSheetType === 'Income' ? incomeTab : expensesTab;
       const targetTab = updated.sheetType === 'Income' ? incomeTab : expensesTab;
 
       if (originalTab !== targetTab) {

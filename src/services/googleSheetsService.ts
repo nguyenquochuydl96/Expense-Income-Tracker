@@ -508,7 +508,7 @@ export async function updateTransactionOnSheet(
       record.purchaseDate,
       record.category,
       record.purchaseItem,
-      record.amount,
+      formatNumberForSheet(record.amount, true),
     ];
   } else {
     range = `${safeTab}!A${rowIndex}:G${rowIndex}`;
@@ -516,9 +516,9 @@ export async function updateTransactionOnSheet(
       record.purchaseDate,
       record.category,
       record.purchaseItem,
-      record.amount,
-      record.beCorp > 0 ? record.beCorp : '',
-      record.credit > 0 ? record.credit : '',
+      formatNumberForSheet(record.amount, true),
+      record.beCorp > 0 ? formatNumberForSheet(record.beCorp, false) : '',
+      record.credit > 0 ? formatNumberForSheet(record.credit, false) : '',
       record.note || '',
     ];
   }

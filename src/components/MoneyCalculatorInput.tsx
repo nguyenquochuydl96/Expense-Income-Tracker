@@ -137,7 +137,18 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
 
   // Evaluate on Enter or '=' or blur
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === '=') {
+    if (e.key === '=') {
+      e.preventDefault();
+      const evaluated = evaluateMoneyExpression(text);
+      if (evaluated !== null) {
+        const formatted = formatMoneyString(evaluated);
+        setText(formatted);
+        onChange(formatted, evaluated);
+      }
+      return;
+    }
+
+    if (e.key === 'Enter') {
       if (isExpression(text)) {
         e.preventDefault();
         const evaluated = evaluateMoneyExpression(text);
@@ -158,12 +169,17 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
         setText(formatted);
         onChange(formatted, evaluated);
       } else {
-        // Fallback to numeric digits
         const num = parseMoneyNumber(text);
         const formatted = num !== 0 ? formatMoneyString(num) : '';
         setText(formatted);
         onChange(formatted, num);
       }
+    } else {
+      const num = parseMoneyNumber(text);
+      const isNeg = allowNegative && text.trim().startsWith('-');
+      const formatted = (isNeg ? '-' : '') + (num !== 0 ? formatMoneyString(Math.abs(num)) : '');
+      setText(formatted);
+      onChange(formatted, num);
     }
   };
 
@@ -222,6 +238,39 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
     onChange(formatted, finalNum);
     setIsCalcOpen(false);
   };
+
+  // Keyboard shortcut listener for popup calculator
+  useEffect(() => {
+    if (!isCalcOpen) return;
+
+    const onWindowKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setIsCalcOpen(false);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        handleApplyCalc();
+      } else if (e.key === 'Backspace') {
+        e.preventDefault();
+        handleCalcAppend('DEL');
+      } else if (e.key === 'Delete' || e.key.toLowerCase() === 'c') {
+        e.preventDefault();
+        handleCalcAppend('C');
+      } else if (/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        handleCalcAppend(e.key);
+      } else if (['+', '-', '*', '/', '(', ')', '.'].includes(e.key)) {
+        e.preventDefault();
+        handleCalcAppend(e.key);
+      } else if (e.key === '=') {
+        e.preventDefault();
+        handleCalcAppend('=');
+      }
+    };
+
+    window.addEventListener('keydown', onWindowKeyDown);
+    return () => window.removeEventListener('keydown', onWindowKeyDown);
+  }, [isCalcOpen, calcResult, calcExpr]);
 
   // Size styling variants
   const sizeClasses = {
