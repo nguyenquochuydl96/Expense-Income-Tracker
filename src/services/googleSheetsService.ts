@@ -419,6 +419,50 @@ export async function appendTransactionToSheet(
   }
 
   const sendAppend = async () => {
+    // 1. Try to find the exact next row based on Column A (to avoid being pushed by trailing formula cells in other columns)
+    try {
+      const colARange = `${safeTab}!A:A`;
+      const colAUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
+        spreadsheetId
+      )}/values/${encodeURIComponent(colARange)}?majorDimension=COLUMNS`;
+      const colARes = await fetch(colAUrl, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (colARes.ok) {
+        const colAData = await colARes.json();
+        const colAVals: any[] = colAData.values?.[0] || [];
+        let lastFilledRow = 0;
+        for (let i = 0; i < colAVals.length; i++) {
+          if (colAVals[i] !== undefined && colAVals[i] !== null && String(colAVals[i]).trim() !== '') {
+            lastFilledRow = i + 1;
+          }
+        }
+        if (lastFilledRow > 0) {
+          const targetRow = lastFilledRow + 1;
+          const endCol = isIncome ? 'E' : 'G';
+          const putUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
+            spreadsheetId
+          )}/values/${encodeURIComponent(`${safeTab}!A${targetRow}:${endCol}${targetRow}`)}?valueInputOption=USER_ENTERED`;
+          const putRes = await fetch(putUrl, {
+            method: 'PUT',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              majorDimension: 'ROWS',
+              values: [rowValues],
+            }),
+          });
+          if (putRes.ok) {
+            return putRes;
+          }
+        }
+      }
+    } catch {
+      // Fall back to append if Column A lookup fails
+    }
+
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
       spreadsheetId
     )}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=OVERWRITE`;
@@ -551,6 +595,50 @@ export async function appendBudgetTransferToSheet(
   const range = `${safeTab}!A:F`;
 
   const sendAppend = async () => {
+    // 1. Try to find the exact next row based on Column A (to avoid being pushed by trailing formula cells in other columns)
+    try {
+      const colARange = `${safeTab}!A:A`;
+      const colAUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
+        spreadsheetId
+      )}/values/${encodeURIComponent(colARange)}?majorDimension=COLUMNS`;
+      const colARes = await fetch(colAUrl, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (colARes.ok) {
+        const colAData = await colARes.json();
+        const colAVals: any[] = colAData.values?.[0] || [];
+        let lastFilledRow = 0;
+        for (let i = 0; i < colAVals.length; i++) {
+          if (colAVals[i] !== undefined && colAVals[i] !== null && String(colAVals[i]).trim() !== '') {
+            lastFilledRow = i + 1;
+          }
+        }
+        if (lastFilledRow > 0) {
+          const targetRow = lastFilledRow + 1;
+          const endCol = 'F';
+          const putUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
+            spreadsheetId
+          )}/values/${encodeURIComponent(`${safeTab}!A${targetRow}:${endCol}${targetRow}`)}?valueInputOption=USER_ENTERED`;
+          const putRes = await fetch(putUrl, {
+            method: 'PUT',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              majorDimension: 'ROWS',
+              values: [rowValues],
+            }),
+          });
+          if (putRes.ok) {
+            return putRes;
+          }
+        }
+      }
+    } catch {
+      // Fall back to append if Column A lookup fails
+    }
+
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
       spreadsheetId
     )}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=OVERWRITE`;
