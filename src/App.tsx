@@ -35,10 +35,13 @@ import {
   googleSignIn,
   initAuth,
   logout,
+  getStoredAccessToken,
+  clearStoredAccessToken,
 } from './services/firebaseAuth';
 import {
   appendBudgetTransferToSheet,
   appendTransactionToSheet,
+  extractSpreadsheetId,
   fetchBudgetTransfersSheet,
   fetchCheckTienSheet,
   fetchSpreadsheetMetadata,
@@ -166,7 +169,7 @@ export default function App() {
 
   // Google Auth & Sheets state (token kept strictly in memory)
   const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(() => getStoredAccessToken());
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
   const [spreadsheetInput, setSpreadsheetInput] = useState<string>(() => {
     return localStorage.getItem(SAVED_SHEET_URL_KEY) || 'https://docs.google.com/spreadsheets/d/1CTSEC-J52yGD-VIxOuzyNZ8Qddg0bmOIzMSzRVM6ZTI/edit';
@@ -796,25 +799,32 @@ export default function App() {
       createdRecords.push(newRecord);
     }
 
-    if (sheetMeta && accessToken) {
+    const effectiveToken = accessToken || getStoredAccessToken();
+    const effectiveSheetId = sheetMeta?.spreadsheetId || extractSpreadsheetId(spreadsheetInput);
+
+    if (effectiveSheetId && effectiveToken) {
       createdRecords.forEach((r) => (r.syncing = true));
-      setSheetRecords((prev) => (prev ? [...prev, ...createdRecords] : [...createdRecords]));
+      setSheetRecords((prev) => (prev ? [...prev, ...createdRecords] : [...attachedRecords, ...createdRecords]));
       showToast(
         'success',
         createdRecords.length > 1
-          ? `✓ Đã ghi nhận chuyển ngân sách (${createdRecords.length} dòng)!`
-          : `✓ Đã thêm "${createdRecords[0].purchaseItem}" vào bảng!`
+          ? `✓ Đang tự động lưu & đồng bộ ${createdRecords.length} dòng lên Google Sheet...`
+          : `✓ Đang tự động lưu & đồng bộ "${createdRecords[0].purchaseItem}" lên Google Sheet...`
       );
 
+      const expensesTab = sheetMeta?.expensesTab || 'Expenses';
+      const incomeTab = sheetMeta?.incomeTab || 'Income';
+
+      let anyError = false;
       for (const record of createdRecords) {
         const targetTab =
           record.sheetType === 'Expenses'
-            ? sheetMeta.expensesTab
-            : sheetMeta.incomeTab;
+            ? expensesTab
+            : incomeTab;
 
         try {
           await appendTransactionToSheet(
-            sheetMeta.spreadsheetId,
+            effectiveSheetId,
             targetTab,
             {
               sheetType: record.sheetType,
@@ -826,7 +836,7 @@ export default function App() {
               credit: record.credit,
               note: record.note,
             },
-            accessToken
+            effectiveToken
           );
 
           setSheetRecords((prev) =>
@@ -839,6 +849,7 @@ export default function App() {
               : prev
           );
         } catch (err: any) {
+          anyError = true;
           setSheetRecords((prev) =>
             prev
               ? prev.map((r) =>
@@ -846,11 +857,27 @@ export default function App() {
                 )
               : prev
           );
+          if (err?.message?.includes('TOKEN_EXPIRED') || err?.message?.includes('401')) {
+            clearStoredAccessToken();
+            setAccessToken(null);
+          }
           showToast(
             'warning',
-            `Không thể đẩy "${record.purchaseItem}" lên Google Sheet. Dữ liệu vẫn lưu ở máy.`
+            `Không thể tự động đẩy "${record.purchaseItem}" lên Google Sheet (${err?.message || 'Lỗi kết nối'}). Đã lưu trên máy.`
           );
+          setLocalNewRecords((prev) => [...prev, record]);
         }
+      }
+
+      if (!anyError) {
+        showToast(
+          'success',
+          createdRecords.length > 1
+            ? `✓ Đã tự động đồng bộ thành công ${createdRecords.length} dòng lên Google Sheet!`
+            : `✓ Đã tự động đồng bộ thành công "${createdRecords[0].purchaseItem}" lên Google Sheet!`
+        );
+        // Live background sync to pull newest row indices & update balances
+        handleConnectAndSyncSheet(effectiveSheetId, effectiveToken).catch(console.error);
       }
     } else {
       setLocalNewRecords((prev) => [...prev, ...createdRecords]);
@@ -869,19 +896,24 @@ export default function App() {
 
   // Push pending to sheet
   const handlePushPendingToSheet = async () => {
-    if (!sheetMeta || !accessToken) return;
+    const effectiveToken = accessToken || getStoredAccessToken();
+    const effectiveSheetId = sheetMeta?.spreadsheetId || extractSpreadsheetId(spreadsheetInput);
+    if (!effectiveSheetId || !effectiveToken) return;
     const pending = localNewRecords.filter((r) => !r.syncedToSheet);
     if (pending.length === 0) return;
 
     setIsSyncing(true);
     try {
+      const expensesTab = sheetMeta?.expensesTab || 'Expenses';
+      const incomeTab = sheetMeta?.incomeTab || 'Income';
+
       for (const rec of pending) {
         const targetTab =
           rec.sheetType === 'Expenses'
-            ? sheetMeta.expensesTab
-            : sheetMeta.incomeTab;
+            ? expensesTab
+            : incomeTab;
         await appendTransactionToSheet(
-          sheetMeta.spreadsheetId,
+          effectiveSheetId,
           targetTab,
           {
             sheetType: rec.sheetType,
@@ -893,14 +925,14 @@ export default function App() {
             credit: rec.credit,
             note: rec.note,
           },
-          accessToken
+          effectiveToken
         );
       }
 
       setLocalNewRecords((prev) =>
         prev.map((r) => ({ ...r, syncedToSheet: true }))
       );
-      await handleConnectAndSyncSheet(sheetMeta.spreadsheetId, accessToken);
+      await handleConnectAndSyncSheet(effectiveSheetId, effectiveToken);
       showToast(
         'success',
         `Đã đẩy thành công ${pending.length} dòng mới lên cuối bảng Google Sheet!`
@@ -1576,7 +1608,7 @@ export default function App() {
         onSave={handleSaveTransaction}
         onSaveTransfer={handleSaveTransfer}
         suggestions={itemSuggestions}
-        isSheetConnected={Boolean(sheetMeta && accessToken)}
+        isSheetConnected={Boolean((sheetMeta || spreadsheetInput) && (accessToken || getStoredAccessToken()))}
         initialPreset={addModalPreset}
         allRecords={allRecords}
       />

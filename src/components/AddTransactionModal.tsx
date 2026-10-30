@@ -43,6 +43,14 @@ interface AddTransactionModalProps {
   allRecords: TransactionRecord[];
 }
 
+const getTodayIsoDate = (): string => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
 export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   isOpen,
   onClose,
@@ -55,7 +63,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   type ModalMode = 'Expenses' | 'Income' | 'Transfer';
   const [modalMode, setModalMode] = useState<ModalMode>('Expenses');
   const [sheetType, setSheetType] = useState<SheetTabType>('Expenses');
-  const [isoDate, setIsoDate] = useState<string>('2026-10-25');
+  const [isoDate, setIsoDate] = useState<string>(() => getTodayIsoDate());
   const [category, setCategory] = useState<string>('Ăn uống');
   const [fromCategory, setFromCategory] = useState<string>('Giải trí Heo');
   const [toCategory, setToCategory] = useState<string>('Giải trí Mèo');
@@ -81,10 +89,10 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           setModalMode(targetSheet === 'Income' ? 'Income' : 'Expenses');
           setSheetType(targetSheet);
         }
-        setIsoDate(initialPreset.isoDate || '2026-10-25');
+        setIsoDate(initialPreset.isoDate || getTodayIsoDate());
         setCategory(
           initialPreset.category ||
-            (targetSheet === 'Expenses' ? 'Khác' : 'Lương Yes4All')
+            (targetSheet === 'Expenses' ? 'Ăn uống' : 'Lương Yes4All')
         );
         setPurchaseItem(initialPreset.purchaseItem || '');
         setAmountStr(
@@ -103,6 +111,17 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             : ''
         );
         setNote(initialPreset.note || '');
+      } else {
+        // Reset cleanly to default form with TODAY'S date and default category
+        setIsoDate(getTodayIsoDate());
+        setModalMode('Expenses');
+        setSheetType('Expenses');
+        setCategory('Ăn uống');
+        setPurchaseItem('');
+        setAmountStr('');
+        setBeCorpStr('');
+        setCreditStr('');
+        setNote('');
       }
     }
   }, [isOpen, initialPreset]);

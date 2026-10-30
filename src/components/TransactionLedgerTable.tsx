@@ -66,8 +66,8 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
       if (dateCmp !== 0) {
         return sortOrder === 'newest' ? -dateCmp : dateCmp;
       }
-      const idxA = a.rowIndex || 0;
-      const idxB = b.rowIndex || 0;
+      const idxA = a.rowIndex || (a.source === 'local_new' ? 999999 : 0);
+      const idxB = b.rowIndex || (b.source === 'local_new' ? 999999 : 0);
       return sortOrder === 'newest' ? idxB - idxA : idxA - idxB;
     });
   }, [records, selectedCategory, quickFilter, searchQuery, sortOrder]);
