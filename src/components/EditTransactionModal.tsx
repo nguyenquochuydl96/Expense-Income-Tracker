@@ -12,6 +12,7 @@ import {
   parseDateString,
 } from '../utils/csvParser';
 import { X, Calendar, Tag, FileText, DollarSign, CreditCard, Trash2, Check, AlertCircle } from 'lucide-react';
+import { MoneyCalculatorInput } from './MoneyCalculatorInput';
 
 export interface EditTransactionModalProps {
   isOpen: boolean;
@@ -280,13 +281,14 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 <DollarSign className="w-3.5 h-3.5 text-slate-400" />
                 <span>Số tiền (₫) *</span>
               </label>
-              <input
-                type="text"
-                required
-                placeholder="50,000"
+              <MoneyCalculatorInput
                 value={amountStr}
-                onChange={(e) => handleAmountChange(e.target.value, setAmountStr)}
-                className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 font-mono-tabular font-semibold text-slate-900"
+                onChange={(val) => setAmountStr(val)}
+                placeholder="50,000"
+                theme={sheetType === 'Expenses' ? 'rose' : 'emerald'}
+                size="sm"
+                required
+                inputClassName="font-semibold text-slate-900 bg-slate-50"
               />
             </div>
 
@@ -296,12 +298,13 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                   <label className="block text-xs font-semibold text-amber-800 mb-1 flex items-center gap-1">
                     <span>BE Corp</span>
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Để trống nếu 0"
+                  <MoneyCalculatorInput
                     value={beCorpStr}
-                    onChange={(e) => handleAmountChange(e.target.value, setBeCorpStr)}
-                    className="w-full text-xs px-3 py-2 bg-amber-50/40 border border-amber-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 font-mono-tabular text-amber-900"
+                    onChange={(val) => setBeCorpStr(val)}
+                    placeholder="Để trống nếu 0"
+                    theme="amber"
+                    size="sm"
+                    inputClassName="text-amber-900 bg-amber-50/40"
                   />
                 </div>
 
@@ -310,12 +313,13 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                     <CreditCard className="w-3.5 h-3.5 text-indigo-500" />
                     <span>Quẹt thẻ Credit</span>
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Để trống nếu 0"
+                  <MoneyCalculatorInput
                     value={creditStr}
-                    onChange={(e) => handleAmountChange(e.target.value, setCreditStr)}
-                    className="w-full text-xs px-3 py-2 bg-indigo-50/40 border border-indigo-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 font-mono-tabular text-indigo-900"
+                    onChange={(val) => setCreditStr(val)}
+                    placeholder="Để trống nếu 0"
+                    theme="indigo"
+                    size="sm"
+                    inputClassName="text-indigo-900 bg-indigo-50/40"
                   />
                 </div>
               </>

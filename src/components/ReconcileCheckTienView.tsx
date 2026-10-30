@@ -27,6 +27,8 @@ import {
 } from '../utils/csvParser';
 import { getBillingCycleRange } from '../utils/cycleUtils';
 import { NewTransactionPayload } from './AddTransactionModal';
+import { MoneyCalculatorInput } from './MoneyCalculatorInput';
+import { evaluateMoneyExpression } from '../utils/mathExpression';
 
 export interface WalletCategory {
   cash: number;       // Tiền mặt
@@ -150,10 +152,20 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
   const handleWalletChange = (
     person: 'heo' | 'meo',
     field: keyof WalletCategory,
-    rawVal: string
+    rawVal: string | number
   ) => {
-    const cleanDigits = rawVal.replace(/[^\d]/g, '');
-    const num = cleanDigits === '' ? 0 : parseInt(cleanDigits, 10);
+    let num = 0;
+    if (typeof rawVal === 'number') {
+      num = rawVal;
+    } else {
+      const evaluated = evaluateMoneyExpression(rawVal);
+      if (evaluated !== null) {
+        num = evaluated;
+      } else {
+        const cleanDigits = rawVal.replace(/[^\d]/g, '');
+        num = cleanDigits === '' ? 0 : parseInt(cleanDigits, 10);
+      }
+    }
     setWallets((prev) => ({
       ...prev,
       [person]: {
@@ -656,13 +668,14 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                       {WALLET_FIELDS.map((f) => (
                         <div key={f.key} className="flex items-center justify-between gap-1">
                           <span className="text-slate-600 truncate">{f.label}:</span>
-                          <input
-                            type="text"
-                            inputMode="numeric"
+                          <MoneyCalculatorInput
                             value={wallets.heo[f.key] === 0 ? '' : formatNumberForSheet(wallets.heo[f.key], false)}
+                            onChange={(_str, num) => handleWalletChange('heo', f.key, num)}
                             placeholder="0"
-                            onChange={(e) => handleWalletChange('heo', f.key, e.target.value)}
-                            className="w-20 px-1.5 py-0.5 text-right font-mono-tabular font-bold border border-slate-200 rounded bg-white text-slate-900 focus:outline-none focus:border-rose-400"
+                            size="xs"
+                            theme="rose"
+                            className="w-28 shrink-0"
+                            inputClassName="text-right font-bold text-rose-950"
                           />
                         </div>
                       ))}
@@ -684,13 +697,14 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                       {WALLET_FIELDS.map((f) => (
                         <div key={f.key} className="flex items-center justify-between gap-1">
                           <span className="text-slate-600 truncate">{f.label}:</span>
-                          <input
-                            type="text"
-                            inputMode="numeric"
+                          <MoneyCalculatorInput
                             value={wallets.meo[f.key] === 0 ? '' : formatNumberForSheet(wallets.meo[f.key], false)}
+                            onChange={(_str, num) => handleWalletChange('meo', f.key, num)}
                             placeholder="0"
-                            onChange={(e) => handleWalletChange('meo', f.key, e.target.value)}
-                            className="w-20 px-1.5 py-0.5 text-right font-mono-tabular font-bold border border-slate-200 rounded bg-white text-slate-900 focus:outline-none focus:border-sky-400"
+                            size="xs"
+                            theme="sky"
+                            className="w-28 shrink-0"
+                            inputClassName="text-right font-bold text-sky-950"
                           />
                         </div>
                       ))}
@@ -856,13 +870,14 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        <input
-                          type="text"
-                          inputMode="numeric"
+                        <MoneyCalculatorInput
                           value={wallets.heo[f.key] === 0 ? '' : formatNumberForSheet(wallets.heo[f.key], false)}
+                          onChange={(_str, num) => handleWalletChange('heo', f.key, num)}
                           placeholder="0 ₫"
-                          onChange={(e) => handleWalletChange('heo', f.key, e.target.value)}
-                          className="w-36 px-3 py-2 text-right text-sm font-mono-tabular font-extrabold border border-slate-300 rounded-xl focus:outline-none focus:border-rose-500 bg-slate-50/50 text-slate-900"
+                          size="md"
+                          theme="rose"
+                          className="w-44 shrink-0"
+                          inputClassName="text-right text-sm font-extrabold text-slate-900 bg-slate-50/50"
                         />
                       </div>
                     </div>
@@ -909,13 +924,14 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        <input
-                          type="text"
-                          inputMode="numeric"
+                        <MoneyCalculatorInput
                           value={wallets.meo[f.key] === 0 ? '' : formatNumberForSheet(wallets.meo[f.key], false)}
+                          onChange={(_str, num) => handleWalletChange('meo', f.key, num)}
                           placeholder="0 ₫"
-                          onChange={(e) => handleWalletChange('meo', f.key, e.target.value)}
-                          className="w-36 px-3 py-2 text-right text-sm font-mono-tabular font-extrabold border border-slate-300 rounded-xl focus:outline-none focus:border-sky-500 bg-slate-50/50 text-slate-900"
+                          size="md"
+                          theme="sky"
+                          className="w-44 shrink-0"
+                          inputClassName="text-right text-sm font-extrabold text-slate-900 bg-slate-50/50"
                         />
                       </div>
                     </div>

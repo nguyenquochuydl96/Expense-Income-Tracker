@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X, Check, ArrowRight, Sparkles, ArrowLeftRight } from 'lucide-react';
+import { MoneyCalculatorInput } from './MoneyCalculatorInput';
 import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
@@ -416,14 +417,14 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Số tiền chuyển (₫) <span className="text-purple-600">*</span>
                 </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="VD: 100,000"
+                <MoneyCalculatorInput
                   value={amountStr}
-                  onChange={(e) => setAmountStr(formatNumericInput(e.target.value))}
+                  onChange={(val) => setAmountStr(val)}
+                  placeholder="VD: 100,000"
+                  theme="purple"
+                  size="lg"
                   required
-                  className="w-full px-3 py-2.5 text-base font-mono-tabular font-bold text-purple-900 border border-slate-300 rounded-lg focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600"
+                  inputClassName="text-purple-900 font-bold"
                 />
               </div>
 
@@ -620,14 +621,13 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Số tiền chi (₫) <span className="text-rose-600">*</span>
                 </label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="VD: 50,000"
+                <MoneyCalculatorInput
                   value={amountStr}
-                  onChange={(e) => setAmountStr(formatNumericInput(e.target.value))}
+                  onChange={(val) => setAmountStr(val)}
+                  placeholder="VD: 50,000"
+                  theme="rose"
+                  size="md"
                   required
-                  className="w-full px-3 py-2 text-sm font-mono-tabular font-bold border border-slate-300 rounded-lg focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
                 />
               </div>
 
@@ -652,13 +652,12 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                     </button>
                   )}
                 </div>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Để trống nếu không"
+                <MoneyCalculatorInput
                   value={beCorpStr}
-                  onChange={(e) => setBeCorpStr(formatNumericInput(e.target.value))}
-                  className="w-full px-3 py-2 text-sm font-mono-tabular border border-slate-300 rounded-lg focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600"
+                  onChange={(val) => setBeCorpStr(val)}
+                  placeholder="Để trống nếu không"
+                  theme="amber"
+                  size="md"
                 />
               </div>
 
@@ -683,13 +682,12 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                     </button>
                   )}
                 </div>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Để trống nếu không"
+                <MoneyCalculatorInput
                   value={creditStr}
-                  onChange={(e) => setCreditStr(formatNumericInput(e.target.value))}
-                  className="w-full px-3 py-2 text-sm font-mono-tabular border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600"
+                  onChange={(val) => setCreditStr(val)}
+                  placeholder="Để trống nếu không"
+                  theme="indigo"
+                  size="md"
                 />
               </div>
             </div>
@@ -699,14 +697,14 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Số tiền thu nhập (₫) <span className="text-emerald-600">*</span>
               </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="VD: 25,000,000"
+              <MoneyCalculatorInput
                 value={amountStr}
-                onChange={(e) => setAmountStr(formatNumericInput(e.target.value))}
+                onChange={(val) => setAmountStr(val)}
+                placeholder="VD: 25,000,000"
+                theme="emerald"
+                size="lg"
                 required
-                className="w-full px-3 py-2.5 text-base font-mono-tabular font-bold text-emerald-800 border border-slate-300 rounded-lg focus:outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
+                inputClassName="text-emerald-800 font-bold"
               />
             </div>
           )}
