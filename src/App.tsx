@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Plus,
   RefreshCw,
@@ -214,6 +214,15 @@ export default function App() {
     }
   });
 
+  // Reference hooks to prevent stale closures and concurrent sync calls
+  const isSyncingRef = useRef<boolean>(false);
+  const localNewRecordsRef = useRef<TransactionRecord[]>(localNewRecords);
+  localNewRecordsRef.current = localNewRecords;
+  const budgetTransfersRef = useRef<BudgetTransferRecord[]>(budgetTransfers);
+  budgetTransfersRef.current = budgetTransfers;
+  const sheetRecordsRef = useRef<TransactionRecord[] | null>(sheetRecords);
+  sheetRecordsRef.current = sheetRecords;
+
   // Save local state changes
   useEffect(() => {
     try {
@@ -222,6 +231,16 @@ export default function App() {
       // ignore storage errors
     }
   }, [localNewRecords]);
+
+  useEffect(() => {
+    if (budgetTransfers.length > 0) {
+      try {
+        localStorage.setItem(SAVED_BUDGET_TRANSFERS_KEY, JSON.stringify(budgetTransfers));
+      } catch (e) {
+        console.warn('Cannot persist budgetTransfers', e);
+      }
+    }
+  }, [budgetTransfers]);
 
   useEffect(() => {
     try {
@@ -332,7 +351,9 @@ export default function App() {
   const allRecords = useMemo(() => {
     if (sheetRecords !== null) {
       const unsynced = localNewRecords.filter((r) => !r.syncedToSheet);
-      return [...sheetRecords, ...unsynced];
+      const sheetIds = new Set(sheetRecords.map((r) => r.id));
+      const dedupedUnsynced = unsynced.filter((r) => !sheetIds.has(r.id));
+      return [...sheetRecords, ...dedupedUnsynced];
     }
     return [...attachedRecords, ...localNewRecords];
   }, [sheetRecords, attachedRecords, localNewRecords]);
@@ -596,18 +617,24 @@ export default function App() {
     showToast('warning', 'Đã ngắt phiên đăng nhập Google.');
   };
 
-  // Connect & Sync with Google Sheet
+  // Connect & Sync with Google Sheet (with auto-push of offline/pending transactions and transfers)
   const handleConnectAndSyncSheet = async (
     customUrlOrId?: string,
-    overrideToken?: string
+    overrideToken?: string,
+    silent?: boolean
   ) => {
+    if (isSyncingRef.current) {
+      console.log('Sync already in progress, skipping duplicate call.');
+      return;
+    }
+
     const targetInput = (customUrlOrId ?? spreadsheetInput).trim();
     if (!targetInput) {
       setSyncError('Vui lòng dán đường link hoặc ID file Google Sheet của bạn.');
       return;
     }
 
-    let token = overrideToken || accessToken;
+    let token = overrideToken || accessToken || getStoredAccessToken();
     if (!token) {
       try {
         setIsLoggingIn(true);
@@ -624,57 +651,229 @@ export default function App() {
       }
     }
 
+    isSyncingRef.current = true;
     setIsSyncing(true);
     setSyncError(null);
+
+    const executeSync = async (currentToken: string) => {
+      const meta = await fetchSpreadsheetMetadata(targetInput, currentToken);
+      setSheetMeta(meta);
+      localStorage.setItem(SAVED_SHEET_URL_KEY, targetInput);
+
+      const savedIncomeTab = localStorage.getItem('heomeo_custom_income_tab_v1');
+      if (savedIncomeTab && meta.sheetNames.includes(savedIncomeTab)) {
+        meta.incomeTab = savedIncomeTab;
+      }
+      const savedExpensesTab = localStorage.getItem('heomeo_custom_expenses_tab_v1');
+      if (savedExpensesTab && meta.sheetNames.includes(savedExpensesTab)) {
+        meta.expensesTab = savedExpensesTab;
+      }
+
+      // --- 1. AUTO-PUSH PENDING LOCAL TRANSACTIONS ---
+      const pendingMap = new Map<string, TransactionRecord>();
+      (localNewRecordsRef.current || []).forEach((r) => {
+        if (!r.syncedToSheet) pendingMap.set(r.id, r);
+      });
+      try {
+        const saved = localStorage.getItem(LOCAL_NEW_ROWS_KEY);
+        if (saved) {
+          const parsed: TransactionRecord[] = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((r) => {
+              if (!r.syncedToSheet) pendingMap.set(r.id, r);
+            });
+          }
+        }
+      } catch {
+        // ignore
+      }
+      (sheetRecordsRef.current || []).forEach((r) => {
+        if (r.source === 'local_new' && !r.syncedToSheet) {
+          pendingMap.set(r.id, r);
+        }
+      });
+
+      const pendingTransactions = Array.from(pendingMap.values());
+      const pushedTxIds = new Set<string>();
+
+      if (pendingTransactions.length > 0) {
+        // Sort chronologically
+        pendingTransactions.sort((a, b) => a.isoDate.localeCompare(b.isoDate));
+
+        setLocalNewRecords((prev) =>
+          prev.map((r) => (pendingMap.has(r.id) ? { ...r, syncing: true } : r))
+        );
+
+        for (const rec of pendingTransactions) {
+          const targetTab = rec.sheetType === 'Expenses' ? meta.expensesTab : meta.incomeTab;
+          try {
+            await appendTransactionToSheet(
+              meta.spreadsheetId,
+              targetTab,
+              {
+                sheetType: rec.sheetType,
+                purchaseDate: rec.purchaseDate,
+                category: rec.category,
+                purchaseItem: rec.purchaseItem,
+                amount: rec.amount,
+                beCorp: rec.beCorp,
+                credit: rec.credit,
+                note: rec.note,
+              },
+              currentToken
+            );
+            pushedTxIds.add(rec.id);
+          } catch (pushErr: any) {
+            console.error(`Error auto-pushing transaction ${rec.id}:`, pushErr);
+            if (
+              pushErr?.message &&
+              (pushErr.message.includes('TOKEN_EXPIRED') || pushErr.message.includes('401'))
+            ) {
+              throw pushErr;
+            }
+          }
+        }
+
+        if (pushedTxIds.size > 0) {
+          setLocalNewRecords((prev) => {
+            const remaining = prev.filter((r) => !pushedTxIds.has(r.id));
+            try {
+              localStorage.setItem(LOCAL_NEW_ROWS_KEY, JSON.stringify(remaining));
+            } catch {}
+            return remaining;
+          });
+        }
+      }
+
+      // --- 2. AUTO-PUSH PENDING BUDGET TRANSFERS ---
+      const pendingTransfersMap = new Map<string, BudgetTransferRecord>();
+      (budgetTransfersRef.current || []).forEach((t) => {
+        if (t.source === 'local_new' && !t.syncedToSheet) {
+          pendingTransfersMap.set(t.id, t);
+        }
+      });
+      try {
+        const savedBt = localStorage.getItem(SAVED_BUDGET_TRANSFERS_KEY);
+        if (savedBt) {
+          const parsedBt: BudgetTransferRecord[] = JSON.parse(savedBt);
+          if (Array.isArray(parsedBt)) {
+            parsedBt.forEach((t) => {
+              if (t.source === 'local_new' && !t.syncedToSheet) {
+                pendingTransfersMap.set(t.id, t);
+              }
+            });
+          }
+        }
+      } catch {
+        // ignore
+      }
+
+      const pendingTransfers = Array.from(pendingTransfersMap.values());
+      const pushedBtIds = new Set<string>();
+
+      if (pendingTransfers.length > 0) {
+        pendingTransfers.sort((a, b) => a.isoDate.localeCompare(b.isoDate));
+        const btTab = meta.budgetTransfersTab || 'Budget Transfers';
+        for (const transfer of pendingTransfers) {
+          try {
+            await appendBudgetTransferToSheet(
+              meta.spreadsheetId,
+              btTab,
+              {
+                date: transfer.date,
+                fromCategory: transfer.fromCategory,
+                toCategory: transfer.toCategory,
+                amount: transfer.amount,
+                description: transfer.description,
+              },
+              currentToken
+            );
+            pushedBtIds.add(transfer.id);
+          } catch (pushErr: any) {
+            console.error(`Error auto-pushing transfer ${transfer.id}:`, pushErr);
+            if (
+              pushErr?.message &&
+              (pushErr.message.includes('TOKEN_EXPIRED') || pushErr.message.includes('401'))
+            ) {
+              throw pushErr;
+            }
+          }
+        }
+
+        if (pushedBtIds.size > 0) {
+          setBudgetTransfers((prev) => {
+            const updated = prev.map((t) =>
+              pushedBtIds.has(t.id) ? { ...t, syncedToSheet: true } : t
+            );
+            try {
+              localStorage.setItem(SAVED_BUDGET_TRANSFERS_KEY, JSON.stringify(updated));
+            } catch {}
+            return updated;
+          });
+        }
+      }
+
+      // --- 3. FETCH ALL LATEST ROWS DIRECTLY FROM GOOGLE SHEETS ---
+      const [expensesRows, incomeRows, checkTien, liveTransfers] = await Promise.all([
+        fetchTabTransactions(meta.spreadsheetId, meta.expensesTab, 'Expenses', currentToken),
+        fetchTabTransactions(meta.spreadsheetId, meta.incomeTab, 'Income', currentToken),
+        meta.checkTienTab
+          ? fetchCheckTienSheet(meta.spreadsheetId, meta.checkTienTab, currentToken)
+          : Promise.resolve(null),
+        meta.budgetTransfersTab
+          ? fetchBudgetTransfersSheet(meta.spreadsheetId, meta.budgetTransfersTab, currentToken)
+          : Promise.resolve([]),
+      ]);
+
+      setSheetRecords([...expensesRows, ...incomeRows]);
+      if (checkTien) {
+        setCheckTienData(checkTien);
+      }
+      if (liveTransfers && liveTransfers.length > 0) {
+        setBudgetTransfers(liveTransfers);
+        try {
+          localStorage.setItem(SAVED_BUDGET_TRANSFERS_KEY, JSON.stringify(liveTransfers));
+        } catch {}
+      }
+
+      const nowStr = new Date().toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+      setLastSyncedAt(nowStr);
+
+      return {
+        meta,
+        pushedCount: pushedTxIds.size + pushedBtIds.size,
+        expensesCount: expensesRows.length,
+        incomeCount: incomeRows.length,
+        checkTienTab: checkTien?.sheetName,
+      };
+    };
+
     try {
       let activeToken = token;
       try {
-        const meta = await fetchSpreadsheetMetadata(targetInput, activeToken);
-        setSheetMeta(meta);
-        localStorage.setItem(SAVED_SHEET_URL_KEY, targetInput);
-
-        const savedIncomeTab = localStorage.getItem('heomeo_custom_income_tab_v1');
-        if (savedIncomeTab && meta.sheetNames.includes(savedIncomeTab)) {
-          meta.incomeTab = savedIncomeTab;
+        const res = await executeSync(activeToken);
+        if (res.pushedCount > 0) {
+          showToast(
+            'success',
+            `✓ Đã tự động đồng bộ ${res.pushedCount} giao dịch chờ lên Google Sheet!`
+          );
+        } else if (!silent) {
+          showToast(
+            'success',
+            `Đã đồng bộ "${res.meta.title}": ${res.expensesCount} dòng Expenses, ${res.incomeCount} dòng Income${
+              res.checkTienTab ? `, kèm tab "${res.checkTienTab}"` : ''
+            }.`
+          );
         }
-        const savedExpensesTab = localStorage.getItem('heomeo_custom_expenses_tab_v1');
-        if (savedExpensesTab && meta.sheetNames.includes(savedExpensesTab)) {
-          meta.expensesTab = savedExpensesTab;
-        }
-        const [expensesRows, incomeRows, checkTien, liveTransfers] = await Promise.all([
-          fetchTabTransactions(meta.spreadsheetId, meta.expensesTab, 'Expenses', activeToken),
-          fetchTabTransactions(meta.spreadsheetId, meta.incomeTab, 'Income', activeToken),
-          meta.checkTienTab
-            ? fetchCheckTienSheet(meta.spreadsheetId, meta.checkTienTab, activeToken)
-            : Promise.resolve(null),
-          meta.budgetTransfersTab
-            ? fetchBudgetTransfersSheet(meta.spreadsheetId, meta.budgetTransfersTab, activeToken)
-            : Promise.resolve([]),
-        ]);
-
-        setSheetRecords([...expensesRows, ...incomeRows]);
-        if (checkTien) {
-          setCheckTienData(checkTien);
-        }
-        if (liveTransfers && liveTransfers.length > 0) {
-          setBudgetTransfers(liveTransfers);
-          localStorage.setItem(SAVED_BUDGET_TRANSFERS_KEY, JSON.stringify(liveTransfers));
-        }
-
-        const nowStr = new Date().toLocaleTimeString('vi-VN', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-        });
-        setLastSyncedAt(nowStr);
-        showToast(
-          'success',
-          `Đã đồng bộ "${meta.title}": ${expensesRows.length} dòng Expenses, ${incomeRows.length} dòng Income${
-            checkTien ? `, kèm tab "${checkTien.sheetName}"` : ''
-          }.`
-        );
       } catch (innerErr: any) {
-        if (innerErr?.message && innerErr.message.includes('TOKEN_EXPIRED')) {
+        if (
+          innerErr?.message &&
+          (innerErr.message.includes('TOKEN_EXPIRED') || innerErr.message.includes('401'))
+        ) {
           showToast('warning', 'Token Google hết hạn, đang tự động làm mới phiên đăng nhập...');
           const freshLogin = await googleSignIn();
           if (!freshLogin) throw new Error('Không thể làm mới token đăng nhập.');
@@ -682,37 +881,15 @@ export default function App() {
           setAccessToken(freshLogin.accessToken);
           activeToken = freshLogin.accessToken;
 
-          const meta = await fetchSpreadsheetMetadata(targetInput, activeToken);
-          setSheetMeta(meta);
-          localStorage.setItem(SAVED_SHEET_URL_KEY, targetInput);
-
-          const [expensesRows, incomeRows, checkTien, liveTransfers] = await Promise.all([
-            fetchTabTransactions(meta.spreadsheetId, meta.expensesTab, 'Expenses', activeToken),
-            fetchTabTransactions(meta.spreadsheetId, meta.incomeTab, 'Income', activeToken),
-            meta.checkTienTab
-              ? fetchCheckTienSheet(meta.spreadsheetId, meta.checkTienTab, activeToken)
-              : Promise.resolve(null),
-            meta.budgetTransfersTab
-              ? fetchBudgetTransfersSheet(meta.spreadsheetId, meta.budgetTransfersTab, activeToken)
-              : Promise.resolve([]),
-          ]);
-
-          setSheetRecords([...expensesRows, ...incomeRows]);
-          if (checkTien) {
-            setCheckTienData(checkTien);
+          const res = await executeSync(activeToken);
+          if (res.pushedCount > 0) {
+            showToast(
+              'success',
+              `✓ Đã tự động đồng bộ ${res.pushedCount} giao dịch chờ lên Google Sheet!`
+            );
+          } else if (!silent) {
+            showToast('success', 'Đã làm mới token và đồng bộ thành công!');
           }
-          if (liveTransfers && liveTransfers.length > 0) {
-            setBudgetTransfers(liveTransfers);
-            localStorage.setItem(SAVED_BUDGET_TRANSFERS_KEY, JSON.stringify(liveTransfers));
-          }
-
-          const nowStr = new Date().toLocaleTimeString('vi-VN', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-          });
-          setLastSyncedAt(nowStr);
-          showToast('success', 'Đã làm mới token và đồng bộ thành công!');
         } else {
           throw innerErr;
         }
@@ -720,6 +897,7 @@ export default function App() {
     } catch (err: any) {
       setSyncError(err?.message || 'Không thể đồng bộ dữ liệu từ Google Sheet.');
     } finally {
+      isSyncingRef.current = false;
       setIsSyncing(false);
     }
   };
@@ -860,11 +1038,7 @@ export default function App() {
         } catch (err: any) {
           anyError = true;
           setSheetRecords((prev) =>
-            prev
-              ? prev.map((r) =>
-                  r.id === record.id ? { ...r, syncing: false } : r
-                )
-              : prev
+            prev ? prev.filter((r) => r.id !== record.id) : prev
           );
           if (err?.message?.includes('TOKEN_EXPIRED') || err?.message?.includes('401')) {
             clearStoredAccessToken();
@@ -874,7 +1048,7 @@ export default function App() {
             'warning',
             `Không thể tự động đẩy "${record.purchaseItem}" lên Google Sheet (${err?.message || 'Lỗi kết nối'}). Đã lưu trên máy.`
           );
-          setLocalNewRecords((prev) => [...prev, record]);
+          setLocalNewRecords((prev) => [...prev, { ...record, syncing: false, syncedToSheet: false }]);
         }
       }
 
@@ -886,15 +1060,15 @@ export default function App() {
             : `✓ Đã tự động đồng bộ thành công "${createdRecords[0].purchaseItem}" lên Google Sheet!`
         );
         // Live background sync to pull newest row indices & update balances
-        handleConnectAndSyncSheet(effectiveSheetId, effectiveToken).catch(console.error);
+        handleConnectAndSyncSheet(effectiveSheetId, effectiveToken, true).catch(console.error);
       }
     } else {
       setLocalNewRecords((prev) => [...prev, ...createdRecords]);
       showToast(
         'success',
         createdRecords.length > 1
-          ? `Đã ghi nhận ${createdRecords.length} dòng chuyển ngân sách (lưu trên máy).`
-          : `Đã thêm "${createdRecords[0].purchaseItem}" vào bảng ${createdRecords[0].sheetType} (Sẵn sàng đẩy lên Google Sheet khi kết nối).`
+          ? `Đã thêm ${createdRecords.length} giao dịch vào bảng ${createdRecords[0].sheetType} (Sẽ tự động đẩy lên Google Sheet khi kết nối).`
+          : `Đã thêm "${createdRecords[0].purchaseItem}" vào bảng ${createdRecords[0].sheetType} (Sẽ tự động đẩy lên Google Sheet khi kết nối).`
       );
     }
 
@@ -967,7 +1141,7 @@ export default function App() {
 
       showToast('success', `✓ Đã cập nhật "${updated.purchaseItem}" trên Google Sheet!`);
       // Background sync to refresh overviews and recalculate balances
-      handleConnectAndSyncSheet(effectiveSheetId, effectiveToken).catch(console.error);
+      handleConnectAndSyncSheet(effectiveSheetId, effectiveToken, true).catch(console.error);
     } else {
       showToast('success', `✓ Đã cập nhật giao dịch "${updated.purchaseItem}"!`);
     }
@@ -999,7 +1173,7 @@ export default function App() {
         await deleteTransactionFromSheet(effectiveSheetId, sheetId, target.rowIndex, effectiveToken);
         showToast('success', `✓ Đã xóa vĩnh viễn dòng #${target.rowIndex} ("${target.purchaseItem}") khỏi Google Sheet!`);
         // Background sync to re-index all rows
-        handleConnectAndSyncSheet(effectiveSheetId, effectiveToken).catch(console.error);
+        handleConnectAndSyncSheet(effectiveSheetId, effectiveToken, true).catch(console.error);
       } else {
         showToast('success', `✓ Đã xóa giao dịch "${target.purchaseItem}"!`);
       }
@@ -1012,54 +1186,12 @@ export default function App() {
     }
   };
 
-  // Push pending to sheet
+  // Push pending to sheet (delegates to handleConnectAndSyncSheet which auto-pushes all pending)
   const handlePushPendingToSheet = async () => {
     const effectiveToken = accessToken || getStoredAccessToken();
     const effectiveSheetId = sheetMeta?.spreadsheetId || extractSpreadsheetId(spreadsheetInput);
-    if (!effectiveSheetId || !effectiveToken) return;
-    const pending = localNewRecords.filter((r) => !r.syncedToSheet);
-    if (pending.length === 0) return;
-
-    setIsSyncing(true);
-    try {
-      const expensesTab = sheetMeta?.expensesTab || 'Expenses';
-      const incomeTab = sheetMeta?.incomeTab || 'Income';
-
-      for (const rec of pending) {
-        const targetTab =
-          rec.sheetType === 'Expenses'
-            ? expensesTab
-            : incomeTab;
-        await appendTransactionToSheet(
-          effectiveSheetId,
-          targetTab,
-          {
-            sheetType: rec.sheetType,
-            purchaseDate: rec.purchaseDate,
-            category: rec.category,
-            purchaseItem: rec.purchaseItem,
-            amount: rec.amount,
-            beCorp: rec.beCorp,
-            credit: rec.credit,
-            note: rec.note,
-          },
-          effectiveToken
-        );
-      }
-
-      setLocalNewRecords((prev) =>
-        prev.map((r) => ({ ...r, syncedToSheet: true }))
-      );
-      await handleConnectAndSyncSheet(effectiveSheetId, effectiveToken);
-      showToast(
-        'success',
-        `Đã đẩy thành công ${pending.length} dòng mới lên cuối bảng Google Sheet!`
-      );
-    } catch (err: any) {
-      setSyncError(err?.message || 'Lỗi khi đẩy các dòng chờ lên Google Sheet.');
-    } finally {
-      setIsSyncing(false);
-    }
+    if (!effectiveSheetId) return;
+    await handleConnectAndSyncSheet(effectiveSheetId, effectiveToken || undefined);
   };
 
   const handleSelectIncomeTab = async (tabName: string) => {
