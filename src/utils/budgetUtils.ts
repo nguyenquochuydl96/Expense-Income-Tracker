@@ -40,6 +40,40 @@ export const DEFAULT_CATEGORY_PERCENTAGES: Record<string, number> = {
   'Khác': 0.9804,
 };
 
+// Exact ratios matching Google Sheet 'Source data validation'!C1:C14 (denominator 47,500,000) for April-July 2026
+export const DEFAULT_CATEGORY_RATIOS_T4_T7: Record<string, number> = {
+  'Thuê nhà': 6.5 / 47.5,
+  'Thú cưng': 2.0 / 47.5,
+  'Hóa/Mỹ phẩm': 3.0 / 47.5,
+  'Ăn uống': 7.0 / 47.5,
+  'Sức khỏe': 0.5 / 47.5,
+  'Tiết kiệm': 20.0 / 47.5,
+  'Điện thoại/Xăng xe': 1.0 / 47.5,
+  'Shopping': 1.0 / 47.5,
+  'Du lịch': 0.5 / 47.5,
+  'Quà tặng/Cưới hỏi': 3.5 / 47.5,
+  'Giải trí Heo': 1.0 / 47.5,
+  'Giải trí Mèo': 1.0 / 47.5,
+  'Khác': 0.5 / 47.5,
+};
+
+// Exact ratios matching Google Sheet 'Source data validation'!F1:F14 (denominator 51,000,000) for August-October 2026
+export const DEFAULT_CATEGORY_RATIOS: Record<string, number> = {
+  'Thuê nhà': 8.5 / 51.0,
+  'Thú cưng': 2.0 / 51.0,
+  'Hóa/Mỹ phẩm': 2.5 / 51.0,
+  'Ăn uống': 7.0 / 51.0,
+  'Sức khỏe': 1.0 / 51.0,
+  'Tiết kiệm': 20.0 / 51.0,
+  'Điện thoại/Xăng xe': 1.0 / 51.0,
+  'Shopping': 1.5 / 51.0,
+  'Du lịch': 1.0 / 51.0,
+  'Quà tặng/Cưới hỏi': 4.0 / 51.0,
+  'Giải trí Heo': 1.0 / 51.0,
+  'Giải trí Mèo': 1.0 / 51.0,
+  'Khác': 0.5 / 51.0,
+};
+
 export interface CategoryMonthBudgetStats {
   category: string;
   monthKey: string;
@@ -174,17 +208,27 @@ export function computeMultiMonthRollover(
       const mKey = allChronologicalMonths[i];
       const mGeneralIncome = generalMonthlyIncomes[mKey] || 0;
 
-      const defaultPct =
-        mKey <= '2026-07'
-          ? (DEFAULT_CATEGORY_PERCENTAGES_T4_T7[cat] ?? 0)
-          : (DEFAULT_CATEGORY_PERCENTAGES[cat] ?? 0);
+      let ratio: number;
+      let pct: number;
 
-      const pct =
-        hasCustomPercentages && customPercentages[cat] !== undefined
-          ? customPercentages[cat]
-          : defaultPct;
+      // Historical months (T4-T7) are locked historical eras synchronized to Google Sheet Section 2 (R20:R23)
+      // They MUST NEVER be retroactively modified by Phase 2 or custom percentages!
+      if (mKey <= '2026-07') {
+        ratio = DEFAULT_CATEGORY_RATIOS_T4_T7[cat] ?? 0;
+        pct = DEFAULT_CATEGORY_PERCENTAGES_T4_T7[cat] ?? (ratio * 100);
+      } else {
+        if (hasCustomPercentages && customPercentages[cat] !== undefined) {
+          pct = customPercentages[cat];
+          ratio = pct / 100;
+        } else {
+          ratio = DEFAULT_CATEGORY_RATIOS[cat] ?? 0;
+          pct = DEFAULT_CATEGORY_PERCENTAGES[cat] ?? (ratio * 100);
+        }
+      }
 
-      const baseFromGeneral = Math.round((mGeneralIncome * pct) / 100);
+      // Base budget calculation:
+      // Uses exact formula ratio matching Google Sheet (=SUMIFS(...) * XLOOKUP(...))
+      const baseFromGeneral = Math.round(mGeneralIncome * ratio);
       const baseBudget = baseFromGeneral;
 
       const transferIn = monthlyTransfersIn[mKey]?.[cat] || 0;

@@ -70,7 +70,17 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
     try {
       const saved = localStorage.getItem(SAVED_CATEGORY_PERCENTAGES_KEY);
       if (saved) {
-        return { ...DEFAULT_CATEGORY_PERCENTAGES, ...JSON.parse(saved) };
+        const parsed = JSON.parse(saved);
+        // Self-heal: If saved matches DEFAULT_CATEGORY_PERCENTAGES within minor delta, clean it up
+        // so it defaults cleanly to standard Google Sheets formulas with 0 VND difference
+        const isIdenticalToDefault = Object.entries(DEFAULT_CATEGORY_PERCENTAGES).every(
+          ([k, v]) => Math.abs((parsed[k] ?? 0) - v) < 0.05
+        );
+        if (isIdenticalToDefault) {
+          localStorage.removeItem(SAVED_CATEGORY_PERCENTAGES_KEY);
+          return DEFAULT_CATEGORY_PERCENTAGES;
+        }
+        return { ...DEFAULT_CATEGORY_PERCENTAGES, ...parsed };
       }
     } catch {
       // fallback
@@ -155,18 +165,12 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
     const targetMonth = selectedMonth !== 'ALL' ? selectedMonth : allChronologicalMonths[allChronologicalMonths.length - 1];
 
     const items = allCategories.map((cat) => {
+      const mData = targetMonth ? multiMonthRolloverData.chain[cat]?.[targetMonth] : undefined;
       const defaultPct =
         targetMonth && targetMonth <= '2026-07'
           ? (DEFAULT_CATEGORY_PERCENTAGES_T4_T7[cat] ?? 0)
           : (DEFAULT_CATEGORY_PERCENTAGES[cat] ?? 0);
-      let hasCustom = false;
-      try {
-        hasCustom = Boolean(localStorage.getItem(SAVED_CATEGORY_PERCENTAGES_KEY));
-      } catch {
-        // ignore
-      }
-      const pct = hasCustom ? (percentages[cat] ?? defaultPct) : defaultPct;
-      const mData = targetMonth ? multiMonthRolloverData.chain[cat]?.[targetMonth] : undefined;
+      const pct = mData ? mData.percentage : defaultPct;
 
       const baseBudget = mData?.baseBudget ?? Math.round((totalIncome * pct) / 100);
       const dedicatedIncome = mData?.dedicatedIncome ?? 0;
@@ -176,9 +180,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
       const carryover = mData?.carryover ?? 0;
       const effectiveBudget = mData?.effectiveBudget ?? baseBudget;
       const spent = mData?.spent ?? 0;
-      const remaining = effectiveBudget - spent;
-      const pctUsed = effectiveBudget > 0 ? (spent / effectiveBudget) * 100 : spent > 0 ? 999 : 0;
-      const isOver = remaining < 0;
+      const remaining = mData?.remaining ?? (effectiveBudget - spent);
+      const pctUsed = mData?.pctUsed ?? (effectiveBudget > 0 ? (spent / effectiveBudget) * 100 : spent > 0 ? 999 : 0);
+      const isOver = mData?.isOver ?? (remaining < 0);
       const count = mData?.txCount ?? 0;
 
       return {

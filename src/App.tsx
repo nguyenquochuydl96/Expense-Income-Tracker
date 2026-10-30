@@ -490,7 +490,12 @@ export default function App() {
       const saved = localStorage.getItem(SAVED_CATEGORY_PERCENTAGES_KEY);
       if (saved) {
         customPercentages = JSON.parse(saved);
-        hasCustomPercentages = true;
+        const isIdenticalToDefault = Object.entries(DEFAULT_CATEGORY_PERCENTAGES).every(
+          ([k, v]) => Math.abs((customPercentages[k] ?? 0) - v) < 0.05
+        );
+        if (!isIdenticalToDefault) {
+          hasCustomPercentages = true;
+        }
       }
     } catch {
       // ignore
