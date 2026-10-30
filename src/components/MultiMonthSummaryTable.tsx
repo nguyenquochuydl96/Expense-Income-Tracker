@@ -166,7 +166,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
               </span>
             </h2>
             <p className="text-[11px] text-slate-500">
-              Đối chiếu đồng thời Thu nhập (Sheet Income), Chi tiêu &amp; Remaining qua tất cả các tháng · Nhấp vào cột tháng để lọc Dashboard
+              Đối chiếu đồng thời Thu nhập, Chi tiêu &amp; Số dư còn lại (Remaining) qua các tháng · Nhấp vào cột tháng để lọc Dashboard
             </p>
           </div>
         </div>
@@ -231,7 +231,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
               {/* Row 1: Thu nhập (Sheet Income) */}
               <tr className="hover:bg-slate-50/80 transition-colors">
                 <td className="py-2.5 px-4 font-sans font-medium text-emerald-900 sticky left-0 bg-white z-10 whitespace-nowrap shadow-xs">
-                  Thu nhập (Sheet Income)
+                  Tổng thu nhập
                 </td>
                 {monthlyData.map((m) => (
                   <td

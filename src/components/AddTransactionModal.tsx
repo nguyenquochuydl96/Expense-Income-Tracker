@@ -304,8 +304,10 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
               {modalMode === 'Transfer'
-                ? 'Điều chuyển hạn mức ngân sách mà không làm thay đổi tổng chi tiêu gia đình'
-                : `Ghi vào bảng ${sheetType} trên Google Sheet`}
+                ? 'Điều chuyển hạn mức ngân sách mà không làm thay đổi tổng ngân sách gia đình'
+                : modalMode === 'Expenses'
+                ? 'Ghi nhận khoản chi tiêu vào sổ cái và cập nhật ngân sách'
+                : 'Ghi nhận khoản thu nhập vào sổ cái và phân bổ ngân sách'}
             </p>
           </div>
           <button
@@ -445,7 +447,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               <div className="p-3.5 bg-purple-50/70 border border-purple-200 rounded-xl space-y-2 text-xs text-purple-950">
                 <div className="font-semibold flex items-center gap-1.5">
                   <ArrowLeftRight className="w-3.5 h-3.5 text-purple-600" />
-                  <span>Tóm tắt điều chuyển (Tab Budget Transfers):</span>
+                  <span>Tóm tắt điều chuyển ngân sách:</span>
                 </div>
                 {fromCategory === 'Thu nhập riêng' ? (
                   <>
@@ -458,7 +460,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                       <span className="font-mono-tabular">+{amountStr ? amountStr + ' ₫' : '0 ₫'}</span>
                     </div>
                     <div className="text-[11px] text-purple-700 pt-1.5 border-t border-purple-200/60 leading-relaxed">
-                      ⚡ Sẽ ghi trực tiếp vào bảng <strong>Budget Transfers</strong> trên Google Sheet, tăng thẳng hạn mức tiêu xài của <strong>{toCategory}</strong> mà không trừ bất kỳ danh mục nào khác.
+                      ⚡ Tăng trực tiếp hạn mức khả dụng của <strong>{toCategory}</strong> mà không trừ bất kỳ danh mục nào khác.
                     </div>
                   </>
                 ) : (
@@ -472,7 +474,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                       <span className="font-mono-tabular">+{amountStr ? amountStr + ' ₫' : '0 ₫'}</span>
                     </div>
                     <div className="text-[11px] text-purple-700 pt-1.5 border-t border-purple-200/60 leading-relaxed">
-                      ⚡ Sẽ ghi trực tiếp vào bảng <strong>Budget Transfers</strong> trên Google Sheet, điều chuyển hạn mức giữa 2 danh mục mà không làm thay đổi tổng ngân sách gia đình.
+                      ⚡ Điều chuyển hạn mức giữa 2 danh mục mà không làm thay đổi tổng ngân sách gia đình.
                     </div>
                   </>
                 )}

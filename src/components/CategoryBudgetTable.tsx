@@ -378,9 +378,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                   ? 'bg-teal-600 text-white font-bold shadow-2xs'
                   : 'text-slate-600 hover:text-slate-900 border-r border-slate-100'
               }`}
-              title="Cấn trừ toàn bộ số dư (+ dư / - bội chi) từ tháng trước sang tháng sau theo chuẩn Google Sheets"
+              title="Cấn trừ toàn bộ số dư (+ dư / - bội chi) từ tháng trước sang tháng sau liên tục"
             >
-              Lũy kế đầy đủ (Chuẩn Sheet)
+              Lũy kế đầy đủ
             </button>
             <button
               type="button"
@@ -481,7 +481,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
             onClick={() => handleRolloverModeChange('full')}
             className="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-xs shadow-2xs transition-colors cursor-pointer"
           >
-            ✓ Bấm để bật "Lũy kế đầy đủ" (Chuẩn Google Sheets)
+            ✓ Bấm để bật "Lũy kế đầy đủ"
           </button>
         </div>
       )}
@@ -785,7 +785,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                       <span>Điều chuyển / Bổ sung quỹ trong kỳ ({categoryTransfers.length} khoản):</span>
                     </span>
                     <span className="text-[11px] font-normal text-indigo-700 bg-white/80 px-2 py-0.5 rounded border border-indigo-200/50">
-                      Đã ghi vào Google Sheet "Budget Transfers"
+                      Đã ghi nhận điều chuyển
                     </span>
                   </div>
                   <div className="space-y-1.5 text-xs font-mono-tabular">

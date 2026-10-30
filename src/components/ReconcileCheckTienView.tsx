@@ -581,7 +581,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                         <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
                         <span>Thu nhập chu kỳ</span>
                       </div>
-                      <span className="text-[11px] text-slate-500 font-medium">Bảng Income ({cycleReconcileStats.incomeCount} khoản)</span>
+                      <span className="text-[11px] text-slate-500 font-medium">Khoản thu nhập ({cycleReconcileStats.incomeCount} khoản)</span>
                     </div>
                     <span className="font-mono-tabular font-extrabold text-emerald-700 text-sm">
                       +{formatCurrency(cycleReconcileStats.cycleIncome)}
@@ -595,7 +595,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                         <TrendingDown className="w-3.5 h-3.5 text-rose-600" />
                         <span>Tổng chi tiêu chu kỳ</span>
                       </div>
-                      <span className="text-[11px] text-slate-500 font-medium">Bảng Expenses ({cycleReconcileStats.expenseCount} dòng)</span>
+                      <span className="text-[11px] text-slate-500 font-medium">Khoản chi tiêu ({cycleReconcileStats.expenseCount} giao dịch)</span>
                     </div>
                     <span className="font-mono-tabular font-extrabold text-rose-700 text-sm">
                       −{formatCurrency(cycleReconcileStats.cycleExpense)}
@@ -766,7 +766,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
                         <div>
                           <strong className="block font-bold">Hụt {formatCurrency(Math.abs(cycleReconcileStats.discrepancy))}!</strong>
-                          <span className="text-slate-600">Có khoản chi tiêu ngoài đời đã tiêu nhưng quên ghi vào bảng chi tiêu.</span>
+                          <span className="text-slate-600">Có khoản chi tiêu thực tế đã phát sinh nhưng chưa ghi vào sổ.</span>
                         </div>
                       </div>
                     ) : (
@@ -795,7 +795,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                     <ArrowUpRight className="w-3.5 h-3.5" />
                   </button>
                   <p className="text-[11px] text-slate-500 mt-1.5 text-center">
-                    Mở form mục &ldquo;Khác · Lệch tiền&rdquo; để lưu vào Sheet
+                    Tạo nhanh khoản chi tiêu bù lệch để cân đối sổ sách
                   </p>
                 </div>
               )}
@@ -839,7 +839,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                   <span className="text-2xl">🐷</span>
                   <div>
                     <h3 className="text-base font-extrabold text-rose-950">Ví &amp; Tài Khoản của Heo</h3>
-                    <span className="text-xs text-rose-700">4 nguồn tiền chuẩn</span>
+                    <span className="text-xs text-rose-700">4 tài khoản tiền mặt &amp; ngân hàng</span>
                   </div>
                 </div>
                 <div className="text-right">
@@ -893,7 +893,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                   <span className="text-2xl">🐱</span>
                   <div>
                     <h3 className="text-base font-extrabold text-sky-950">Ví &amp; Tài Khoản của Mèo</h3>
-                    <span className="text-xs text-sky-700">4 nguồn tiền chuẩn</span>
+                    <span className="text-xs text-sky-700">4 tài khoản tiền mặt &amp; ngân hàng</span>
                   </div>
                 </div>
                 <div className="text-right">
@@ -972,7 +972,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                 }}
                 className="px-2.5 py-1.5 text-xs font-bold bg-amber-100 text-amber-900 rounded-lg border border-amber-300 hover:bg-amber-200 transition-colors cursor-pointer"
               >
-                Chu kỳ 26/9 – 25/10 (Chuẩn)
+                Chu kỳ 26/9 – 25/10
               </button>
             </div>
           </div>
@@ -1191,7 +1191,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                 }}
                 className="px-2.5 py-1.5 text-xs font-bold bg-indigo-100 text-indigo-900 rounded-lg border border-indigo-300 hover:bg-indigo-200 transition-colors cursor-pointer"
               >
-                Sao kê 25/9 – 24/10 (Chuẩn)
+                Sao kê 25/9 – 24/10
               </button>
             </div>
           </div>

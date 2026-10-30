@@ -148,7 +148,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
               )}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Cập nhật lại thông tin ngày, danh mục, số tiền trên Google Sheet
+              Cập nhật thông tin chi tiết của giao dịch
             </p>
           </div>
           <button
@@ -220,7 +220,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 font-mono-tabular"
               />
               <span className="text-[10px] text-slate-400 mt-0.5 block">
-                Google Sheet: {sheetDatePreview}
+                Định dạng: {sheetDatePreview}
               </span>
             </div>
 

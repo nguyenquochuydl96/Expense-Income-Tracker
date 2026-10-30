@@ -97,10 +97,10 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h2 className="text-base font-bold text-slate-900">
-              Sổ Cái Lịch Sử Giao Dịch (Chuẩn 6 Cột Google Sheet)
+              Sổ Cái Lịch Sử Giao Dịch
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Hiển thị {filteredRecords.length} giao dịch · Tổng cột Amount:{' '}
+              Hiển thị {filteredRecords.length} giao dịch · Tổng chi tiêu:{' '}
               <strong className="font-mono-tabular text-slate-900">
                 {formatCurrency(totals.amount)}
               </strong>{' '}
@@ -207,7 +207,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                 {sortOrder === 'newest'
                   ? 'Mới nhất'
                   : sortOrder === 'oldest'
-                  ? 'Cũ nhất (Theo Sheet)'
+                  ? 'Cũ nhất'
                   : 'Số tiền lớn nhất'}
               </span>
             </button>
@@ -241,7 +241,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
               <th className="py-2.5 px-4 text-right w-36">Amount</th>
               <th className="py-2.5 px-4 text-right w-32 text-amber-800">BE Corp</th>
               <th className="py-2.5 px-4 text-right w-32 text-indigo-800">Credit</th>
-              <th className="py-2.5 px-4 w-36">Bảng / Ghi chú</th>
+              <th className="py-2.5 px-4 w-36">Phân loại / Ghi chú</th>
               <th className="py-2.5 px-3 text-center w-20">Thao tác</th>
             </tr>
           </thead>
@@ -318,9 +318,9 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                               Đang đồng bộ...
                             </span>
                           ) : rec.syncedToSheet ? (
-                            <span className="text-emerald-700 font-medium">✓ Đã sync Sheet</span>
+                            <span className="text-emerald-700 font-medium">✓ Đã đồng bộ</span>
                           ) : (
-                            <span className="text-amber-700 font-medium">Chờ đẩy Sheet</span>
+                            <span className="text-amber-700 font-medium">Chờ đồng bộ</span>
                           )}
                         </>
                       )}

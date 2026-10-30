@@ -1258,7 +1258,7 @@ export default function App() {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            Google Sheet ({sheetRecords && sheetRecords.length > 0 ? (accessToken ? 'Đã sync' : 'Đã lưu máy') : 'Chưa sync'})
+            Đồng bộ dữ liệu ({sheetRecords && sheetRecords.length > 0 ? (accessToken ? 'Đã kết nối' : 'Đã lưu máy') : 'Chưa kết nối'})
           </button>
           <button
             type="button"
@@ -1281,7 +1281,7 @@ export default function App() {
             className="text-[11px] font-medium text-emerald-800 hover:underline flex items-center gap-1.5"
           >
             <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin text-emerald-600' : 'text-emerald-600'}`} />
-            <span>Sheet: {sheetMeta.title}</span>
+            <span>Dữ liệu: {sheetMeta.title}</span>
           </button>
         ) : (
           <button
@@ -1291,7 +1291,7 @@ export default function App() {
             className="text-[11px] font-semibold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2.5 py-1 rounded-md transition-colors flex items-center gap-1.5 shadow-xs"
           >
             <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin text-amber-700' : 'text-amber-700'}`} />
-            <span>{isSyncing ? 'Đang đồng bộ...' : 'Bấm để sync Google Sheet'}</span>
+            <span>{isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ dữ liệu'}</span>
           </button>
         )}
       </div>
@@ -1789,16 +1789,16 @@ export default function App() {
               </div>
               {deletingTransaction.rowIndex && (
                 <div className="flex justify-between border-t border-slate-200/80 pt-1.5 mt-1.5">
-                  <span className="text-slate-500">Google Sheet:</span>
+                  <span className="text-slate-500">Mã giao dịch:</span>
                   <span className="font-mono-tabular text-teal-700 font-medium">
-                    {deletingTransaction.sheetType} · Dòng #{deletingTransaction.rowIndex}
+                    {deletingTransaction.sheetType === 'Income' ? 'Thu nhập' : 'Chi tiêu'} #{deletingTransaction.rowIndex}
                   </span>
                 </div>
               )}
             </div>
 
             <p className="text-xs text-rose-600 bg-rose-50/80 border border-rose-200 rounded-lg p-2.5">
-              ⚠️ Thao tác này sẽ xóa trực tiếp dòng tương ứng trên Google Sheet (nếu đã kết nối) và cập nhật lại toàn bộ ngân sách. Không thể hoàn tác.
+              ⚠️ Thao tác này sẽ xóa vĩnh viễn giao dịch khỏi hệ thống và cập nhật lại toàn bộ ngân sách. Không thể hoàn tác.
             </p>
 
             <div className="flex items-center justify-end gap-2 pt-2">
