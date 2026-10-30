@@ -37,12 +37,12 @@ export interface DailyLivingRunwayWidgetProps {
 const STORAGE_KEY_LIVING_CATS = 'heomeo_daily_living_categories_v1';
 const STORAGE_KEY_COLLAPSED = 'heomeo_runway_collapsed_v1';
 
-// Mặc định 4 danh mục phát sinh thường nhật hàng ngày
+// Mặc định 4 danh mục phát sinh thường nhật hàng ngày (sắp xếp theo alphabet)
 const DEFAULT_LIVING_CATEGORIES = [
   'Ăn uống',
-  'Hóa/Mỹ phẩm',
   'Giải trí Heo',
   'Giải trí Mèo',
+  'Hóa/Mỹ phẩm',
 ];
 
 export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = ({
@@ -141,7 +141,7 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
     };
   }, [selectedMonth]);
 
-  // Phân tách items thành: Nhóm Hằng ngày vs Nhóm Định kỳ / Đột xuất
+  // Phân tách items thành: Nhóm Hằng ngày vs Nhóm Định kỳ / Đột xuất (sắp xếp theo alphabet từ trái sang phải)
   const { dailyItems, periodicItems } = useMemo(() => {
     const livingSet = new Set(livingCategories);
     const daily: DailyCategoryStat[] = [];
@@ -154,6 +154,10 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
         periodic.push(item);
       }
     });
+
+    // Sắp xếp thứ tự từ trái sang phải theo alphabet tiếng Việt
+    daily.sort((a, b) => a.category.localeCompare(b.category, 'vi'));
+    periodic.sort((a, b) => a.category.localeCompare(b.category, 'vi'));
 
     return { dailyItems: daily, periodicItems: periodic };
   }, [items, livingCategories]);
@@ -589,9 +593,9 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
               </button>
             </div>
 
-            {/* Checkbox list */}
+            {/* Checkbox list (sắp xếp theo alphabet) */}
             <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
-              {items.map((item) => {
+              {[...items].sort((a, b) => a.category.localeCompare(b.category, 'vi')).map((item) => {
                 const isChecked = tempLivingCats.includes(item.category);
                 return (
                   <label
