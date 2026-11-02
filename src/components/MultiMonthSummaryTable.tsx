@@ -24,8 +24,8 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
   monthlyBaseIncome,
   beCorpStartDay = 26,
   beCorpEndDay = 25,
-  creditStartDay = 25,
-  creditEndDay = 24,
+  creditStartDay = 20,
+  creditEndDay = 19,
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
 

@@ -167,8 +167,8 @@ export default function App() {
   // Cycle start/end day configuration for BE Corp and Credit
   const [beCorpStartDay, setBeCorpStartDay] = useState<number>(26);
   const [beCorpEndDay, setBeCorpEndDay] = useState<number>(25);
-  const [creditStartDay, setCreditStartDay] = useState<number>(25);
-  const [creditEndDay, setCreditEndDay] = useState<number>(24);
+  const [creditStartDay, setCreditStartDay] = useState<number>(20);
+  const [creditEndDay, setCreditEndDay] = useState<number>(19);
 
   // Toggle for secondary analytics charts (Bar & Donut)
   const [showCharts, setShowCharts] = useState<boolean>(false);

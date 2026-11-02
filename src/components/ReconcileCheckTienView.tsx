@@ -196,17 +196,17 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
   const activeReconcileMonth = selectedMonth !== 'ALL' ? selectedMonth : activeMonthFallback;
 
   const defaultCycle = useMemo(() => {
-    return getBillingCycleRange(activeReconcileMonth, 25, 24);
+    return getBillingCycleRange(activeReconcileMonth, 20, 19);
   }, [activeReconcileMonth]);
 
-  const [cyclePreset, setCyclePreset] = useState<'standard_25_24' | 'becorp_26_25' | 'custom'>('standard_25_24');
+  const [cyclePreset, setCyclePreset] = useState<'standard_20_19' | 'becorp_26_25' | 'custom'>('standard_20_19');
   const [cycleStart, setCycleStart] = useState<string>(defaultCycle.startDate);
   const [cycleEnd, setCycleEnd] = useState<string>(defaultCycle.endDate);
 
   // Sync cycle start/end when selectedMonth changes
   useEffect(() => {
-    if (cyclePreset === 'standard_25_24') {
-      const c = getBillingCycleRange(activeReconcileMonth, 25, 24);
+    if (cyclePreset === 'standard_20_19') {
+      const c = getBillingCycleRange(activeReconcileMonth, 20, 19);
       setCycleStart(c.startDate);
       setCycleEnd(c.endDate);
     } else if (cyclePreset === 'becorp_26_25') {
@@ -326,16 +326,16 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
     };
   }, [allRecords, beStartDate, beEndDate, beSubsidyQuota]);
 
-  // Credit statement cycle range (25th last month to 24th this month)
+  // Credit statement cycle range (20th last month to 19th this month)
   const creditCycle = useMemo(() => {
-    return getBillingCycleRange(activeReconcileMonth, 25, 24);
+    return getBillingCycleRange(activeReconcileMonth, 20, 19);
   }, [activeReconcileMonth]);
 
   const [creditStartDate, setCreditStartDate] = useState<string>(creditCycle.startDate);
   const [creditEndDate, setCreditEndDate] = useState<string>(creditCycle.endDate);
 
   useEffect(() => {
-    const c = getBillingCycleRange(activeReconcileMonth, 25, 24);
+    const c = getBillingCycleRange(activeReconcileMonth, 20, 19);
     setCreditStartDate(c.startDate);
     setCreditEndDate(c.endDate);
   }, [activeReconcileMonth]);
@@ -503,18 +503,18 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    setCyclePreset('standard_25_24');
-                    const c = getBillingCycleRange(activeReconcileMonth, 25, 24);
+                    setCyclePreset('standard_20_19');
+                    const c = getBillingCycleRange(activeReconcileMonth, 20, 19);
                     setCycleStart(c.startDate);
                     setCycleEnd(c.endDate);
                   }}
                   className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors cursor-pointer ${
-                    cyclePreset === 'standard_25_24'
+                    cyclePreset === 'standard_20_19'
                       ? 'bg-white text-teal-900 shadow-2xs'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Chu kỳ 25–24 ({defaultCycle.displayLabel})
+                  Chu kỳ 20–19 ({defaultCycle.displayLabel})
                 </button>
                 <button
                   type="button"
@@ -1178,7 +1178,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
               <div className="flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-indigo-600" />
                 <h2 className="text-base font-bold text-slate-900">
-                  Chu Kỳ Sao Kê Thẻ Credit — 25 Tháng Trước Đến 24 Tháng Này
+                  Chu Kỳ Sao Kê Thẻ Credit — 20 Tháng Trước Đến 19 Tháng Này
                 </h2>
               </div>
               <p className="text-xs text-slate-500 mt-1">
@@ -1191,13 +1191,13 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  const c = getBillingCycleRange(activeReconcileMonth, 25, 24);
+                  const c = getBillingCycleRange(activeReconcileMonth, 20, 19);
                   setCreditStartDate(c.startDate);
                   setCreditEndDate(c.endDate);
                 }}
                 className="px-2.5 py-1.5 text-xs font-bold bg-indigo-100 text-indigo-900 rounded-lg border border-indigo-300 hover:bg-indigo-200 transition-colors cursor-pointer"
               >
-                Sao kê 25/9 – 24/10
+                Sao kê ({creditCycle.displayLabel})
               </button>
             </div>
           </div>
