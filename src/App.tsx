@@ -1473,8 +1473,8 @@ export default function App() {
       </div>
 
       {/* Navigation Sub-bar */}
-      <div className="max-w-[1400px] w-full mx-auto px-4 sm:px-6 pt-3 flex items-center justify-between">
-        <nav className="flex items-center gap-2 text-xs font-semibold">
+      <div className="max-w-[1400px] w-full mx-auto px-4 sm:px-6 pt-3 flex flex-wrap items-center justify-between gap-2">
+        <nav className="flex items-center gap-1.5 sm:gap-2 text-xs font-semibold overflow-x-auto max-w-full py-1">
           <button
             type="button"
             onClick={() => setActiveTab('dashboard')}
@@ -1810,7 +1810,9 @@ export default function App() {
                           {formatCurrency(kpiStats.totalExpense)}
                         </div>
                         <div className="text-xs text-white/70 font-medium">
-                          {kpiStats.expenseCount} giao dịch (01/{selectedMonth.split('-')[1]} – Hết tháng)
+                          {selectedMonth === 'ALL'
+                            ? `${kpiStats.expenseCount} giao dịch (Tất cả thời gian)`
+                            : `${kpiStats.expenseCount} giao dịch (01/${selectedMonth.split('-')[1]} – Hết tháng)`}
                         </div>
                       </div>
 

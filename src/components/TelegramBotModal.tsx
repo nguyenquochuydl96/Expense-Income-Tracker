@@ -65,7 +65,7 @@ export const TelegramBotModal: React.FC<TelegramBotModalProps> = ({
       ],
     },
     {
-      group: 'Quẹt thẻ tín dụng (Credit Card chu kỳ 25–24)',
+      group: 'Quẹt thẻ tín dụng (Credit Card chu kỳ 20–19)',
       icon: <CreditCard className="w-4 h-4 text-purple-600" />,
       examples: [
         { cmd: 'meo 450k an lau credit', note: 'Ăn uống: 450.000 đ | Credit: 450.000 đ' },

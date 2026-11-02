@@ -188,7 +188,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
     return heoTotal + meoTotal;
   }, [heoTotal, meoTotal]);
 
-  // ═══════ CHU KỲ CHECK TIỀN (THEO CHU KỲ SAO KÊ 25-24) ═══════
+  // ═══════ CHU KỲ CHECK TIỀN (THEO CHU KỲ SAO KÊ 20-19) ═══════
   const activeMonthFallback = useMemo(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -493,7 +493,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                 </h2>
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                Tự động tính số dư lý thuyết theo đúng chu kỳ (25 tháng trước đến 24 tháng này) và đối soát với tổng tiền thực tế của Heo &amp; Mèo.
+                Tự động tính số dư lý thuyết theo đúng chu kỳ sao kê (20 tháng trước đến 19 tháng này) và đối soát với tổng tiền thực tế của Heo &amp; Mèo.
               </p>
             </div>
 
