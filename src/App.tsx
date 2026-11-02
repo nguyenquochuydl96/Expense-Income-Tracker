@@ -51,6 +51,10 @@ import {
   SpreadsheetMetadata,
   updateTransactionOnSheet,
 } from './services/googleSheetsService';
+import {
+  isAppsScriptUrl,
+  appsScriptSyncAll,
+} from './services/appsScriptService';
 import { AnalyticsCharts } from './components/AnalyticsCharts';
 import {
   AddTransactionModal,
@@ -634,8 +638,9 @@ export default function App() {
       return;
     }
 
-    let token = overrideToken || accessToken || getStoredAccessToken();
-    if (!token) {
+    const isAppsScript = isAppsScriptUrl(targetInput);
+    let token = overrideToken || accessToken || getStoredAccessToken() || '';
+    if (!token && !isAppsScript) {
       try {
         setIsLoggingIn(true);
         const loginRes = await googleSignIn();
@@ -656,18 +661,31 @@ export default function App() {
     setSyncError(null);
 
     const executeSync = async (currentToken: string) => {
-      const meta = await fetchSpreadsheetMetadata(targetInput, currentToken);
+      let meta: SpreadsheetMetadata;
+      let preloadedExpenses: TransactionRecord[] | null = null;
+      let preloadedIncome: TransactionRecord[] | null = null;
+      let preloadedTransfers: BudgetTransferRecord[] | null = null;
+
+      if (isAppsScript) {
+        const fullData = await appsScriptSyncAll(targetInput);
+        meta = fullData.metadata;
+        preloadedExpenses = fullData.expenses;
+        preloadedIncome = fullData.income;
+        preloadedTransfers = fullData.budgetTransfers;
+      } else {
+        meta = await fetchSpreadsheetMetadata(targetInput, currentToken);
+        const savedIncomeTab = localStorage.getItem('heomeo_custom_income_tab_v1');
+        if (savedIncomeTab && meta.sheetNames.includes(savedIncomeTab)) {
+          meta.incomeTab = savedIncomeTab;
+        }
+        const savedExpensesTab = localStorage.getItem('heomeo_custom_expenses_tab_v1');
+        if (savedExpensesTab && meta.sheetNames.includes(savedExpensesTab)) {
+          meta.expensesTab = savedExpensesTab;
+        }
+      }
+
       setSheetMeta(meta);
       localStorage.setItem(SAVED_SHEET_URL_KEY, targetInput);
-
-      const savedIncomeTab = localStorage.getItem('heomeo_custom_income_tab_v1');
-      if (savedIncomeTab && meta.sheetNames.includes(savedIncomeTab)) {
-        meta.incomeTab = savedIncomeTab;
-      }
-      const savedExpensesTab = localStorage.getItem('heomeo_custom_expenses_tab_v1');
-      if (savedExpensesTab && meta.sheetNames.includes(savedExpensesTab)) {
-        meta.expensesTab = savedExpensesTab;
-      }
 
       // --- 1. AUTO-PUSH PENDING LOCAL TRANSACTIONS ---
       const pendingMap = new Map<string, TransactionRecord>();
@@ -814,16 +832,31 @@ export default function App() {
       }
 
       // --- 3. FETCH ALL LATEST ROWS DIRECTLY FROM GOOGLE SHEETS ---
-      const [expensesRows, incomeRows, checkTien, liveTransfers] = await Promise.all([
-        fetchTabTransactions(meta.spreadsheetId, meta.expensesTab, 'Expenses', currentToken),
-        fetchTabTransactions(meta.spreadsheetId, meta.incomeTab, 'Income', currentToken),
-        meta.checkTienTab
-          ? fetchCheckTienSheet(meta.spreadsheetId, meta.checkTienTab, currentToken)
-          : Promise.resolve(null),
-        meta.budgetTransfersTab
-          ? fetchBudgetTransfersSheet(meta.spreadsheetId, meta.budgetTransfersTab, currentToken)
-          : Promise.resolve([]),
-      ]);
+      let expensesRows: TransactionRecord[];
+      let incomeRows: TransactionRecord[];
+      let checkTien: any = null;
+      let liveTransfers: BudgetTransferRecord[] = [];
+
+      if (isAppsScript && preloadedExpenses && preloadedIncome && preloadedTransfers && pushedTxIds.size === 0 && pushedBtIds.size === 0) {
+        expensesRows = preloadedExpenses;
+        incomeRows = preloadedIncome;
+        liveTransfers = preloadedTransfers;
+      } else {
+        const [exp, inc, ct, bt] = await Promise.all([
+          fetchTabTransactions(meta.spreadsheetId, meta.expensesTab, 'Expenses', currentToken),
+          fetchTabTransactions(meta.spreadsheetId, meta.incomeTab, 'Income', currentToken),
+          meta.checkTienTab
+            ? fetchCheckTienSheet(meta.spreadsheetId, meta.checkTienTab, currentToken)
+            : Promise.resolve(null),
+          meta.budgetTransfersTab
+            ? fetchBudgetTransfersSheet(meta.spreadsheetId, meta.budgetTransfersTab, currentToken)
+            : Promise.resolve([]),
+        ]);
+        expensesRows = exp;
+        incomeRows = inc;
+        checkTien = ct;
+        liveTransfers = bt;
+      }
 
       setSheetRecords([...expensesRows, ...incomeRows]);
       if (checkTien) {
@@ -864,9 +897,11 @@ export default function App() {
         } else if (!silent) {
           showToast(
             'success',
-            `Đã đồng bộ "${res.meta.title}": ${res.expensesCount} dòng Expenses, ${res.incomeCount} dòng Income${
-              res.checkTienTab ? `, kèm tab "${res.checkTienTab}"` : ''
-            }.`
+            isAppsScript
+              ? `✓ Đã kết nối Web App API: ${res.expensesCount} chi tiêu, ${res.incomeCount} thu nhập (Không cần đăng nhập Google)!`
+              : `Đã đồng bộ "${res.meta.title}": ${res.expensesCount} dòng Expenses, ${res.incomeCount} dòng Income${
+                  res.checkTienTab ? ' & Check tiền' : ''
+                }`
           );
         }
       } catch (innerErr: any) {
@@ -927,11 +962,14 @@ export default function App() {
 
     setBudgetTransfers((prev) => [newTransfer, ...prev]);
 
-    if (accessToken && sheetMeta?.spreadsheetId) {
-      const tabName = sheetMeta.budgetTransfersTab || 'Budget Transfers';
+    const effectiveSheetId = sheetMeta?.spreadsheetId || extractSpreadsheetId(spreadsheetInput);
+    const isAppsScript = isAppsScriptUrl(effectiveSheetId);
+
+    if ((accessToken || isAppsScript) && effectiveSheetId) {
+      const tabName = sheetMeta?.budgetTransfersTab || 'Budget Transfers';
       try {
         await appendBudgetTransferToSheet(
-          sheetMeta.spreadsheetId,
+          effectiveSheetId,
           tabName,
           {
             date: transfer.date,
@@ -940,7 +978,7 @@ export default function App() {
             amount: transfer.amount,
             description: transfer.description,
           },
-          accessToken
+          accessToken || ''
         );
         setBudgetTransfers((prev) =>
           prev.map((t) => (t.id === newTransfer.id ? { ...t, syncedToSheet: true } : t))
@@ -986,10 +1024,11 @@ export default function App() {
       createdRecords.push(newRecord);
     }
 
-    const effectiveToken = accessToken || getStoredAccessToken();
+    const effectiveToken = accessToken || getStoredAccessToken() || '';
     const effectiveSheetId = sheetMeta?.spreadsheetId || extractSpreadsheetId(spreadsheetInput);
+    const isAppsScript = isAppsScriptUrl(effectiveSheetId);
 
-    if (effectiveSheetId && effectiveToken) {
+    if (effectiveSheetId && (effectiveToken || isAppsScript)) {
       createdRecords.forEach((r) => (r.syncing = true));
       setSheetRecords((prev) => (prev ? [...prev, ...createdRecords] : [...attachedRecords, ...createdRecords]));
       showToast(
@@ -1079,8 +1118,9 @@ export default function App() {
 
   // Edit transaction handler
   const handleSaveEditedTransaction = async (updated: TransactionRecord) => {
-    const effectiveToken = accessToken || getStoredAccessToken();
+    const effectiveToken = accessToken || getStoredAccessToken() || '';
     const effectiveSheetId = sheetMeta?.spreadsheetId || extractSpreadsheetId(spreadsheetInput);
+    const isAppsScript = isAppsScriptUrl(effectiveSheetId);
 
     // 1. Optimistic update
     setSheetRecords((prev) =>
@@ -1091,7 +1131,7 @@ export default function App() {
     );
 
     // 2. If already on Google Sheet
-    if (updated.rowIndex && effectiveSheetId && effectiveToken) {
+    if (updated.rowIndex && effectiveSheetId && (effectiveToken || isAppsScript)) {
       const expensesTab = sheetMeta?.expensesTab || 'Expenses';
       const incomeTab = sheetMeta?.incomeTab || 'Income';
       const originalRecord = (sheetRecords || []).find((r) => r.id === updated.id);
@@ -1104,7 +1144,7 @@ export default function App() {
         const oldSheetId =
           sheetMeta?.sheetIdsByName?.[originalTab] ??
           (originalRecord?.sheetType === 'Income' ? 392215035 : 1528073380);
-        await deleteTransactionFromSheet(effectiveSheetId, oldSheetId, updated.rowIndex, effectiveToken);
+        await deleteTransactionFromSheet(effectiveSheetId, oldSheetId, updated.rowIndex, effectiveToken, originalTab);
         await appendTransactionToSheet(
           effectiveSheetId,
           targetTab,
@@ -1151,8 +1191,9 @@ export default function App() {
   const handleConfirmDelete = async () => {
     if (!deletingTransaction) return;
     const target = deletingTransaction;
-    const effectiveToken = accessToken || getStoredAccessToken();
+    const effectiveToken = accessToken || getStoredAccessToken() || '';
     const effectiveSheetId = sheetMeta?.spreadsheetId || extractSpreadsheetId(spreadsheetInput);
+    const isAppsScript = isAppsScriptUrl(effectiveSheetId);
 
     setIsDeleting(true);
     try {
@@ -1162,7 +1203,7 @@ export default function App() {
       setAttachedRecords((prev) => prev.filter((r) => r.id !== target.id));
 
       // 2. If it is on Google Sheet
-      if (target.rowIndex && effectiveSheetId && effectiveToken) {
+      if (target.rowIndex && effectiveSheetId && (effectiveToken || isAppsScript)) {
         const expensesTab = sheetMeta?.expensesTab || 'Expenses';
         const incomeTab = sheetMeta?.incomeTab || 'Income';
         const tabName = target.sheetType === 'Income' ? incomeTab : expensesTab;
@@ -1170,7 +1211,7 @@ export default function App() {
           sheetMeta?.sheetIdsByName?.[tabName] ??
           (target.sheetType === 'Income' ? 392215035 : 1528073380);
 
-        await deleteTransactionFromSheet(effectiveSheetId, sheetId, target.rowIndex, effectiveToken);
+        await deleteTransactionFromSheet(effectiveSheetId, sheetId, target.rowIndex, effectiveToken, tabName);
         showToast('success', `✓ Đã xóa vĩnh viễn dòng #${target.rowIndex} ("${target.purchaseItem}") khỏi Google Sheet!`);
         // Background sync to re-index all rows
         handleConnectAndSyncSheet(effectiveSheetId, effectiveToken, true).catch(console.error);
@@ -1872,7 +1913,10 @@ export default function App() {
         onSave={handleSaveTransaction}
         onSaveTransfer={handleSaveTransfer}
         suggestions={itemSuggestions}
-        isSheetConnected={Boolean((sheetMeta || spreadsheetInput) && (accessToken || getStoredAccessToken()))}
+        isSheetConnected={Boolean(
+          (sheetMeta || spreadsheetInput) &&
+          (accessToken || getStoredAccessToken() || isAppsScriptUrl(spreadsheetInput) || isAppsScriptUrl(sheetMeta?.spreadsheetId))
+        )}
         initialPreset={addModalPreset}
         allRecords={allRecords}
         onGoogleLogin={handleGoogleLogin}

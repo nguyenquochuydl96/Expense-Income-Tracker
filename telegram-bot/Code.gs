@@ -18,21 +18,25 @@
 
 // ==================== CẤU HÌNH (CONFIGURATION) ====================
 const CONFIG = {
-  // 1. Token bot lấy từ @BotFather trên Telegram (Bắt buộc)
+  // 1. Token bot lấy từ @BotFather trên Telegram (Bắt buộc cho Telegram)
   TELEGRAM_BOT_TOKEN: 'YOUR_TELEGRAM_BOT_TOKEN_HERE',
 
-  // 2. Web App URL sau khi deploy (Dùng để chạy hàm setWebhook)
+  // 2. Web App URL sau khi deploy (Dùng cho cả Web App & Telegram Webhook)
   WEBHOOK_URL: 'YOUR_WEB_APP_URL_HERE',
 
-  // 3. Google Gemini API Key (Tùy chọn - Miễn phí tại aistudio.google.com)
-  // Nếu có, bot sẽ hiểu mọi câu nói tự nhiên, văn nói, viết tắt tiếng Việt
+  // 3. Mã bảo vệ gia đình (Tùy chọn - Dành cho Web/Mobile App)
+  // Nếu điền (VD: 'heomeo2026'), chỉ người có mã này mới đọc/ghi dữ liệu vào Sheet được
+  API_SECRET_KEY: '',
+
+  // 4. Google Gemini API Key (Tùy chọn - Miễn phí tại aistudio.google.com)
+  // Nếu có, bot Telegram sẽ hiểu mọi câu nói tự nhiên, văn nói, viết tắt tiếng Việt
   GEMINI_API_KEY: '',
 
-  // 4. Giới hạn Chat ID được phép sử dụng (Bảo mật - Tránh người lạ)
+  // 5. Giới hạn Chat ID Telegram được phép sử dụng (Bảo mật bot - Tránh người lạ)
   // Để trống [] nếu cho phép mọi người trong nhóm của bạn dùng
   ALLOWED_CHAT_IDS: [], 
 
-  // 5. Cấu hình định mức
+  // 6. Cấu hình định mức
   BE_CORP_ALLOWANCE: 2500000, // 2.5 triệu / tháng (chu kỳ 26 -> 25)
 };
 
@@ -65,17 +69,374 @@ const INCOME_CATEGORIES = [
   'Khác'
 ];
 
-// ==================== XỬ LÝ WEBHOOK TỪ TELEGRAM ====================
+// ==================== ROUTER: WEB APP API & TELEGRAM WEBHOOK ====================
 function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) {
-      return ContentService.createTextOutput('No content');
+      return jsonResponse({ success: false, error: 'No content received' });
     }
 
-    const update = JSON.parse(e.postData.contents);
+    const payload = JSON.parse(e.postData.contents);
+
+    // 1. Phân luồng: Nếu request đến từ Web App / Mobile App (có trường `action`)
+    if (payload.action) {
+      return handleApiRequest(payload);
+    }
+
+    // 2. Phân luồng: Nếu request đến từ Telegram Webhook (có `message` hoặc `update_id`)
+    if (payload.message || payload.edited_message || payload.update_id) {
+      return handleTelegramWebhook(payload);
+    }
+
+    return jsonResponse({ success: false, error: 'Unknown payload format' });
+  } catch (err) {
+    Logger.log('Lỗi trong doPost: ' + err.toString());
+    return jsonResponse({ success: false, error: err.toString() });
+  }
+}
+
+function doGet(e) {
+  try {
+    const action = e && e.parameter ? e.parameter.action : null;
+    if (action) {
+      return handleApiRequest(e.parameter);
+    }
+    return jsonResponse({
+      success: true,
+      message: 'HeoMeo Finance Web App API & Telegram Bot is running smoothly!',
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    return jsonResponse({ success: false, error: err.toString() });
+  }
+}
+
+function jsonResponse(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ==================== XỬ LÝ REST API CHO WEB & MOBILE APP ====================
+function handleApiRequest(params) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const action = params.action;
+
+    // Kiểm tra API Key (Nếu có cấu hình CONFIG.API_SECRET_KEY)
+    if (CONFIG.API_SECRET_KEY && params.apiKey !== CONFIG.API_SECRET_KEY) {
+      return jsonResponse({ success: false, error: 'Mã khóa bảo vệ không đúng (Invalid API Key)' });
+    }
+
+    // 1. PING / TEST KẾT NỐI
+    if (action === 'ping') {
+      return jsonResponse({
+        success: true,
+        message: 'Kết nối thành công với Google Sheet!',
+        spreadsheetId: ss.getId(),
+        title: ss.getName(),
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // 2. ĐỌC METADATA
+    if (action === 'getMetadata') {
+      const sheets = ss.getSheets();
+      const sheetNames = sheets.map(s => s.getName());
+      return jsonResponse({
+        success: true,
+        spreadsheetId: ss.getId(),
+        title: ss.getName(),
+        sheetNames: sheetNames,
+        expensesTab: sheetNames.includes('Expenses') ? 'Expenses' : sheetNames[0],
+        incomeTab: sheetNames.includes('Income') ? 'Income' : 'Income',
+        budgetTransfersTab: sheetNames.find(n => /budget transfer|transfer/i.test(n)) || 'Budget Transfers',
+        checkTienTab: sheetNames.find(n => /check tiền|check tien|check/i.test(n)) || null,
+        summaryTab: sheetNames.find(n => /monthly overview|summary|overview/i.test(n)) || null
+      });
+    }
+
+    // 3. ĐỒNG BỘ TOÀN BỘ DỮ LIỆU (EXPENSES, INCOME, TRANSFERS) TRONG 1 REQUEST
+    if (action === 'syncAll' || action === 'fetchData') {
+      const sheets = ss.getSheets();
+      const sheetNames = sheets.map(s => s.getName());
+
+      const expensesTab = sheetNames.includes('Expenses') ? 'Expenses' : sheetNames[0];
+      const incomeTab = sheetNames.includes('Income') ? 'Income' : 'Income';
+      const btTab = sheetNames.find(n => /budget transfer|transfer/i.test(n)) || 'Budget Transfers';
+      const checkTienTab = sheetNames.find(n => /check tiền|check tien|check/i.test(n)) || null;
+      const summaryTab = sheetNames.find(n => /monthly overview|summary|overview/i.test(n)) || null;
+
+      const metadata = {
+        spreadsheetId: ss.getId(),
+        title: ss.getName(),
+        sheetNames: sheetNames,
+        expensesTab: expensesTab,
+        incomeTab: incomeTab,
+        budgetTransfersTab: btTab,
+        checkTienTab: checkTienTab,
+        summaryTab: summaryTab
+      };
+
+      // Đọc Expenses
+      const expenses = [];
+      const expSheet = ss.getSheetByName(expensesTab);
+      if (expSheet) {
+        const lastRow = expSheet.getLastRow();
+        if (lastRow >= 2) {
+          const values = expSheet.getRange(2, 1, lastRow - 1, 7).getDisplayValues();
+          for (let i = 0; i < values.length; i++) {
+            const row = values[i];
+            const dateStr = (row[0] || '').trim();
+            const cat = (row[1] || '').trim();
+            const item = (row[2] || '').trim();
+            const amtStr = (row[3] || '').replace(/[^0-9.-]/g, '');
+            const amount = parseFloat(amtStr) || 0;
+            const beCorp = parseFloat((row[4] || '').replace(/[^0-9.-]/g, '')) || 0;
+            const credit = parseFloat((row[5] || '').replace(/[^0-9.-]/g, '')) || 0;
+            const note = (row[6] || '').trim();
+
+            if (dateStr || cat || item || amount > 0) {
+              expenses.push({
+                id: 'exp-' + (i + 2) + '-' + dateStr,
+                rowIndex: i + 2,
+                purchaseDate: dateStr,
+                category: cat,
+                purchaseItem: item,
+                amount: amount,
+                beCorp: beCorp,
+                credit: credit,
+                note: note,
+                sheetType: 'Expenses'
+              });
+            }
+          }
+        }
+      }
+
+      // Đọc Income
+      const income = [];
+      const incSheet = ss.getSheetByName(incomeTab);
+      if (incSheet) {
+        const lastRow = incSheet.getLastRow();
+        if (lastRow >= 2) {
+          const values = incSheet.getRange(2, 1, lastRow - 1, 5).getDisplayValues();
+          for (let i = 0; i < values.length; i++) {
+            const row = values[i];
+            const dateStr = (row[0] || '').trim();
+            const cat = (row[1] || '').trim();
+            const item = (row[2] || '').trim();
+            const amtStr = (row[3] || '').replace(/[^0-9.-]/g, '');
+            const amount = parseFloat(amtStr) || 0;
+            const monthStr = (row[4] || '').trim();
+
+            if (dateStr || cat || item || amount > 0) {
+              income.push({
+                id: 'inc-' + (i + 2) + '-' + dateStr,
+                rowIndex: i + 2,
+                purchaseDate: dateStr,
+                category: cat,
+                purchaseItem: item,
+                amount: amount,
+                note: monthStr,
+                sheetType: 'Income'
+              });
+            }
+          }
+        }
+      }
+
+      // Đọc Budget Transfers
+      const budgetTransfers = [];
+      const btSheet = ss.getSheetByName(btTab);
+      if (btSheet) {
+        const lastRow = btSheet.getLastRow();
+        if (lastRow >= 2) {
+          const values = btSheet.getRange(2, 1, lastRow - 1, 6).getDisplayValues();
+          for (let i = 0; i < values.length; i++) {
+            const row = values[i];
+            const dateStr = (row[0] || '').trim();
+            const fromCat = (row[1] || '').trim();
+            const toCat = (row[2] || '').trim();
+            const amtStr = (row[3] || '').replace(/[^0-9.-]/g, '');
+            const amount = parseFloat(amtStr) || 0;
+            const desc = (row[4] || '').trim();
+            const monthStr = (row[5] || '').trim();
+
+            if (dateStr || fromCat || toCat || amount > 0) {
+              budgetTransfers.push({
+                id: 'bt-' + (i + 2) + '-' + dateStr,
+                rowIndex: i + 2,
+                date: dateStr,
+                fromCategory: fromCat,
+                toCategory: toCat,
+                amount: amount,
+                description: desc,
+                month: monthStr
+              });
+            }
+          }
+        }
+      }
+
+      return jsonResponse({
+        success: true,
+        metadata: metadata,
+        expenses: expenses,
+        income: income,
+        budgetTransfers: budgetTransfers,
+        totalExpenses: expenses.length,
+        totalIncome: income.length,
+        totalTransfers: budgetTransfers.length
+      });
+    }
+
+    // 4. THÊM GIAO DỊCH MỚI (EXPENSES HOẶC INCOME)
+    if (action === 'appendTransaction') {
+      const tabName = params.tabName || 'Expenses';
+      const sheet = ss.getSheetByName(tabName) || ss.insertSheet(tabName);
+      const rec = params.record || {};
+      const isIncome = tabName.toLowerCase().includes('income') || rec.sheetType === 'Income';
+
+      // Quét cột A để tìm dòng trống đầu tiên
+      const colAValues = sheet.getRange("A:A").getValues();
+      let targetRow = 1;
+      for (let i = colAValues.length - 1; i >= 0; i--) {
+        if (colAValues[i][0] !== "" && colAValues[i][0] !== null && colAValues[i][0] !== undefined) {
+          targetRow = i + 2;
+          break;
+        }
+      }
+      if (targetRow < 2) targetRow = 2;
+
+      if (isIncome) {
+        const monthFormula = '=DATE(YEAR(INDIRECT("A"&ROW())), MONTH(INDIRECT("A"&ROW())), 1)';
+        sheet.getRange(targetRow, 1, 1, 5).setValues([[
+          rec.purchaseDate || '',
+          rec.category || '',
+          rec.purchaseItem || '',
+          rec.amount || 0,
+          monthFormula
+        ]]);
+      } else {
+        sheet.getRange(targetRow, 1, 1, 7).setValues([[
+          rec.purchaseDate || '',
+          rec.category || '',
+          rec.purchaseItem || '',
+          rec.amount || 0,
+          rec.beCorp ? rec.beCorp : '',
+          rec.credit ? rec.credit : '',
+          rec.note ? rec.note : ''
+        ]]);
+      }
+
+      return jsonResponse({
+        success: true,
+        rowIndex: targetRow,
+        tabName: tabName,
+        message: 'Đã thêm dòng mới vào hàng ' + targetRow
+      });
+    }
+
+    // 5. THÊM ĐIỀU CHUYỂN NGÂN SÁCH (BUDGET TRANSFERS)
+    if (action === 'appendBudgetTransfer') {
+      const tabName = params.tabName || 'Budget Transfers';
+      const sheet = ss.getSheetByName(tabName) || ss.insertSheet(tabName);
+      const t = params.transfer || {};
+
+      const colAValues = sheet.getRange("A:A").getValues();
+      let targetRow = 1;
+      for (let i = colAValues.length - 1; i >= 0; i--) {
+        if (colAValues[i][0] !== "" && colAValues[i][0] !== null && colAValues[i][0] !== undefined) {
+          targetRow = i + 2;
+          break;
+        }
+      }
+      if (targetRow < 2) targetRow = 2;
+
+      const monthFormula = '=DATE(YEAR(INDIRECT("A"&ROW())), MONTH(INDIRECT("A"&ROW())), 1)';
+      sheet.getRange(targetRow, 1, 1, 6).setValues([[
+        t.date || '',
+        t.fromCategory || '',
+        t.toCategory || '',
+        t.amount || 0,
+        t.description || '',
+        monthFormula
+      ]]);
+
+      return jsonResponse({
+        success: true,
+        rowIndex: targetRow,
+        message: 'Đã thêm điều chuyển vào hàng ' + targetRow
+      });
+    }
+
+    // 6. CẬP NHẬT GIAO DỊCH
+    if (action === 'updateTransaction') {
+      const tabName = params.tabName || 'Expenses';
+      const sheet = ss.getSheetByName(tabName);
+      if (!sheet) return jsonResponse({ success: false, error: 'Không tìm thấy tab: ' + tabName });
+
+      const rowIndex = parseInt(params.rowIndex, 10);
+      if (!rowIndex || rowIndex < 2) return jsonResponse({ success: false, error: 'Dòng không hợp lệ' });
+
+      const rec = params.record || {};
+      const isIncome = tabName.toLowerCase().includes('income') || rec.sheetType === 'Income';
+
+      if (isIncome) {
+        sheet.getRange(rowIndex, 1, 1, 4).setValues([[
+          rec.purchaseDate || '',
+          rec.category || '',
+          rec.purchaseItem || '',
+          rec.amount || 0
+        ]]);
+      } else {
+        sheet.getRange(rowIndex, 1, 1, 7).setValues([[
+          rec.purchaseDate || '',
+          rec.category || '',
+          rec.purchaseItem || '',
+          rec.amount || 0,
+          rec.beCorp ? rec.beCorp : '',
+          rec.credit ? rec.credit : '',
+          rec.note ? rec.note : ''
+        ]]);
+      }
+
+      return jsonResponse({
+        success: true,
+        rowIndex: rowIndex,
+        message: 'Đã cập nhật dòng #' + rowIndex
+      });
+    }
+
+    // 7. XÓA GIAO DỊCH
+    if (action === 'deleteTransaction') {
+      const tabName = params.tabName || 'Expenses';
+      const sheet = ss.getSheetByName(tabName);
+      if (!sheet) return jsonResponse({ success: false, error: 'Không tìm thấy tab: ' + tabName });
+
+      const rowIndex = parseInt(params.rowIndex, 10);
+      if (!rowIndex || rowIndex < 2) return jsonResponse({ success: false, error: 'Dòng không hợp lệ' });
+
+      sheet.deleteRow(rowIndex);
+      return jsonResponse({
+        success: true,
+        rowIndex: rowIndex,
+        message: 'Đã xóa dòng #' + rowIndex
+      });
+    }
+
+    return jsonResponse({ success: false, error: 'Yêu cầu không được hỗ trợ: ' + action });
+  } catch (err) {
+    return jsonResponse({ success: false, error: err.toString() });
+  }
+}
+
+// ==================== XỬ LÝ TIN NHẮN TỪ BOT TELEGRAM ====================
+function handleTelegramWebhook(update) {
+  try {
     const message = update.message || update.edited_message;
     if (!message || !message.text) {
-      return ContentService.createTextOutput('OK');
+      return jsonResponse({ success: true, message: 'No text message' });
     }
 
     const chatId = message.chat.id;
@@ -85,42 +446,37 @@ function doPost(e) {
     // Kiểm tra quyền truy cập (nếu có cấu hình ALLOWED_CHAT_IDS)
     if (CONFIG.ALLOWED_CHAT_IDS.length > 0 && !CONFIG.ALLOWED_CHAT_IDS.includes(chatId)) {
       sendMessage(chatId, `⛔ Xin lỗi ${senderName}, bạn không có quyền sử dụng bot này. Chat ID của bạn là: \`${chatId}\``);
-      return ContentService.createTextOutput('Unauthorized');
+      return jsonResponse({ success: false, error: 'Unauthorized' });
     }
 
     // Xử lý các lệnh hệ thống
     if (text.startsWith('/start') || text.startsWith('/help') || text.toLowerCase() === 'help') {
       sendHelpMessage(chatId);
-      return ContentService.createTextOutput('OK');
+      return jsonResponse({ success: true });
     }
 
     if (text.startsWith('/check') || text.toLowerCase() === 'check' || text.toLowerCase() === 'check tien') {
       sendCheckTienSummary(chatId);
-      return ContentService.createTextOutput('OK');
+      return jsonResponse({ success: true });
     }
 
     if (text.startsWith('/categories') || text.toLowerCase() === 'danh muc') {
       sendCategoriesList(chatId);
-      return ContentService.createTextOutput('OK');
+      return jsonResponse({ success: true });
     }
 
     if (text.startsWith('/undo') || text.toLowerCase() === 'undo' || text.toLowerCase() === 'huy') {
       handleUndoLastAction(chatId);
-      return ContentService.createTextOutput('OK');
+      return jsonResponse({ success: true });
     }
 
     // Xử lý tin nhắn ghi chép chi tiêu / thu nhập
     handleTransactionMessage(chatId, text, senderName);
-
   } catch (err) {
-    Logger.log('Lỗi trong doPost: ' + err.toString());
+    Logger.log('Lỗi trong handleTelegramWebhook: ' + err.toString());
   }
 
-  return ContentService.createTextOutput('OK');
-}
-
-function doGet(e) {
-  return ContentService.createTextOutput('HeoMeo Finance Bot is running smoothly!');
+  return jsonResponse({ success: true });
 }
 
 // ==================== XỬ LÝ GHI CHÉP GIAO DỊCH ====================

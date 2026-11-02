@@ -1,5 +1,13 @@
 import { BudgetTransferRecord, CheckTienSheetData, SheetTabType, TransactionRecord } from '../types/finance';
 import { formatNumberForSheet, parseDateString, parseSheetNumber } from '../utils/csvParser';
+import {
+  isAppsScriptUrl,
+  appsScriptSyncAll,
+  appsScriptAppendTransaction,
+  appsScriptUpdateTransaction,
+  appsScriptDeleteTransaction,
+  appsScriptAppendTransfer,
+} from './appsScriptService';
 
 export interface SpreadsheetMetadata {
   spreadsheetId: string;
@@ -21,6 +29,9 @@ export interface SummarySheetData {
 
 export function extractSpreadsheetId(input: string): string {
   const trimmed = input.trim();
+  if (isAppsScriptUrl(trimmed)) {
+    return trimmed;
+  }
   const match = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
   if (match && match[1]) {
     return match[1];
@@ -45,6 +56,11 @@ export async function fetchSpreadsheetMetadata(
   spreadsheetIdOrUrl: string,
   accessToken: string
 ): Promise<SpreadsheetMetadata> {
+  if (isAppsScriptUrl(spreadsheetIdOrUrl)) {
+    const result = await appsScriptSyncAll(spreadsheetIdOrUrl);
+    return result.metadata;
+  }
+
   const spreadsheetId = extractSpreadsheetId(spreadsheetIdOrUrl);
   const res = await fetch(
     `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}?fields=spreadsheetId,properties.title,sheets.properties(title,sheetId)`,
@@ -112,6 +128,11 @@ export async function fetchTabTransactions(
   sheetType: SheetTabType,
   accessToken: string
 ): Promise<TransactionRecord[]> {
+  if (isAppsScriptUrl(spreadsheetId)) {
+    const result = await appsScriptSyncAll(spreadsheetId);
+    return sheetType === 'Expenses' ? result.expenses : result.income;
+  }
+
   const safeTab = `'${tabName.replace(/'/g, "''")}'`;
   const range = `${safeTab}!A1:Z5000`;
   const res = await fetch(
@@ -381,6 +402,11 @@ export async function appendTransactionToSheet(
   },
   accessToken: string
 ): Promise<void> {
+  if (isAppsScriptUrl(spreadsheetId)) {
+    await appsScriptAppendTransaction(spreadsheetId, tabName, record);
+    return;
+  }
+
   const isIncome = record.sheetType === 'Income' || tabName.toLowerCase().includes('income');
   const safeTab = `'${tabName.replace(/'/g, "''")}'`;
 
@@ -514,6 +540,11 @@ export async function fetchBudgetTransfersSheet(
   tabName: string,
   accessToken: string
 ): Promise<BudgetTransferRecord[]> {
+  if (isAppsScriptUrl(spreadsheetId)) {
+    const result = await appsScriptSyncAll(spreadsheetId);
+    return result.budgetTransfers;
+  }
+
   const range = `'${tabName.replace(/'/g, "''")}'!A2:F`;
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
     spreadsheetId
@@ -578,6 +609,11 @@ export async function appendBudgetTransferToSheet(
   },
   accessToken: string
 ): Promise<void> {
+  if (isAppsScriptUrl(spreadsheetId)) {
+    await appsScriptAppendTransfer(spreadsheetId, transfer);
+    return;
+  }
+
   const parsedDate = parseDateString(transfer.date);
   const monthDateStr = parsedDate.monthKey
     ? `${parseInt(parsedDate.monthKey.split('-')[1], 10)}/1/${parsedDate.monthKey.split('-')[0]}`
@@ -702,6 +738,11 @@ export async function updateTransactionOnSheet(
   },
   accessToken: string
 ): Promise<void> {
+  if (isAppsScriptUrl(spreadsheetId)) {
+    await appsScriptUpdateTransaction(spreadsheetId, tabName, rowIndex, record);
+    return;
+  }
+
   const isIncome = record.sheetType === 'Income' || tabName.toLowerCase().includes('income');
   const safeTab = `'${tabName.replace(/'/g, "''")}'`;
 
@@ -760,8 +801,15 @@ export async function deleteTransactionFromSheet(
   spreadsheetId: string,
   sheetId: number,
   rowIndex: number,
-  accessToken: string
+  accessToken: string,
+  tabName?: string
 ): Promise<void> {
+  if (isAppsScriptUrl(spreadsheetId)) {
+    const finalTab = tabName || (sheetId === 392215035 ? 'Income' : 'Expenses');
+    await appsScriptDeleteTransaction(spreadsheetId, finalTab, rowIndex);
+    return;
+  }
+
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
     spreadsheetId
   )}:batchUpdate`;
