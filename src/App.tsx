@@ -54,6 +54,8 @@ import {
 import {
   isAppsScriptUrl,
   appsScriptSyncAll,
+  DEFAULT_WEB_APP_URL,
+  getStoredWebAppUrl,
 } from './services/appsScriptService';
 import { AnalyticsCharts } from './components/AnalyticsCharts';
 import {
@@ -185,7 +187,11 @@ export default function App() {
   const [accessToken, setAccessToken] = useState<string | null>(() => getStoredAccessToken());
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
   const [spreadsheetInput, setSpreadsheetInput] = useState<string>(() => {
-    return localStorage.getItem(SAVED_SHEET_URL_KEY) || 'https://docs.google.com/spreadsheets/d/1CTSEC-J52yGD-VIxOuzyNZ8Qddg0bmOIzMSzRVM6ZTI/edit';
+    const saved = localStorage.getItem(SAVED_SHEET_URL_KEY);
+    if (saved && isAppsScriptUrl(saved)) return saved;
+    const storedWebApp = getStoredWebAppUrl();
+    if (storedWebApp) return storedWebApp;
+    return saved || DEFAULT_WEB_APP_URL;
   });
   const [sheetMeta, setSheetMeta] = useState<SpreadsheetMetadata | null>(() => {
     try {
@@ -332,13 +338,23 @@ export default function App() {
     };
   }, []);
 
+  // Auto-sync on load for Web App API (works without any Google login)
+  useEffect(() => {
+    const targetUrl = spreadsheetInput || getStoredWebAppUrl() || DEFAULT_WEB_APP_URL;
+    if (isAppsScriptUrl(targetUrl)) {
+      handleConnectAndSyncSheet(targetUrl, '', true).catch((err) => {
+        console.warn('Initial background Web App sync:', err);
+      });
+    }
+  }, []);
+
   // Initialize Firebase Auth listener with auto-sync on load
   useEffect(() => {
     const unsubscribe = initAuth(
       (loggedInUser, token) => {
         setUser(loggedInUser);
         setAccessToken(token);
-        const targetUrl = localStorage.getItem(SAVED_SHEET_URL_KEY) || 'https://docs.google.com/spreadsheets/d/1CTSEC-J52yGD-VIxOuzyNZ8Qddg0bmOIzMSzRVM6ZTI/edit';
+        const targetUrl = localStorage.getItem(SAVED_SHEET_URL_KEY) || DEFAULT_WEB_APP_URL;
         if (targetUrl) {
           handleConnectAndSyncSheet(targetUrl, token);
         }

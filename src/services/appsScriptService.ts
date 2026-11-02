@@ -6,18 +6,23 @@ export const STORAGE_KEY_WEB_APP_URL = 'heomeo_apps_script_url_v1';
 export const STORAGE_KEY_WEB_APP_KEY = 'heomeo_apps_script_key_v1';
 export const STORAGE_KEY_CONNECTION_MODE = 'heomeo_connection_mode_v1'; // 'webapp' | 'oauth'
 
+export const DEFAULT_WEB_APP_URL =
+  'https://script.google.com/macros/s/AKfycbwp6bORyNAXWePm2R7akA-VMLDdKPr421g0r-0Nb203wPJYM2f1lY5AriJQ4KBTTFcUyQ/exec';
+
 export function isAppsScriptUrl(url: string | null | undefined): boolean {
   if (!url) return false;
   const clean = url.trim().toLowerCase();
   return clean.includes('script.google.com') && (clean.includes('/macros/s/') || clean.includes('/exec'));
 }
 
-export function getStoredWebAppUrl(): string | null {
+export function getStoredWebAppUrl(): string {
   try {
-    return localStorage.getItem(STORAGE_KEY_WEB_APP_URL);
+    const saved = localStorage.getItem(STORAGE_KEY_WEB_APP_URL);
+    if (saved && isAppsScriptUrl(saved)) return saved;
   } catch {
-    return null;
+    // ignore
   }
+  return DEFAULT_WEB_APP_URL;
 }
 
 export function saveStoredWebAppUrl(url: string) {

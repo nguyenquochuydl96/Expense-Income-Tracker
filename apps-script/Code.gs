@@ -22,7 +22,7 @@ const CONFIG = {
   TELEGRAM_BOT_TOKEN: 'YOUR_TELEGRAM_BOT_TOKEN_HERE',
 
   // 2. Web App URL sau khi deploy (Dùng cho cả Web App & Telegram Webhook)
-  WEBHOOK_URL: 'YOUR_WEB_APP_URL_HERE',
+  WEBHOOK_URL: 'https://script.google.com/macros/s/AKfycbwp6bORyNAXWePm2R7akA-VMLDdKPr421g0r-0Nb203wPJYM2f1lY5AriJQ4KBTTFcUyQ/exec',
 
   // 3. Mã bảo vệ gia đình (Tùy chọn - Dành cho Web/Mobile App)
   // Nếu điền (VD: 'heomeo2026'), chỉ người có mã này mới đọc/ghi dữ liệu vào Sheet được
