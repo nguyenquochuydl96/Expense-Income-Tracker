@@ -102,14 +102,13 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
 
   // Tính toán thông tin ngày tháng trong kỳ
   const dateMetrics = useMemo(() => {
-    const targetMonth = selectedMonth !== 'ALL' ? selectedMonth : '2026-10';
+    const now = new Date();
+    const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const targetMonth = selectedMonth !== 'ALL' ? selectedMonth : currentYearMonth;
     const [yearStr, monthStr] = targetMonth.split('-');
     const year = parseInt(yearStr, 10);
     const month = parseInt(monthStr, 10);
     const daysInMonth = new Date(year, month, 0).getDate();
-
-    const now = new Date();
-    const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
     let currentDay: number;
     let isPast = false;

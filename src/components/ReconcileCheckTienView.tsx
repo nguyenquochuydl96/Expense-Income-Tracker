@@ -189,9 +189,15 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
   }, [heoTotal, meoTotal]);
 
   // ═══════ CHU KỲ CHECK TIỀN (THEO CHU KỲ SAO KÊ 25-24) ═══════
+  const activeMonthFallback = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }, []);
+  const activeReconcileMonth = selectedMonth !== 'ALL' ? selectedMonth : activeMonthFallback;
+
   const defaultCycle = useMemo(() => {
-    return getBillingCycleRange(selectedMonth !== 'ALL' ? selectedMonth : '2026-10', 25, 24);
-  }, [selectedMonth]);
+    return getBillingCycleRange(activeReconcileMonth, 25, 24);
+  }, [activeReconcileMonth]);
 
   const [cyclePreset, setCyclePreset] = useState<'standard_25_24' | 'becorp_26_25' | 'custom'>('standard_25_24');
   const [cycleStart, setCycleStart] = useState<string>(defaultCycle.startDate);
@@ -200,15 +206,15 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
   // Sync cycle start/end when selectedMonth changes
   useEffect(() => {
     if (cyclePreset === 'standard_25_24') {
-      const c = getBillingCycleRange(selectedMonth !== 'ALL' ? selectedMonth : '2026-10', 25, 24);
+      const c = getBillingCycleRange(activeReconcileMonth, 25, 24);
       setCycleStart(c.startDate);
       setCycleEnd(c.endDate);
     } else if (cyclePreset === 'becorp_26_25') {
-      const c = getBillingCycleRange(selectedMonth !== 'ALL' ? selectedMonth : '2026-10', 26, 25);
+      const c = getBillingCycleRange(activeReconcileMonth, 26, 25);
       setCycleStart(c.startDate);
       setCycleEnd(c.endDate);
     }
-  }, [selectedMonth, cyclePreset]);
+  }, [activeReconcileMonth, cyclePreset]);
 
   // ═══════ TÍNH TOÁN THEO CHU KỲ (INCOME − EXPENSE + CREDIT) ═══════
   const cycleReconcileStats = useMemo(() => {
@@ -280,17 +286,17 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
 
   // BE Corp cycle range (26th last month to 25th this month)
   const beCycle = useMemo(() => {
-    return getBillingCycleRange(selectedMonth !== 'ALL' ? selectedMonth : '2026-10', 26, 25);
-  }, [selectedMonth]);
+    return getBillingCycleRange(activeReconcileMonth, 26, 25);
+  }, [activeReconcileMonth]);
 
   const [beStartDate, setBeStartDate] = useState<string>(beCycle.startDate);
   const [beEndDate, setBeEndDate] = useState<string>(beCycle.endDate);
 
   useEffect(() => {
-    const c = getBillingCycleRange(selectedMonth !== 'ALL' ? selectedMonth : '2026-10', 26, 25);
+    const c = getBillingCycleRange(activeReconcileMonth, 26, 25);
     setBeStartDate(c.startDate);
     setBeEndDate(c.endDate);
-  }, [selectedMonth]);
+  }, [activeReconcileMonth]);
 
   // BE Corp Cycle Analysis - SORTED NEWEST TO OLDEST
   const beCorpCycleStats = useMemo(() => {
@@ -322,17 +328,17 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
 
   // Credit statement cycle range (25th last month to 24th this month)
   const creditCycle = useMemo(() => {
-    return getBillingCycleRange(selectedMonth !== 'ALL' ? selectedMonth : '2026-10', 25, 24);
-  }, [selectedMonth]);
+    return getBillingCycleRange(activeReconcileMonth, 25, 24);
+  }, [activeReconcileMonth]);
 
   const [creditStartDate, setCreditStartDate] = useState<string>(creditCycle.startDate);
   const [creditEndDate, setCreditEndDate] = useState<string>(creditCycle.endDate);
 
   useEffect(() => {
-    const c = getBillingCycleRange(selectedMonth !== 'ALL' ? selectedMonth : '2026-10', 25, 24);
+    const c = getBillingCycleRange(activeReconcileMonth, 25, 24);
     setCreditStartDate(c.startDate);
     setCreditEndDate(c.endDate);
-  }, [selectedMonth]);
+  }, [activeReconcileMonth]);
 
   // Credit Cycle Analysis - SORTED NEWEST TO OLDEST
   const creditCycleStats = useMemo(() => {
@@ -498,7 +504,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                   type="button"
                   onClick={() => {
                     setCyclePreset('standard_25_24');
-                    const c = getBillingCycleRange(selectedMonth !== 'ALL' ? selectedMonth : '2026-10', 25, 24);
+                    const c = getBillingCycleRange(activeReconcileMonth, 25, 24);
                     setCycleStart(c.startDate);
                     setCycleEnd(c.endDate);
                   }}
@@ -514,7 +520,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                   type="button"
                   onClick={() => {
                     setCyclePreset('becorp_26_25');
-                    const c = getBillingCycleRange(selectedMonth !== 'ALL' ? selectedMonth : '2026-10', 26, 25);
+                    const c = getBillingCycleRange(activeReconcileMonth, 26, 25);
                     setCycleStart(c.startDate);
                     setCycleEnd(c.endDate);
                   }}
@@ -966,7 +972,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  const c = getBillingCycleRange(selectedMonth !== 'ALL' ? selectedMonth : '2026-10', 26, 25);
+                  const c = getBillingCycleRange(activeReconcileMonth, 26, 25);
                   setBeStartDate(c.startDate);
                   setBeEndDate(c.endDate);
                 }}
@@ -1185,7 +1191,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  const c = getBillingCycleRange(selectedMonth !== 'ALL' ? selectedMonth : '2026-10', 25, 24);
+                  const c = getBillingCycleRange(activeReconcileMonth, 25, 24);
                   setCreditStartDate(c.startDate);
                   setCreditEndDate(c.endDate);
                 }}

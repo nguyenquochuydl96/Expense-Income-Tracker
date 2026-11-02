@@ -153,7 +153,11 @@ export default function App() {
   });
 
   const [isLoadingInitial, setIsLoadingInitial] = useState<boolean>(true);
-  const [selectedMonth, setSelectedMonth] = useState<string>('2026-10');
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const userHasManuallySelectedMonthRef = useRef<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
 
   // Cycle start/end day configuration for BE Corp and Credit
@@ -387,7 +391,7 @@ export default function App() {
     return Array.from(set).sort();
   }, [allRecords]);
 
-  // Available months in dataset
+  // Available months in dataset (sorted descending: latest month first)
   const availableMonths = useMemo(() => {
     const set = new Set<string>();
     allRecords.forEach((r) => {
@@ -395,6 +399,21 @@ export default function App() {
     });
     return Array.from(set).sort((a, b) => b.localeCompare(a));
   }, [allRecords]);
+
+  // Dynamic default latest month (either current calendar month or latest in dataset)
+  const defaultLatestMonth = useMemo(() => {
+    const now = new Date();
+    const currentCalMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    if (availableMonths.includes(currentCalMonth)) return currentCalMonth;
+    return availableMonths[0] || currentCalMonth;
+  }, [availableMonths]);
+
+  // Automatically select latest month on initial data load if user hasn't explicitly chosen one
+  useEffect(() => {
+    if (!userHasManuallySelectedMonthRef.current && availableMonths.length > 0) {
+      setSelectedMonth(defaultLatestMonth);
+    }
+  }, [defaultLatestMonth, availableMonths]);
 
   // Records filtered by selectedMonth (Calendar month: 1st to 30/31st)
   const periodRecords = useMemo(() => {
@@ -410,19 +429,19 @@ export default function App() {
   // Cycle range calculations for BE Corp and Credit for the active month
   const activeBeCycle = useMemo(() => {
     return getBillingCycleRange(
-      selectedMonth !== 'ALL' ? selectedMonth : '2026-10',
+      selectedMonth !== 'ALL' ? selectedMonth : defaultLatestMonth,
       beCorpStartDay,
       beCorpEndDay
     );
-  }, [selectedMonth, beCorpStartDay, beCorpEndDay]);
+  }, [selectedMonth, defaultLatestMonth, beCorpStartDay, beCorpEndDay]);
 
   const activeCreditCycle = useMemo(() => {
     return getBillingCycleRange(
-      selectedMonth !== 'ALL' ? selectedMonth : '2026-10',
+      selectedMonth !== 'ALL' ? selectedMonth : defaultLatestMonth,
       creditStartDay,
       creditEndDay
     );
-  }, [selectedMonth, creditStartDay, creditEndDay]);
+  }, [selectedMonth, defaultLatestMonth, creditStartDay, creditEndDay]);
 
   // KPI calculations (Separating BE Corp & Credit into their own independent cycles)
   const kpiStats = useMemo(() => {
@@ -535,7 +554,7 @@ export default function App() {
   const categoryKpiStats = useMemo(() => {
     if (selectedCategory === 'ALL') return null;
 
-    const targetMonth = selectedMonth !== 'ALL' ? selectedMonth : '2026-10';
+    const targetMonth = selectedMonth !== 'ALL' ? selectedMonth : defaultLatestMonth;
 
     let hasCustomPercentages = false;
     let customPercentages: Record<string, number> = {};
@@ -606,7 +625,7 @@ export default function App() {
       count,
       percentage,
     };
-  }, [selectedCategory, allRecords, budgetTransfers, periodRecords, selectedMonth, kpiStats.effectiveIncome]);
+  }, [selectedCategory, allRecords, budgetTransfers, periodRecords, selectedMonth, defaultLatestMonth, kpiStats.effectiveIncome]);
 
   // Google Sign-In handler
   const handleGoogleLogin = async () => {
@@ -1518,7 +1537,10 @@ export default function App() {
                 <Calendar className="w-3.5 h-3.5 text-slate-500" />
                 <select
                   value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  onChange={(e) => {
+                    userHasManuallySelectedMonthRef.current = true;
+                    setSelectedMonth(e.target.value);
+                  }}
                   className="bg-transparent border-none outline-none cursor-pointer pr-6 appearance-none text-slate-800 font-semibold"
                 >
                   {availableMonths.map((mKey) => {
@@ -1557,11 +1579,12 @@ export default function App() {
             )}
 
             {/* Reset Filter Button if active */}
-            {(selectedMonth !== '2026-10' || selectedCategory !== 'ALL') && (
+            {(selectedMonth !== defaultLatestMonth || selectedCategory !== 'ALL') && (
               <button
                 type="button"
                 onClick={() => {
-                  setSelectedMonth('2026-10');
+                  userHasManuallySelectedMonthRef.current = false;
+                  setSelectedMonth(defaultLatestMonth);
                   setSelectedCategory('ALL');
                 }}
                 className="text-xs text-sky-700 hover:text-sky-900 font-medium px-2 py-1"
@@ -1712,7 +1735,7 @@ export default function App() {
                         onClick={() => {
                           setAddModalPreset({
                             sheetType: 'Income',
-                            isoDate: selectedMonth !== 'ALL' ? `${selectedMonth}-01` : '2026-10-01',
+                            isoDate: selectedMonth !== 'ALL' ? `${selectedMonth}-01` : `${defaultLatestMonth}-01`,
                             category: 'Lương Yes4All',
                           });
                           setIsAddModalOpen(true);
