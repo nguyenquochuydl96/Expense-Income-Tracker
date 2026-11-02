@@ -154,9 +154,12 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
         </div>
 
         {/* Title & Subtitle */}
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white mb-1">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white mb-0.5">
           Heo &amp; Mèo
         </h1>
+        <p className="text-[11px] text-pink-200/90 font-medium mb-2">
+          Sổ chi tiêu của ba mẹ Chuối, Đậu, Vịt
+        </p>
         <p className="text-xs text-slate-300 font-medium mb-6">
           Nhập mã PIN để mở khóa sổ chi tiêu
         </p>

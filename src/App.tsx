@@ -1424,7 +1424,7 @@ export default function App() {
                 </span>
               </div>
               <span className="text-[11px] font-medium text-sky-200/80 block mt-0.5">
-                Sổ chi tiêu đôi mình
+                Sổ chi tiêu của ba mẹ Chuối, Đậu, Vịt
               </span>
             </div>
           </div>
