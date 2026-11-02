@@ -35,10 +35,12 @@ export function saveStoredWebAppUrl(url: string) {
 
 export function getStoredWebAppKey(): string | null {
   try {
-    return localStorage.getItem(STORAGE_KEY_WEB_APP_KEY);
+    const key = localStorage.getItem(STORAGE_KEY_WEB_APP_KEY);
+    if (key && key.trim()) return key.trim();
   } catch {
-    return null;
+    // ignore
   }
+  return '111196';
 }
 
 export function saveStoredWebAppKey(key: string) {

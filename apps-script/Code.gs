@@ -26,7 +26,7 @@ const CONFIG = {
 
   // 3. Mã bảo vệ gia đình (Tùy chọn - Dành cho Web/Mobile App)
   // Nếu điền (VD: 'heomeo2026'), chỉ người có mã này mới đọc/ghi dữ liệu vào Sheet được
-  API_SECRET_KEY: '',
+  API_SECRET_KEY: '111196',
 
   // 4. Google Gemini API Key (Tùy chọn - Miễn phí tại aistudio.google.com)
   // Nếu có, bot Telegram sẽ hiểu mọi câu nói tự nhiên, văn nói, viết tắt tiếng Việt

@@ -12,7 +12,10 @@ import {
   Filter,
   Bot,
   Trash2,
+  Lock,
+  KeyRound,
 } from 'lucide-react';
+import { AppLockScreen, isDeviceUnlocked, lockDevice } from './components/AppLockScreen';
 import { User } from 'firebase/auth';
 import {
   BudgetTransferRecord,
@@ -153,6 +156,7 @@ export default function App() {
   });
 
   const [isLoadingInitial, setIsLoadingInitial] = useState<boolean>(true);
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => isDeviceUnlocked());
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -1371,6 +1375,16 @@ export default function App() {
     [allRecords]
   );
 
+  const handleLockApp = useCallback(() => {
+    lockDevice();
+    setIsUnlocked(false);
+    showToast('success', 'Đã khóa ứng dụng an toàn');
+  }, [showToast]);
+
+  if (!isUnlocked) {
+    return <AppLockScreen onUnlock={() => setIsUnlocked(true)} />;
+  }
+
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#EEF2F6' }}>
       {/* ═══════ TOP HEADER (Xero Coupler Curved Dark Navy Banner) ═══════ */}
@@ -1399,7 +1413,17 @@ export default function App() {
           </div>
 
           {/* Right Action Buttons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={handleLockApp}
+              className="px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 cursor-pointer"
+              title="Khóa ứng dụng an toàn"
+            >
+              <Lock className="w-3.5 h-3.5 text-amber-300" />
+              <span className="hidden sm:inline">Khóa App</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setActiveTab(activeTab === 'dashboard' ? 'ledger' : 'dashboard')}
