@@ -239,9 +239,9 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
         <button
           type="button"
           onClick={() => setShowHint(!showHint)}
-          className="text-[11px] text-slate-400 hover:text-teal-300 underline underline-offset-4 transition-colors"
+          className="text-[11px] text-slate-400 hover:text-teal-300 underline underline-offset-4 transition-colors cursor-pointer"
         >
-          {showHint ? 'Gợi ý: Ngày sinh nhật (11/11/96)' : 'Quên mã PIN?'}
+          {showHint ? 'Liên hệ Heo để được bật mí 😉' : 'Quên mã PIN?'}
         </button>
 
         {/* Security badge footer */}
