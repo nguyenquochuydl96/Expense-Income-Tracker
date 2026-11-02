@@ -109,8 +109,8 @@ export const CATEGORY_COLORS: Record<string, string> = {
   'Tiết kiệm': '#2563EB',       // Blue 600
   'Thuê nhà': '#4F46E5',        // Indigo 600
   'Quà tặng/Cưới hỏi': '#E11D48', // Rose 600
-  'Giải trí Heo': '#D97706',    // Amber 600
-  'Giải trí Mèo': '#9333EA',    // Purple 600
+  'Giải trí Heo': '#F43F5E',    // Rose 500 (Heo)
+  'Giải trí Mèo': '#8B5CF6',    // Violet 500 (Mèo Xiêm)
   'Hóa/Mỹ phẩm': '#DB2777',     // Pink 600
   'Thú cưng': '#EA580C',        // Orange 600
   'Shopping': '#0284C7',        // Sky 600

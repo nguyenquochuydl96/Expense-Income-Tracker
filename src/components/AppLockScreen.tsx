@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Lock, Delete, ShieldCheck, KeyRound, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { PigIcon, SiameseCatIcon } from '../utils/categoryIcons';
 import { saveStoredWebAppKey } from '../services/appsScriptService';
 
 export const STORAGE_KEY_APP_UNLOCKED = 'heomeo_app_unlocked_v1';
@@ -129,12 +130,21 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
       <div className="relative w-full max-w-sm flex flex-col items-center text-center">
         {/* App Logo & Lock Icon */}
         <div className="relative mb-4">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-indigo-600 via-sky-600 to-teal-400 p-0.5 shadow-xl shadow-indigo-500/25 flex items-center justify-center">
-            <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center text-3xl sm:text-4xl">
-              🐷
+          <div className="flex items-center -space-x-3 p-1.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-xl shadow-indigo-500/25">
+            <div
+              className="w-12 h-12 rounded-full bg-rose-100 ring-2 ring-white/80 flex items-center justify-center shadow-md z-10"
+              title="Heo 🐷"
+            >
+              <PigIcon className="w-7 h-7" />
+            </div>
+            <div
+              className="w-12 h-12 rounded-full bg-[#FAF4EE] ring-2 ring-white/80 flex items-center justify-center shadow-md z-0"
+              title="Mèo Xiêm 🐱"
+            >
+              <SiameseCatIcon className="w-7 h-7" />
             </div>
           </div>
-          <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-teal-500 border-2 border-slate-950 flex items-center justify-center shadow-md">
+          <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-teal-500 border-2 border-slate-950 flex items-center justify-center shadow-md z-20">
             {isSuccess ? (
               <CheckCircle2 className="w-4 h-4 text-white animate-bounce" />
             ) : (
@@ -145,10 +155,10 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
 
         {/* Title & Subtitle */}
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-white mb-1">
-          Heo &amp; Mèo Finance
+          Heo &amp; Mèo
         </h1>
         <p className="text-xs text-slate-300 font-medium mb-6">
-          Nhập mã PIN để mở khóa sổ tài chính
+          Nhập mã PIN để mở khóa sổ chi tiêu
         </p>
 
         {/* 6-dot PIN Indicator */}

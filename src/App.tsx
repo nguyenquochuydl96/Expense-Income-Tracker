@@ -15,6 +15,7 @@ import {
   Lock,
   KeyRound,
 } from 'lucide-react';
+import { PigIcon, SiameseCatIcon } from './utils/categoryIcons';
 import { AppLockScreen, isDeviceUnlocked, lockDevice } from './components/AppLockScreen';
 import { User } from 'firebase/auth';
 import {
@@ -1395,19 +1396,35 @@ export default function App() {
             backgroundColor: '#132247',
           }}
         >
-          {/* Left Brand */}
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-xs">
-              <div className="w-7 h-7 rounded-lg bg-[#0077B6] flex items-center justify-center">
-                <span className="text-white font-black text-sm tracking-tighter">HM</span>
+          {/* Left Brand: Modern, Youthful Duo Avatar & Concise Title */}
+          <div className="flex items-center gap-3">
+            {/* Adorable Duo Avatar (Heo 🐷 + Siamese Cat 🐱) */}
+            <div className="flex items-center -space-x-2.5 p-1 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-xs hover:scale-105 transition-transform cursor-pointer">
+              <div
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-rose-100 ring-2 ring-white/80 flex items-center justify-center shadow-xs z-10"
+                title="Heo 🐷"
+              >
+                <PigIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
+              </div>
+              <div
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#FAF4EE] ring-2 ring-white/80 flex items-center justify-center shadow-xs z-0"
+                title="Mèo Xiêm 🐱"
+              >
+                <SiameseCatIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
               </div>
             </div>
+
             <div>
-              <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                Billing dashboard for Heo &amp; Mèo
-              </h1>
-              <span className="text-[10px] tracking-wider font-semibold text-sky-300 uppercase block -mt-0.5">
-                HEOMEO.FINANCE
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white">
+                  Heo &amp; Mèo
+                </h1>
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/15 text-pink-200 border border-white/15 backdrop-blur-xs">
+                  Finance
+                </span>
+              </div>
+              <span className="text-[11px] font-medium text-sky-200/80 block mt-0.5">
+                Sổ chi tiêu đôi mình
               </span>
             </div>
           </div>
