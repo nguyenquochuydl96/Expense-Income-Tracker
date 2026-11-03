@@ -28,6 +28,7 @@ import { useThemeMode } from './utils/themeService';
 import { PwaInstallModal } from './components/PwaInstallModal';
 import { CalendarHeatmapView } from './components/CalendarHeatmapView';
 import { MonthlyReportCardModal } from './components/MonthlyReportCardModal';
+import { MultiMonthPickerDropdown, formatSelectedMonthsDisplay } from './components/MultiMonthPickerDropdown';
 import { User } from 'firebase/auth';
 import {
   BudgetTransferRecord,
@@ -169,9 +170,9 @@ export default function App() {
 
   const [isLoadingInitial, setIsLoadingInitial] = useState<boolean>(true);
   const [isUnlocked, setIsUnlocked] = useState<boolean>(() => isDeviceUnlocked());
-  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+  const [selectedMonths, setSelectedMonths] = useState<string[]>(() => {
     const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    return [`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`];
   });
   const userHasManuallySelectedMonthRef = useRef<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
@@ -514,15 +515,71 @@ export default function App() {
   // Automatically select latest month on initial data load if user hasn't explicitly chosen one
   useEffect(() => {
     if (!userHasManuallySelectedMonthRef.current && availableMonths.length > 0) {
-      setSelectedMonth(defaultLatestMonth);
+      setSelectedMonths([defaultLatestMonth]);
     }
   }, [defaultLatestMonth, availableMonths]);
 
-  // Records filtered by selectedMonth (Calendar month: 1st to 30/31st)
+  const isAllMonthsSelected = useMemo(() => {
+    return (
+      selectedMonths.length === 0 ||
+      selectedMonths.includes('ALL') ||
+      (availableMonths.length > 0 && selectedMonths.length >= availableMonths.length)
+    );
+  }, [selectedMonths, availableMonths]);
+
+  // Derived single month for backward compatibility
+  const selectedMonth = useMemo(() => {
+    if (isAllMonthsSelected) return 'ALL';
+    if (selectedMonths.length === 1) return selectedMonths[0];
+    return selectedMonths[0] || defaultLatestMonth;
+  }, [isAllMonthsSelected, selectedMonths, defaultLatestMonth]);
+
+  const selectedMonthsLabel = useMemo(() => {
+    return formatSelectedMonthsDisplay(selectedMonths, availableMonths).title;
+  }, [selectedMonths, availableMonths]);
+
+  // Record counts per month for dropdown context
+  const monthRecordCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const r of allRecords) {
+      if (r.monthKey) {
+        counts[r.monthKey] = (counts[r.monthKey] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [allRecords]);
+
+  // Records filtered by selectedMonths (Calendar month: 1st to 30/31st)
   const periodRecords = useMemo(() => {
-    if (selectedMonth === 'ALL') return allRecords;
-    return allRecords.filter((r) => r.monthKey === selectedMonth);
-  }, [allRecords, selectedMonth]);
+    if (isAllMonthsSelected) return allRecords;
+    const monthSet = new Set(selectedMonths);
+    return allRecords.filter((r) => r.monthKey && monthSet.has(r.monthKey));
+  }, [allRecords, isAllMonthsSelected, selectedMonths]);
+
+  const handleSelectMonth = useCallback((mKey: string) => {
+    userHasManuallySelectedMonthRef.current = true;
+    if (mKey === 'ALL') {
+      setSelectedMonths(availableMonths);
+    } else {
+      setSelectedMonths([mKey]);
+    }
+  }, [availableMonths]);
+
+  const handleToggleMonth = useCallback((mKey: string) => {
+    userHasManuallySelectedMonthRef.current = true;
+    setSelectedMonths((prev) => {
+      if (prev.length === 0 || prev.includes('ALL') || prev.length >= availableMonths.length) {
+        const remaining = availableMonths.filter((m) => m !== mKey);
+        return remaining.length > 0 ? remaining : [availableMonths[0]];
+      }
+      if (prev.includes(mKey)) {
+        const next = prev.filter((m) => m !== mKey);
+        return next.length > 0 ? next : availableMonths;
+      }
+      const next = [...prev, mKey];
+      return next.length >= availableMonths.length ? availableMonths : next;
+    });
+  }, [availableMonths]);
 
   // Historical autocomplete suggestions
   const itemSuggestions = useMemo(() => {
@@ -582,13 +639,13 @@ export default function App() {
     const effectiveIncome = sheetIncome;
     const netBalance = effectiveIncome - totalExpense;
 
-    // Distinct cycle calculations for BE Corp and Credit
+    // Distinct cycle calculations for BE Corp and Credit across all selected months
     let beCorpCycleTotal = 0;
     let beCorpCount = 0;
     let creditCycleTotal = 0;
     let creditCount = 0;
 
-    if (selectedMonth === 'ALL') {
+    if (isAllMonthsSelected) {
       for (const r of allRecords) {
         if (r.sheetType === 'Expenses') {
           if (r.beCorp > 0) {
@@ -602,21 +659,22 @@ export default function App() {
         }
       }
     } else {
-      // Filter by respective cycle dates
+      // Filter by respective cycle dates across each selected month
+      const beRanges = selectedMonths.map((m) => getBillingCycleRange(m, beCorpStartDay, beCorpEndDay));
+      const creditRanges = selectedMonths.map((m) => getBillingCycleRange(m, creditStartDay, creditEndDay));
+
       for (const r of allRecords) {
         if (r.sheetType === 'Expenses') {
           if (
             r.beCorp > 0 &&
-            r.isoDate >= activeBeCycle.startDate &&
-            r.isoDate <= activeBeCycle.endDate
+            beRanges.some((rng) => r.isoDate >= rng.startDate && r.isoDate <= rng.endDate)
           ) {
             beCorpCycleTotal += r.beCorp;
             beCorpCount += 1;
           }
           if (
             r.credit > 0 &&
-            r.isoDate >= activeCreditCycle.startDate &&
-            r.isoDate <= activeCreditCycle.endDate
+            creditRanges.some((rng) => r.isoDate >= rng.startDate && r.isoDate <= rng.endDate)
           ) {
             creditCycleTotal += r.credit;
             creditCount += 1;
@@ -624,6 +682,18 @@ export default function App() {
         }
       }
     }
+
+    const beDisplayLabel = isAllMonthsSelected
+      ? 'Tất cả chu kỳ BE'
+      : selectedMonths.length > 1
+        ? `${selectedMonths.length} chu kỳ BE đã chọn`
+        : activeBeCycle.displayLabel;
+
+    const creditDisplayLabel = isAllMonthsSelected
+      ? 'Tất cả kỳ sao kê thẻ'
+      : selectedMonths.length > 1
+        ? `${selectedMonths.length} kỳ sao kê thẻ đã chọn`
+        : activeCreditCycle.displayLabel;
 
     return {
       sheetIncome,
@@ -637,8 +707,8 @@ export default function App() {
       beCorpCount,
       creditCycleTotal,
       creditCount,
-      beRange: activeBeCycle,
-      creditRange: activeCreditCycle,
+      beRange: { ...activeBeCycle, displayLabel: beDisplayLabel },
+      creditRange: { ...activeCreditCycle, displayLabel: creditDisplayLabel },
       netBalance,
       expenseCount,
       incomeCount,
@@ -648,9 +718,15 @@ export default function App() {
     allRecords,
     monthlyBaseIncome,
     selectedMonth,
+    selectedMonths,
+    isAllMonthsSelected,
     availableMonths.length,
     activeBeCycle,
     activeCreditCycle,
+    beCorpStartDay,
+    beCorpEndDay,
+    creditStartDay,
+    creditEndDay,
   ]);
 
   // Category-specific KPI metrics when selectedCategory !== 'ALL'
@@ -1249,8 +1325,8 @@ export default function App() {
       );
     }
 
-    if (createdRecords.length > 0 && selectedMonth !== 'ALL' && selectedMonth !== createdRecords[0].monthKey) {
-      setSelectedMonth(createdRecords[0].monthKey);
+    if (createdRecords.length > 0 && !isAllMonthsSelected && !selectedMonths.includes(createdRecords[0].monthKey)) {
+      setSelectedMonths([createdRecords[0].monthKey]);
     }
   };
 
@@ -1725,40 +1801,26 @@ export default function App() {
         {/* ═══════ FLOATING FILTER BAR ═══════ */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
-            {/* Filter 1: Date Range Selector (Month: 01 to 30/31st) */}
-            <div className="relative bg-white rounded-lg border border-slate-200/90 shadow-2xs hover:border-slate-300 transition-colors">
-              <div className="flex items-center px-3 py-2 gap-2 text-xs font-medium text-slate-700">
-                <Calendar className="w-3.5 h-3.5 text-slate-500" />
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => {
-                    userHasManuallySelectedMonthRef.current = true;
-                    setSelectedMonth(e.target.value);
-                  }}
-                  className="bg-transparent border-none outline-none cursor-pointer pr-6 appearance-none text-slate-800 font-semibold"
-                >
-                  {availableMonths.map((mKey) => {
-                    const [y, m] = mKey.split('-');
-                    return (
-                      <option key={mKey} value={mKey}>
-                        Tháng {parseInt(m, 10)}, {y} (01/{m} – Hết tháng)
-                      </option>
-                    );
-                  })}
-                  <option value="ALL">Tất cả thời gian ({allRecords.length} giao dịch)</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 pointer-events-none absolute right-2.5" />
-              </div>
-            </div>
+            {/* Filter 1: Date Range Multi-Month Picker */}
+            <MultiMonthPickerDropdown
+              availableMonths={availableMonths}
+              selectedMonths={selectedMonths}
+              onChange={(nextMonths) => {
+                userHasManuallySelectedMonthRef.current = true;
+                setSelectedMonths(nextMonths);
+              }}
+              monthRecordCounts={monthRecordCounts}
+              totalRecordCount={allRecords.length}
+            />
 
             {/* Filter 2: Category Dropdown (Only show on dashboard and ledger tabs) */}
             {(activeTab === 'dashboard' || activeTab === 'ledger') && (
-              <div className="relative bg-white rounded-lg border border-slate-200/90 shadow-2xs hover:border-slate-300 transition-colors">
-                <div className="flex items-center px-3 py-2 gap-2 text-xs font-medium text-slate-700">
+              <div className="relative bg-white dark:bg-slate-800 rounded-lg border border-slate-200/90 dark:border-slate-700 shadow-2xs hover:border-slate-300 transition-colors">
+                <div className="flex items-center px-3 py-2 gap-2 text-xs font-medium text-slate-700 dark:text-slate-200">
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="bg-transparent border-none outline-none cursor-pointer pr-6 appearance-none text-slate-800 font-semibold"
+                    className="bg-transparent border-none outline-none cursor-pointer pr-6 appearance-none text-slate-800 dark:text-slate-100 font-semibold"
                   >
                     <option value="ALL">Tất cả danh mục (Category)</option>
                     {allCategories.map((cat) => (
@@ -1773,15 +1835,15 @@ export default function App() {
             )}
 
             {/* Reset Filter Button if active */}
-            {(selectedMonth !== defaultLatestMonth || selectedCategory !== 'ALL') && (
+            {(!isAllMonthsSelected || selectedMonths.length !== 1 || selectedMonths[0] !== defaultLatestMonth || selectedCategory !== 'ALL') && (
               <button
                 type="button"
                 onClick={() => {
                   userHasManuallySelectedMonthRef.current = false;
-                  setSelectedMonth(defaultLatestMonth);
+                  setSelectedMonths([defaultLatestMonth]);
                   setSelectedCategory('ALL');
                 }}
-                className="text-xs text-sky-700 hover:text-sky-900 font-medium px-2 py-1"
+                className="text-xs text-sky-700 hover:text-sky-900 font-medium px-2 py-1 cursor-pointer"
               >
                 Đặt lại bộ lọc
               </button>
@@ -1803,7 +1865,7 @@ export default function App() {
               <span className="w-2.5 h-2.5 rounded-full bg-sky-600 animate-pulse shrink-0"></span>
               <span>
                 Đang lọc riêng theo danh mục: <strong className="font-extrabold text-sky-950 text-sm">{selectedCategory}</strong>
-                {selectedMonth !== 'ALL' ? ` · Tháng ${selectedMonth.split('-')[1]}/${selectedMonth.split('-')[0]}` : ' · Tất cả thời gian'}
+                {isAllMonthsSelected ? ' · Tất cả thời gian' : ` · ${selectedMonthsLabel}`}
                 {' · '}
                 <strong>{categoryKpiStats?.count || 0}</strong> giao dịch
                 {' · '}
@@ -1942,11 +2004,13 @@ export default function App() {
                           {formatCurrency(kpiStats.effectiveIncome)}
                         </div>
                         <div className="text-xs text-white/70 font-medium">
-                          {selectedMonth === 'ALL'
+                          {isAllMonthsSelected
                             ? `Tất cả các tháng · ${kpiStats.incomeCount} khoản thu`
-                            : kpiStats.incomeCount > 0
-                              ? `${formatMonthLabel(selectedMonth)} · ${kpiStats.incomeCount} khoản thu`
-                              : `${formatMonthLabel(selectedMonth)} · Chưa có giao dịch`}
+                            : selectedMonths.length > 1
+                              ? `${selectedMonths.length} tháng đã chọn · ${kpiStats.incomeCount} khoản thu`
+                              : kpiStats.incomeCount > 0
+                                ? `${formatMonthLabel(selectedMonth)} · ${kpiStats.incomeCount} khoản thu`
+                                : `${formatMonthLabel(selectedMonth)} · Chưa có giao dịch`}
                         </div>
                       </div>
 
@@ -1963,9 +2027,11 @@ export default function App() {
                           {formatCurrency(kpiStats.totalExpense)}
                         </div>
                         <div className="text-xs text-white/70 font-medium">
-                          {selectedMonth === 'ALL'
+                          {isAllMonthsSelected
                             ? `${kpiStats.expenseCount} giao dịch (Tất cả thời gian)`
-                            : `${kpiStats.expenseCount} giao dịch (01/${selectedMonth.split('-')[1]} – Hết tháng)`}
+                            : selectedMonths.length > 1
+                              ? `${kpiStats.expenseCount} giao dịch (${selectedMonths.length} tháng đã chọn)`
+                              : `${kpiStats.expenseCount} giao dịch (01/${selectedMonth.split('-')[1]} – Hết tháng)`}
                         </div>
                       </div>
 
@@ -2030,7 +2096,9 @@ export default function App() {
                   allRecords={allRecords}
                   availableMonths={availableMonths}
                   selectedMonth={selectedMonth}
-                  onSelectMonth={setSelectedMonth}
+                  selectedMonths={selectedMonths}
+                  onSelectMonth={handleSelectMonth}
+                  onToggleMonth={handleToggleMonth}
                   monthlyBaseIncome={monthlyBaseIncome}
                   beCorpStartDay={beCorpStartDay}
                   beCorpEndDay={beCorpEndDay}
@@ -2044,6 +2112,7 @@ export default function App() {
                   allRecords={allRecords}
                   totalIncome={kpiStats.effectiveIncome}
                   selectedMonth={selectedMonth}
+                  selectedMonths={selectedMonths}
                   selectedCategory={selectedCategory}
                   onSelectCategory={setSelectedCategory}
                   showChartsButton={true}
@@ -2061,7 +2130,9 @@ export default function App() {
                     expensesInPeriod={periodRecords}
                     allRecords={allRecords}
                     selectedMonth={selectedMonth}
-                    onSelectMonth={setSelectedMonth}
+                    selectedMonths={selectedMonths}
+                    onSelectMonth={handleSelectMonth}
+                    onToggleMonth={handleToggleMonth}
                     selectedCategoryFilter={selectedCategory}
                     onSelectCategoryFilter={setSelectedCategory}
                     monthlyBaseIncome={monthlyBaseIncome}
@@ -2109,6 +2180,7 @@ export default function App() {
                 onDeleteTransaction={setDeletingTransaction}
                 onPushPendingToSheet={handlePushPendingToSheet}
                 isSyncing={isSyncing}
+                periodLabel={selectedMonthsLabel}
               />
             )}
 

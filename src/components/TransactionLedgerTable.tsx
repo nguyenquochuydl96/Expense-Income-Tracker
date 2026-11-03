@@ -33,6 +33,7 @@ interface TransactionLedgerTableProps {
   onDeleteTransaction?: (record: TransactionRecord) => void;
   onPushPendingToSheet?: () => Promise<void>;
   isSyncing?: boolean;
+  periodLabel?: string;
 }
 
 type QuickLedgerFilter = 'all' | 'expenses' | 'income' | 'becorp' | 'credit' | 'savings';
@@ -46,6 +47,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
   onDeleteTransaction,
   onPushPendingToSheet,
   isSyncing,
+  periodLabel,
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [quickFilter, setQuickFilter] = useState<QuickLedgerFilter>('all');
@@ -136,7 +138,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
               Sổ Cái Lịch Sử Giao Dịch
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Hiển thị {filteredRecords.length} giao dịch
+              Hiển thị {filteredRecords.length} giao dịch{periodLabel ? ` (${periodLabel})` : ''}
               {quickFilter === 'income' ? (
                 <>
                   {' '}· Tổng thu nhập:{' '}

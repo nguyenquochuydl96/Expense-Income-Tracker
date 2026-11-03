@@ -6,7 +6,9 @@ interface AnalyticsChartsProps {
   expensesInPeriod: TransactionRecord[];
   allRecords: TransactionRecord[];
   selectedMonth: string;
+  selectedMonths?: string[];
   onSelectMonth: (monthKey: string) => void;
+  onToggleMonth?: (monthKey: string) => void;
   selectedCategoryFilter: string;
   onSelectCategoryFilter: (category: string) => void;
   monthlyBaseIncome: number;
@@ -28,7 +30,9 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
   expensesInPeriod,
   allRecords,
   selectedMonth,
+  selectedMonths,
   onSelectMonth,
+  onToggleMonth,
   selectedCategoryFilter,
   onSelectCategoryFilter,
   monthlyBaseIncome,
@@ -324,7 +328,10 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
             <div className="pt-2">
               <div className="grid grid-cols-7 gap-2 items-end h-44 pt-4 px-2 border-b border-slate-100">
                 {monthlyCashflow.map((m) => {
-                  const isSelected = selectedMonth === m.monthKey;
+                  const isSelected =
+                    selectedMonths && selectedMonths.length > 0
+                      ? selectedMonths.includes(m.monthKey)
+                      : selectedMonth === m.monthKey;
                   const maxVal = Math.max(1, ...monthlyCashflow.map((x) => Math.max(x.effectiveIncome, x.totalExpense)));
                   const incomeH = Math.max(4, Math.round((m.effectiveIncome / maxVal) * 120));
                   const expenseH = Math.max(4, Math.round((m.totalExpense / maxVal) * 120));
@@ -332,10 +339,17 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                   return (
                     <div
                       key={m.monthKey}
-                      onClick={() => onSelectMonth(selectedMonth === m.monthKey ? 'ALL' : m.monthKey)}
+                      onClick={() => {
+                        if (onToggleMonth) {
+                          onToggleMonth(m.monthKey);
+                        } else {
+                          onSelectMonth(selectedMonth === m.monthKey ? 'ALL' : m.monthKey);
+                        }
+                      }}
                       className={`flex flex-col items-center cursor-pointer rounded-t p-1 transition-colors ${
                         isSelected ? 'bg-sky-50' : 'hover:bg-slate-50'
                       }`}
+                      title={`Nhấp để chọn / bỏ chọn ${m.label} vào bộ lọc`}
                     >
                       <div className="flex items-end justify-center gap-1 w-full h-32">
                         <div

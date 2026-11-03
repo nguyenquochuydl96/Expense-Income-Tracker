@@ -119,6 +119,19 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
 * **Loại trừ định phí cố định:** Không cảnh báo lạm phát nhịp độ đối với `Thuê nhà` và `Tiết kiệm` (các khoản chi cố định 1 lần/tháng), chỉ tập trung giám sát các danh mục chi tiêu thường nhật/daily.
 * **Tương phản màu sắc:** Hoàn thiện màu chữ đậm trên nền nhạt ở cả chế độ sáng (Light) và tối (Dark), khắc phục triệt để hiện tượng chữ vàng nhạt chìm vào nền trắng.
 
+### 2.11 Bộ lọc Đa tháng Tự do (Multi-Month Checkbox Picker)
+* **Vị trí tích hợp:** Thay thế thẻ `<select>` đơn tháng ở thanh **Floating Filter Bar** bằng component dropdown đa năng [`MultiMonthPickerDropdown.tsx`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/components/MultiMonthPickerDropdown.tsx).
+* **Trải nghiệm người dùng:**
+  - Cho phép **tick chọn nhiều tháng bất kỳ** cùng một lúc (ví dụ: tick T8 + T9 + T10).
+  - Có các nút bấm nhanh: `Tất cả các tháng`, `Tháng mới nhất`, `3 tháng gần nhất`.
+  - Mỗi hàng tháng có checkbox tùy chọn kèm số lượng giao dịch và nút `Chỉ xem` hiển thị khi hover để chọn riêng 1 tháng trong 1-click.
+  - Tự động đóng khi bấm ra ngoài hoặc ấn phím `Escape`.
+* **Hiệu ứng lan tỏa toàn app:**
+  - **Sổ giao dịch (`TransactionLedgerTable`):** Lọc và hiển thị toàn bộ giao dịch của các tháng được tick, tiêu đề hiển thị rõ tên các tháng đang lọc.
+  - **KPIs Dashboard:** Thu nhập, chi tiêu, số dư ròng, ví BE Corp và Thẻ tín dụng Credit tự động gộp theo chu kỳ của tất cả các tháng đã tick.
+  - **Bảng Ngân sách Hạng mục (`CategoryBudgetTable`):** Tự động tính gộp Định mức, Đã chi, Còn lại cho giai đoạn nhiều tháng và highlight các cột tương ứng trong Ma trận 7T.
+  - **Bảng Tổng hợp Đa tháng (`MultiMonthSummaryTable`) & Biểu đồ (`AnalyticsCharts`):** Cho phép nhấp trực tiếp vào tên cột/cột biểu đồ để bật/tắt (toggle) tháng đó vào bộ lọc chung.
+
 ---
 
 ## 3. Quản lý Chu kỳ & Logic ngày (Cycle Configuration)

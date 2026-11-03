@@ -45,6 +45,7 @@ interface CategoryBudgetTableProps {
   allRecords: TransactionRecord[];
   totalIncome: number; // Budget tổng của kỳ đang chọn
   selectedMonth: string;
+  selectedMonths?: string[];
   selectedCategory: string;
   onSelectCategory: (cat: string) => void;
   onShowCharts?: () => void;
@@ -58,6 +59,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
   allRecords,
   totalIncome,
   selectedMonth,
+  selectedMonths,
   selectedCategory,
   onSelectCategory,
   onShowCharts,
@@ -160,8 +162,81 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
     return `T${parseInt(parts[1], 10)}/${parts[0].slice(2)}`;
   }, [prevMonthKey]);
 
+  const isMultiMonth = useMemo(() => {
+    return Boolean(selectedMonths && selectedMonths.length > 1);
+  }, [selectedMonths]);
+
   // Current view stats for the selectedMonth
   const currentViewStats = useMemo(() => {
+    if (isMultiMonth && selectedMonths && selectedMonths.length > 1) {
+      const items = allCategories.map((cat) => {
+        let totalBaseBudget = 0;
+        let totalDedicated = 0;
+        let totalTransferIn = 0;
+        let totalTransferOut = 0;
+        let totalSpent = 0;
+        let totalTxCount = 0;
+
+        for (const mKey of selectedMonths) {
+          const mData = multiMonthRolloverData.chain[cat]?.[mKey];
+          if (mData) {
+            totalBaseBudget += mData.baseBudget;
+            totalDedicated += mData.dedicatedIncome;
+            totalTransferIn += mData.transferIn;
+            totalTransferOut += mData.transferOut;
+            totalSpent += mData.spent;
+            totalTxCount += mData.txCount;
+          }
+        }
+
+        const defaultPct = DEFAULT_CATEGORY_PERCENTAGES[cat] ?? 0;
+        const pct = percentages[cat] ?? defaultPct;
+        const effectiveBudget = totalBaseBudget > 0 ? totalBaseBudget : Math.round((totalIncome * pct) / 100);
+        const remaining = effectiveBudget - totalSpent;
+        const pctUsed = effectiveBudget > 0 ? (totalSpent / effectiveBudget) * 100 : totalSpent > 0 ? 999 : 0;
+        const isOver = remaining < 0;
+
+        return {
+          category: cat,
+          percentage: pct,
+          baseBudget: effectiveBudget,
+          dedicatedIncome: totalDedicated,
+          transferIn: totalTransferIn,
+          transferOut: totalTransferOut,
+          netTransfer: totalTransferIn - totalTransferOut,
+          carryover: 0,
+          effectiveBudget,
+          spent: totalSpent,
+          remaining,
+          pctUsed,
+          isOver,
+          txCount: totalTxCount,
+        };
+      });
+
+      items.sort((a, b) => b.spent - a.spent);
+
+      const totalBaseBudget = items.reduce((s, i) => s + i.baseBudget, 0);
+      const totalDedicatedIncome = items.reduce((s, i) => s + (i.dedicatedIncome || 0), 0);
+      const totalCarryover = 0;
+      const totalEffectiveBudget = items.reduce((s, i) => s + i.effectiveBudget, 0);
+      const totalSpent = items.reduce((s, i) => s + i.spent, 0);
+      const totalRemaining = totalEffectiveBudget - totalSpent;
+      const overallPctUsed = totalEffectiveBudget > 0 ? (totalSpent / totalEffectiveBudget) * 100 : 0;
+
+      return {
+        items,
+        totalBaseBudget,
+        totalDedicatedIncome,
+        totalCarryover,
+        totalEffectiveBudget,
+        totalSpent,
+        totalRemaining,
+        overallPctUsed,
+        sumPercentages: items.reduce((s, i) => s + i.percentage, 0),
+      };
+    }
+
     const targetMonth = selectedMonth !== 'ALL' ? selectedMonth : allChronologicalMonths[allChronologicalMonths.length - 1];
 
     const items = allCategories.map((cat) => {
@@ -224,7 +299,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
       overallPctUsed,
       sumPercentages: items.reduce((s, i) => s + i.percentage, 0),
     };
-  }, [selectedMonth, allChronologicalMonths, allCategories, percentages, multiMonthRolloverData, totalIncome]);
+  }, [selectedMonth, selectedMonths, isMultiMonth, allChronologicalMonths, allCategories, percentages, multiMonthRolloverData, totalIncome]);
 
   // Filtered items based on filterMode & selectedCategory
   const displayedItems = useMemo(() => {
@@ -302,10 +377,15 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
   };
 
   const monthLabel = useMemo(() => {
+    if (isMultiMonth && selectedMonths) {
+      const sorted = [...selectedMonths].sort();
+      const labels = sorted.map((mk) => `T${parseInt(mk.split('-')[1], 10)}`);
+      return `${selectedMonths.length} tháng đã chọn (${labels.join(', ')})`;
+    }
     if (selectedMonth === 'ALL') return 'tất cả các tháng';
     const parts = selectedMonth.split('-');
     return `tháng ${parseInt(parts[1], 10)}/${parts[0]}`;
-  }, [selectedMonth]);
+  }, [selectedMonth, isMultiMonth, selectedMonths]);
 
   return (
     <section className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5 overflow-hidden transition-all">
@@ -889,7 +969,10 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                 {allChronologicalMonths.map((mKey) => {
                   const [y, m] = mKey.split('-');
                   const label = `T${parseInt(m, 10)}/${y.slice(2)}`;
-                  const isCurrent = selectedMonth === mKey;
+                  const isCurrent =
+                    selectedMonths && selectedMonths.length > 0
+                      ? selectedMonths.includes(mKey)
+                      : selectedMonth === mKey;
                   return (
                     <th
                       key={mKey}
@@ -920,7 +1003,10 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                       const mData = multiMonthRolloverData.chain[cat]?.[mKey];
                       if (!mData) return <td key={mKey} className="py-2.5 px-3 text-right text-slate-300">—</td>;
 
-                      const isCurrent = selectedMonth === mKey;
+                      const isCurrent =
+                        selectedMonths && selectedMonths.length > 0
+                          ? selectedMonths.includes(mKey)
+                          : selectedMonth === mKey;
                       const isOver = mData.remaining < 0;
 
                       return (

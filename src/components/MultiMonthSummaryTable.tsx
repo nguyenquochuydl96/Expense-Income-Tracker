@@ -17,7 +17,9 @@ interface MultiMonthSummaryTableProps {
   allRecords: TransactionRecord[];
   availableMonths: string[];
   selectedMonth: string;
+  selectedMonths?: string[];
   onSelectMonth: (monthKey: string) => void;
+  onToggleMonth?: (monthKey: string) => void;
   monthlyBaseIncome?: number;
   beCorpStartDay?: number;
   beCorpEndDay?: number;
@@ -29,7 +31,9 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
   allRecords,
   availableMonths,
   selectedMonth,
+  selectedMonths,
   onSelectMonth,
+  onToggleMonth,
   monthlyBaseIncome,
   beCorpStartDay = 26,
   beCorpEndDay = 25,
@@ -37,6 +41,13 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
   creditEndDay = 19,
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
+
+  const isMonthSelected = (mKey: string) => {
+    if (selectedMonths && selectedMonths.length > 0) {
+      return selectedMonths.includes(mKey);
+    }
+    return selectedMonth === mKey;
+  };
 
   // Time-range selector state: Default to '3m' (3 tháng gần nhất)
   const [rangePreset, setRangePreset] = useState<SummaryTimeRangePreset>('3m');
@@ -493,17 +504,23 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                   Chỉ số tài chính
                 </th>
                 {visibleMonthlyData.map((m) => {
-                  const isCurrent = selectedMonth === m.mKey;
+                  const isCurrent = isMonthSelected(m.mKey);
                   return (
                     <th
                       key={m.mKey}
-                      onClick={() => onSelectMonth(m.mKey)}
+                      onClick={() => {
+                        if (onToggleMonth) {
+                          onToggleMonth(m.mKey);
+                        } else {
+                          onSelectMonth(m.mKey);
+                        }
+                      }}
                       className={`py-2.5 px-3 text-right cursor-pointer transition-colors whitespace-nowrap ${
                         isCurrent
                           ? 'bg-sky-100/90 text-sky-900 font-bold border-b-2 border-sky-600'
                           : 'hover:bg-slate-100 text-slate-700'
                       }`}
-                      title={`Xem chi tiết ${m.label} (Nhấp để lọc Dashboard)`}
+                      title={`Nhấp để chọn / bỏ chọn ${m.label} vào bộ lọc`}
                     >
                       <div className="flex items-center justify-end gap-1">
                         <span>{m.label}</span>
@@ -531,7 +548,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                   <td
                     key={m.mKey}
                     className={`py-2.5 px-3 text-right ${
-                      selectedMonth === m.mKey ? 'bg-sky-50/50 font-semibold text-emerald-800' : 'text-slate-700'
+                      isMonthSelected(m.mKey) ? 'bg-sky-50/50 font-semibold text-emerald-800' : 'text-slate-700'
                     }`}
                   >
                     {formatNumberForSheet(m.budget)}
@@ -554,7 +571,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                   <td
                     key={m.mKey}
                     className={`py-2 px-3 text-right text-slate-600 ${
-                      selectedMonth === m.mKey ? 'bg-sky-50/30 font-medium' : ''
+                      isMonthSelected(m.mKey) ? 'bg-sky-50/30 font-medium' : ''
                     }`}
                   >
                     {formatNumberForSheet(m.livingExpense)}
@@ -577,7 +594,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                   <td
                     key={m.mKey}
                     className={`py-2 px-3 text-right text-blue-700 ${
-                      selectedMonth === m.mKey ? 'bg-sky-50/30 font-medium' : ''
+                      isMonthSelected(m.mKey) ? 'bg-sky-50/30 font-medium' : ''
                     }`}
                   >
                     {m.savingsExpense > 0 ? formatNumberForSheet(m.savingsExpense) : '—'}
@@ -600,7 +617,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                   <td
                     key={m.mKey}
                     className={`py-2.5 px-3 text-right text-rose-700 font-bold ${
-                      selectedMonth === m.mKey ? 'bg-sky-50 font-extrabold' : ''
+                      isMonthSelected(m.mKey) ? 'bg-sky-50 font-extrabold' : ''
                     }`}
                   >
                     {formatNumberForSheet(m.totalExpense)}
@@ -625,7 +642,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                     <td
                       key={m.mKey}
                       className={`py-2.5 px-3 text-right ${
-                        selectedMonth === m.mKey ? 'bg-sky-50' : ''
+                        isMonthSelected(m.mKey) ? 'bg-sky-50' : ''
                       }`}
                     >
                       <span
@@ -671,7 +688,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                   <td
                     key={m.mKey}
                     className={`py-2 px-3 text-right font-semibold ${
-                      selectedMonth === m.mKey ? 'bg-sky-50/60 font-bold' : ''
+                      isMonthSelected(m.mKey) ? 'bg-sky-50/60 font-bold' : ''
                     }`}
                   >
                     <span
@@ -702,7 +719,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                   <td
                     key={m.mKey}
                     className={`py-2 px-3 text-right ${
-                      selectedMonth === m.mKey ? 'bg-sky-50/30' : ''
+                      isMonthSelected(m.mKey) ? 'bg-sky-50/30' : ''
                     }`}
                   >
                     <span
@@ -735,7 +752,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                   <td
                     key={m.mKey}
                     className={`py-2 px-3 text-right text-amber-800 ${
-                      selectedMonth === m.mKey ? 'bg-sky-50/30 font-semibold' : ''
+                      isMonthSelected(m.mKey) ? 'bg-sky-50/30 font-semibold' : ''
                     }`}
                     title={`Chu kỳ ${m.beRangeLabel}`}
                   >
@@ -765,7 +782,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                   <td
                     key={m.mKey}
                     className={`py-2 px-3 text-right text-indigo-800 ${
-                      selectedMonth === m.mKey ? 'bg-sky-50/30 font-semibold' : ''
+                      isMonthSelected(m.mKey) ? 'bg-sky-50/30 font-semibold' : ''
                     }`}
                     title={`Sao kê ${m.creditRangeLabel}`}
                   >
