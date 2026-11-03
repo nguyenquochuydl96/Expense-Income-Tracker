@@ -112,7 +112,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       `---------------------------------`,
       `💰 Tổng thu nhập: ${formatCurrency(totalIncome)}`,
       `🛒 Tổng chi tiêu: ${formatCurrency(totalExpense)}`,
-      `🏦 Số dư còn lại: ${remaining >= 0 ? '+' : ''}${formatCurrency(remaining)} (${savingsRate.toFixed(1)}%)`,
+      `🏦 Số dư còn lại: ${formatCurrency(remaining, remaining > 0)} (${savingsRate.toFixed(1)}%)`,
       `⭐ Đánh giá: ${healthStars} ${healthTitle}`,
       ``,
       `🏆 Top 3 Hạng mục chi nhiều nhất:`,
@@ -252,7 +252,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       ctx.fillText('CÒN LẠI / TÍCH LŨY', 50 + (cardW + 12) * 2, 230);
       ctx.fillStyle = '#FFFFFF';
       ctx.font = 'bold 16px "Segoe UI", Arial, sans-serif';
-      ctx.fillText(`${remaining >= 0 ? '+' : ''}${formatCurrency(remaining)}`, 50 + (cardW + 12) * 2, 260);
+      ctx.fillText(formatCurrency(remaining, remaining > 0), 50 + (cardW + 12) * 2, 260);
 
       // 5. Top Categories Section
       ctx.fillStyle = '#FFFFFF';
@@ -409,8 +409,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
                   remaining >= 0 ? 'text-sky-200' : 'text-rose-300'
                 }`}
               >
-                {remaining >= 0 ? '+' : ''}
-                {formatCurrency(remaining)}
+                {formatCurrency(remaining, remaining > 0)}
               </div>
             </div>
           </div>

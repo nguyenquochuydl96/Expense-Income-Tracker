@@ -422,16 +422,34 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-bold text-amber-950 dark:text-amber-100 text-xs sm:text-sm">
+                  <span
+                    className={`font-bold text-xs sm:text-sm ${
+                      pacingStats.fastBurners.length > 0
+                        ? 'text-amber-950 dark:text-amber-100'
+                        : 'text-emerald-950 dark:text-emerald-100'
+                    }`}
+                  >
                     {pacingStats.fastBurners.length > 0
                       ? '⚡ Cảnh báo nhịp độ chi tiêu thông minh:'
                       : '🛡️ Nhịp độ chi tiêu an toàn:'}
                   </span>
-                  <span className="text-[11px] font-bold font-mono-tabular px-2 py-0.5 rounded-full bg-amber-200/70 text-amber-950 dark:bg-amber-900/60 dark:text-amber-200 border border-amber-300/50 dark:border-amber-700/60">
+                  <span
+                    className={`text-[11px] font-bold font-mono-tabular px-2 py-0.5 rounded-full border ${
+                      pacingStats.fastBurners.length > 0
+                        ? 'bg-amber-200/70 text-amber-950 dark:bg-amber-900/60 dark:text-amber-200 border-amber-300/50 dark:border-amber-700/60'
+                        : 'bg-emerald-200/70 text-emerald-950 dark:bg-emerald-900/60 dark:text-emerald-200 border-emerald-300/50 dark:border-emerald-700/60'
+                    }`}
+                  >
                     Tháng đã qua {pacingStats.monthElapsedPct.toFixed(0)}% thời gian
                   </span>
                 </div>
-                <p className="text-xs mt-1.5 leading-relaxed text-amber-900 dark:text-amber-100/90 font-medium">
+                <p
+                  className={`text-xs mt-1.5 leading-relaxed font-medium ${
+                    pacingStats.fastBurners.length > 0
+                      ? 'text-amber-900 dark:text-amber-100/90'
+                      : 'text-emerald-900 dark:text-emerald-100/90'
+                  }`}
+                >
                   {pacingStats.fastBurners.length > 0 ? (
                     <>
                       Có <strong>{pacingStats.fastBurners.length}</strong> danh mục đang chi tiêu vượt tốc độ của tháng:{' '}

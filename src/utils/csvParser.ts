@@ -36,12 +36,20 @@ export function parseSheetNumber(raw: string | number | undefined | null): numbe
 /**
  * Formats a number with thousand commas to match the user's Google Sheet ("48,000")
  */
-export function formatNumberForSheet(val: number, showZero = false, forceVisible = false): string {
+export function formatNumberForSheet(
+  val: number,
+  showZero = false,
+  forceVisible = false,
+  showSign = false
+): string {
   if (!val && !showZero) return '';
   if (!forceVisible && isPrivacyActive()) {
     return '••••••';
   }
-  return Math.round(val).toLocaleString('en-US');
+  const formatted = Math.round(Math.abs(val)).toLocaleString('en-US');
+  if (val < 0) return `-${formatted}`;
+  if (val > 0 && showSign) return `+${formatted}`;
+  return formatted;
 }
 
 /**

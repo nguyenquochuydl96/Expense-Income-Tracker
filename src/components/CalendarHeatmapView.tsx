@@ -311,7 +311,7 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = ({
                       </div>
                     ) : d.totalIncome > 0 ? (
                       <div className="text-[10px] font-bold text-emerald-700 font-mono-tabular truncate">
-                        +{formatCurrency(d.totalIncome)}
+                        {formatCurrency(d.totalIncome, true)}
                       </div>
                     ) : !d.isFuture ? (
                       <div className="text-[10px] text-emerald-700/80 font-semibold flex items-center justify-end gap-0.5">
@@ -378,7 +378,7 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = ({
                     <>
                       {' · '}Thu:{' '}
                       <strong className="text-emerald-700 font-mono-tabular">
-                        +{formatCurrency(selectedDay.totalIncome)}
+                        {formatCurrency(selectedDay.totalIncome, true)}
                       </strong>
                     </>
                   )}
@@ -443,8 +443,7 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = ({
                           tx.sheetType === 'Income' ? 'text-emerald-700' : 'text-slate-900'
                         }`}
                       >
-                        {tx.sheetType === 'Income' ? '+' : ''}
-                        {formatCurrency(tx.amount)}
+                        {formatCurrency(tx.amount, tx.sheetType === 'Income')}
                       </div>
                     </div>
                   </div>

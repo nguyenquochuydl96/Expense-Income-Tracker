@@ -597,8 +597,8 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                     <td className="py-2.5 px-3 text-right">
                       <div className="font-semibold text-slate-700">{formatCurrency(item.baseBudget)}</div>
                       {item.dedicatedIncome > 0 && (
-                        <div className="text-[10px] text-teal-700 font-medium whitespace-nowrap" title={`Bao gồm +${formatCurrency(item.dedicatedIncome)} thu nhập dành riêng`}>
-                          (+{formatCurrency(item.dedicatedIncome)} thu riêng)
+                        <div className="text-[10px] text-teal-700 font-medium whitespace-nowrap" title={`Bao gồm ${formatCurrency(item.dedicatedIncome, true)} thu nhập dành riêng`}>
+                          ({formatCurrency(item.dedicatedIncome, true)} thu riêng)
                         </div>
                       )}
                     </td>
@@ -607,11 +607,11 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                     <td className="py-2.5 px-3 text-right">
                       {item.carryover < 0 ? (
                         <span className="inline-flex items-center gap-0.5 font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200" title="Bội chi từ tháng trước cấn trừ vào tháng này">
-                          <span>-{formatCurrency(Math.abs(item.carryover))}</span>
+                          <span>{formatCurrency(item.carryover)}</span>
                         </span>
                       ) : item.carryover > 0 ? (
                         <span className="inline-flex items-center gap-0.5 font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/50" title="Số dư tháng trước cộng dồn vào ngân sách tháng này">
-                          <span>+{formatCurrency(item.carryover)}</span>
+                          <span>{formatCurrency(item.carryover, true)}</span>
                         </span>
                       ) : (
                         <span className="text-slate-300 font-mono">0</span>
@@ -626,11 +626,11 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                           className={`text-[10px] font-medium whitespace-nowrap ${
                             item.netTransfer > 0 ? 'text-emerald-700' : 'text-amber-700'
                           }`}
-                          title={`Điều chuyển ngân sách: ${item.netTransfer > 0 ? '+' : ''}${formatCurrency(item.netTransfer)}`}
+                          title={`Điều chuyển ngân sách: ${formatCurrency(item.netTransfer, true)}`}
                         >
                           {item.netTransfer > 0
-                            ? `(+ ${formatCurrency(item.netTransfer)} nhận)`
-                            : `(- ${formatCurrency(Math.abs(item.netTransfer))} chuyển)`}
+                            ? `(${formatCurrency(item.netTransfer, true)} nhận)`
+                            : `(${formatCurrency(item.netTransfer)} chuyển)`}
                         </div>
                       )}
                     </td>
@@ -645,7 +645,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                       {isOver ? (
                         <span className="inline-flex items-center gap-1 font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
                           <TrendingDown className="w-3 h-3 shrink-0" />
-                          <span>Bội chi -{formatCurrency(Math.abs(item.remaining))}</span>
+                          <span>Bội chi {formatCurrency(item.remaining)}</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 font-semibold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
@@ -716,11 +716,11 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                 <td className="py-3 px-3 text-right">
                   {currentViewStats.totalCarryover < 0 ? (
                     <span className="text-rose-700 font-bold">
-                      -{formatCurrency(Math.abs(currentViewStats.totalCarryover))}
+                      {formatCurrency(currentViewStats.totalCarryover)}
                     </span>
                   ) : currentViewStats.totalCarryover > 0 ? (
                     <span className="text-emerald-700 font-bold">
-                      +{formatCurrency(currentViewStats.totalCarryover)}
+                      {formatCurrency(currentViewStats.totalCarryover, true)}
                     </span>
                   ) : (
                     <span className="text-slate-400">0</span>
@@ -735,7 +735,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                 <td className="py-3 px-3 text-right">
                   {currentViewStats.totalRemaining < 0 ? (
                     <span className="text-rose-700 bg-rose-100/80 px-2.5 py-1 rounded border border-rose-300 font-bold">
-                      Vượt -{formatCurrency(Math.abs(currentViewStats.totalRemaining))}
+                      Vượt {formatCurrency(currentViewStats.totalRemaining)}
                     </span>
                   ) : (
                     <span className="text-emerald-800 bg-emerald-100/80 px-2.5 py-1 rounded border border-emerald-300 font-bold">
@@ -812,7 +812,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                             </span>
                           </div>
                           <div className={`font-bold ${isReceiving ? 'text-emerald-700' : 'text-amber-700'}`}>
-                            {isReceiving ? '+' : '-'}{formatCurrency(bt.amount)}
+                            {isReceiving ? formatCurrency(bt.amount, true) : formatCurrency(-bt.amount)}
                           </div>
                         </div>
                       );

@@ -592,7 +592,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                       <span className="text-[11px] text-slate-500 font-medium">Khoản thu nhập ({cycleReconcileStats.incomeCount} khoản)</span>
                     </div>
                     <span className="font-mono-tabular font-extrabold text-emerald-700 text-sm">
-                      +{formatCurrency(cycleReconcileStats.cycleIncome)}
+                      {formatCurrency(cycleReconcileStats.cycleIncome, true)}
                     </span>
                   </div>
 
@@ -606,7 +606,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                       <span className="text-[11px] text-slate-500 font-medium">Khoản chi tiêu ({cycleReconcileStats.expenseCount} giao dịch)</span>
                     </div>
                     <span className="font-mono-tabular font-extrabold text-rose-700 text-sm">
-                      −{formatCurrency(cycleReconcileStats.cycleExpense)}
+                      {formatCurrency(-cycleReconcileStats.cycleExpense)}
                     </span>
                   </div>
 
@@ -620,7 +620,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                       <span className="text-[11px] text-slate-500 font-medium">Chưa trừ tiền mặt ({cycleReconcileStats.creditCount} dòng)</span>
                     </div>
                     <span className="font-mono-tabular font-extrabold text-indigo-700 text-sm">
-                      +{formatCurrency(cycleReconcileStats.cycleCredit)}
+                      {formatCurrency(cycleReconcileStats.cycleCredit, true)}
                     </span>
                   </div>
                 </div>
@@ -980,7 +980,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                 }}
                 className="px-2.5 py-1.5 text-xs font-bold bg-amber-100 text-amber-900 rounded-lg border border-amber-300 hover:bg-amber-200 transition-colors cursor-pointer"
               >
-                Chu kỳ 26/9 – 25/10
+                Chu kỳ ({beCycle.displayLabel})
               </button>
             </div>
           </div>

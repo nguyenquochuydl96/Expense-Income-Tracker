@@ -1806,10 +1806,10 @@ export default function App() {
                         <div className="text-[11px] text-white/80 font-medium truncate flex items-center gap-1.5 flex-wrap">
                           <span>Định mức: {formatCurrency(categoryKpiStats.baseBudget)}</span>
                           {categoryKpiStats.carryover !== 0 && (
-                            <span>· Lũy kế: {categoryKpiStats.carryover > 0 ? '+' : ''}{formatCurrency(categoryKpiStats.carryover)}</span>
+                            <span>· Lũy kế: {formatCurrency(categoryKpiStats.carryover, true)}</span>
                           )}
                           {categoryKpiStats.netTransfer !== 0 && (
-                            <span>· Chuyển quỹ: {categoryKpiStats.netTransfer > 0 ? '+' : ''}{formatCurrency(categoryKpiStats.netTransfer)}</span>
+                            <span>· Chuyển quỹ: {formatCurrency(categoryKpiStats.netTransfer, true)}</span>
                           )}
                         </div>
                       </div>
@@ -1840,7 +1840,7 @@ export default function App() {
                           {categoryKpiStats.remaining >= 0 ? 'Còn lại (Dư)' : 'Bội chi (Âm)'}
                         </div>
                         <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          {categoryKpiStats.remaining >= 0 ? '+' : ''}{formatCurrency(categoryKpiStats.remaining)}
+                          {formatCurrency(categoryKpiStats.remaining)}
                         </div>
                         <div className="text-xs text-white/80 font-medium truncate">
                           {categoryKpiStats.remaining >= 0 ? 'Trong hạn mức khả dụng' : 'Vượt quá định mức tháng!'}

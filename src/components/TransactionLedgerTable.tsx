@@ -316,8 +316,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                           : 'text-slate-900'
                       }`}
                     >
-                      {rec.sheetType === 'Income' ? '+' : ''}
-                      {formatNumberForSheet(rec.amount, true)}
+                      {formatNumberForSheet(rec.amount, true, false, rec.sheetType === 'Income')}
                     </td>
                     <td className="py-2.5 px-4 text-right font-mono-tabular text-amber-700 whitespace-nowrap">
                       {rec.beCorp !== 0 ? formatNumberForSheet(rec.beCorp, true) : ''}
