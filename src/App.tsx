@@ -185,6 +185,20 @@ export default function App() {
   // Privacy mode (Masking/Unmasking financial numbers)
   const { isPrivate, togglePrivacy } = usePrivacyMode();
 
+  // Keyboard shortcut: Alt + P để bật / tắt nhanh chế độ riêng tư
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        togglePrivacy();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [togglePrivacy]);
+
   // PWA Install state
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState<boolean>(false);
@@ -1506,8 +1520,8 @@ export default function App() {
               }`}
               title={
                 isPrivate
-                  ? 'Đang bật chế độ riêng tư (ẩn số tiền) — Nhấp để hiện lại'
-                  : 'Bật chế độ riêng tư (Ẩn toàn bộ số tiền khi ở nơi công cộng)'
+                  ? 'Đang ẩn số tiền (mặc định an toàn) — Nhấp hoặc bấm Alt+P để hiện số'
+                  : 'Đang hiện số tiền — Nhấp hoặc bấm Alt+P để ẩn nhanh'
               }
             >
               {isPrivate ? (

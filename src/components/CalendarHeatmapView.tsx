@@ -316,7 +316,7 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = ({
                     ) : !d.isFuture ? (
                       <div className="text-[10px] text-emerald-700/80 font-semibold flex items-center justify-end gap-0.5">
                         <Leaf className="w-2.5 h-2.5 text-emerald-600" />
-                        <span className="hidden sm:inline">0 ₫</span>
+                        <span className="hidden sm:inline">{formatCurrency(0)}</span>
                       </div>
                     ) : null}
                   </div>

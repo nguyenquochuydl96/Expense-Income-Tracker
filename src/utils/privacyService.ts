@@ -2,12 +2,9 @@ import { useState, useEffect } from 'react';
 
 export const STORAGE_KEY_PRIVACY = 'heomeo_privacy_mode_v1';
 
-let globalPrivacyMode = false;
-try {
-  globalPrivacyMode = localStorage.getItem(STORAGE_KEY_PRIVACY) === 'true';
-} catch {
-  globalPrivacyMode = false;
-}
+// Mặc định luôn là TRUE (Ẩn số tiền) mỗi khi mở app hoặc tải lại trang
+// Bảo vệ dữ liệu tài chính cá nhân khỏi người xung quanh khi mở ở cơ quan, văn phòng hay nơi công cộng
+let globalPrivacyMode = true;
 
 const listeners = new Set<(isPrivate: boolean) => void>();
 
@@ -17,11 +14,6 @@ export function isPrivacyActive(): boolean {
 
 export function setPrivacyMode(enabled: boolean) {
   globalPrivacyMode = enabled;
-  try {
-    localStorage.setItem(STORAGE_KEY_PRIVACY, String(enabled));
-  } catch {
-    // ignore
-  }
   listeners.forEach((fn) => fn(enabled));
 }
 
