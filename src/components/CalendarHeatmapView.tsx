@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -49,6 +49,18 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
   const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
+
+  // Close day detail popup on Escape
+  useEffect(() => {
+    if (!selectedDay) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedDay(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedDay]);
 
   // Fallback target month if 'ALL' is selected
   const activeMonthKey = useMemo(() => {
@@ -356,8 +368,14 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = ({
 
       {/* Selected Day Detail Popover / Modal */}
       {selectedDay && (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 relative space-y-4 max-h-[85vh] flex flex-col">
+        <div
+          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+          onClick={() => setSelectedDay(null)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 relative space-y-4 max-h-[85vh] flex flex-col cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>

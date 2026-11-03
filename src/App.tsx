@@ -185,20 +185,6 @@ export default function App() {
   // Privacy mode (Masking/Unmasking financial numbers)
   const { isPrivate, togglePrivacy } = usePrivacyMode();
 
-  // Keyboard shortcut: Alt + P để bật / tắt nhanh chế độ riêng tư
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && (e.key === 'p' || e.key === 'P')) {
-        e.preventDefault();
-        togglePrivacy();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [togglePrivacy]);
-
   // PWA Install state
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState<boolean>(false);
@@ -247,6 +233,61 @@ export default function App() {
     type: 'success' | 'warning';
     message: string;
   } | null>(null);
+
+  // Global Keyboard shortcuts: Alt + P (Privacy), Alt + N (Thêm nhanh giao dịch), Escape (Đóng modal)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && (e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        togglePrivacy();
+        return;
+      }
+      if (e.altKey && (e.key === 'n' || e.key === 'N')) {
+        e.preventDefault();
+        setAddModalPreset(null);
+        setIsAddModalOpen(true);
+        return;
+      }
+      if (e.key === 'Escape') {
+        if (deletingTransaction) {
+          setDeletingTransaction(null);
+          return;
+        }
+        if (editingTransaction) {
+          setEditingTransaction(null);
+          return;
+        }
+        if (isAddModalOpen) {
+          setIsAddModalOpen(false);
+          return;
+        }
+        if (isReportModalOpen) {
+          setIsReportModalOpen(false);
+          return;
+        }
+        if (isTelegramModalOpen) {
+          setIsTelegramModalOpen(false);
+          return;
+        }
+        if (isInstallModalOpen) {
+          setIsInstallModalOpen(false);
+          return;
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [
+    togglePrivacy,
+    deletingTransaction,
+    editingTransaction,
+    isAddModalOpen,
+    isReportModalOpen,
+    isTelegramModalOpen,
+    isInstallModalOpen,
+  ]);
 
   // Google Auth & Sheets state (token kept strictly in memory)
   const [user, setUser] = useState<User | null>(null);
@@ -2151,8 +2192,14 @@ export default function App() {
 
       {/* DELETE CONFIRMATION MODAL */}
       {deletingTransaction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 cursor-pointer"
+          onClick={() => !isDeleting && setDeletingTransaction(null)}
+        >
+          <div
+            className="bg-white border border-slate-200 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4 cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
                 <Trash2 className="w-5 h-5" />
@@ -2181,7 +2228,7 @@ export default function App() {
               <div className="flex justify-between">
                 <span className="text-slate-500">Số tiền:</span>
                 <span className="font-mono-tabular font-bold text-rose-700">
-                  {formatCurrency(deletingTransaction.amount)}
+                  {formatCurrency(deletingTransaction.amount, false, true)}
                 </span>
               </div>
               {deletingTransaction.rowIndex && (

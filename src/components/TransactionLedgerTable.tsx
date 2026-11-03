@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Search, Plus, ArrowUpDown, FilterX, RefreshCw, CheckCircle2, Edit3, Trash2, UploadCloud, AlertCircle } from 'lucide-react';
+import { Search, Plus, ArrowUpDown, FilterX, RefreshCw, CheckCircle2, Edit3, Trash2, UploadCloud, AlertCircle, X } from 'lucide-react';
 import {
   CATEGORY_COLORS,
   EXPENSE_CATEGORIES,
@@ -81,15 +81,20 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
   }, [records, selectedCategory, quickFilter, searchQuery, sortOrder]);
 
   const totals = useMemo(() => {
-    let amount = 0;
+    let expenseSum = 0;
+    let incomeSum = 0;
     let beCorp = 0;
     let credit = 0;
     for (const r of filteredRecords) {
-      amount += r.amount;
-      beCorp += r.beCorp;
-      credit += r.credit;
+      if (r.sheetType === 'Income') {
+        incomeSum += r.amount;
+      } else {
+        expenseSum += r.amount;
+        beCorp += r.beCorp;
+        credit += r.credit;
+      }
     }
-    return { amount, beCorp, credit };
+    return { expenseSum, incomeSum, beCorp, credit };
   }, [filteredRecords]);
 
   const displayedRows = filteredRecords.slice(0, visibleLimit);
@@ -104,18 +109,61 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
               Sổ Cái Lịch Sử Giao Dịch
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Hiển thị {filteredRecords.length} giao dịch · Tổng chi tiêu:{' '}
-              <strong className="font-mono-tabular text-slate-900">
-                {formatCurrency(totals.amount)}
-              </strong>{' '}
-              · Tổng BE Corp:{' '}
-              <strong className="font-mono-tabular text-amber-700">
-                {formatCurrency(totals.beCorp)}
-              </strong>{' '}
-              · Tổng Credit:{' '}
-              <strong className="font-mono-tabular text-indigo-700">
-                {formatCurrency(totals.credit)}
-              </strong>
+              Hiển thị {filteredRecords.length} giao dịch
+              {quickFilter === 'income' ? (
+                <>
+                  {' '}· Tổng thu nhập:{' '}
+                  <strong className="font-mono-tabular text-emerald-700">
+                    {formatCurrency(totals.incomeSum, true)}
+                  </strong>
+                </>
+              ) : quickFilter === 'expenses' ? (
+                <>
+                  {' '}· Tổng chi tiêu:{' '}
+                  <strong className="font-mono-tabular text-slate-900">
+                    {formatCurrency(totals.expenseSum)}
+                  </strong>
+                  {' '}· Tổng BE Corp:{' '}
+                  <strong className="font-mono-tabular text-amber-700">
+                    {formatCurrency(totals.beCorp)}
+                  </strong>
+                  {' '}· Tổng Credit:{' '}
+                  <strong className="font-mono-tabular text-indigo-700">
+                    {formatCurrency(totals.credit)}
+                  </strong>
+                </>
+              ) : (
+                <>
+                  {' '}· Tổng chi:{' '}
+                  <strong className="font-mono-tabular text-slate-900">
+                    {formatCurrency(totals.expenseSum)}
+                  </strong>
+                  {totals.incomeSum > 0 && (
+                    <>
+                      {' '}· Thu:{' '}
+                      <strong className="font-mono-tabular text-emerald-700">
+                        {formatCurrency(totals.incomeSum, true)}
+                      </strong>
+                    </>
+                  )}
+                  {totals.beCorp > 0 && (
+                    <>
+                      {' '}· BE Corp:{' '}
+                      <strong className="font-mono-tabular text-amber-700">
+                        {formatCurrency(totals.beCorp)}
+                      </strong>
+                    </>
+                  )}
+                  {totals.credit > 0 && (
+                    <>
+                      {' '}· Credit:{' '}
+                      <strong className="font-mono-tabular text-indigo-700">
+                        {formatCurrency(totals.credit)}
+                      </strong>
+                    </>
+                  )}
+                </>
+              )}
             </p>
           </div>
 
@@ -199,8 +247,21 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                   setSearchQuery(e.target.value);
                   setVisibleLimit(80);
                 }}
-                className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-teal-600"
+                className="w-full pl-8 pr-7 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-teal-600"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setVisibleLimit(80);
+                  }}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+                  title="Xóa tìm kiếm"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
             <select

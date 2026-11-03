@@ -327,8 +327,14 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-slate-900 text-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-700/80 relative space-y-5 max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+      onClick={onClose}
+    >
+      <div
+        className="bg-slate-900 text-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-700/80 relative space-y-5 max-h-[90vh] overflow-y-auto cursor-default"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Close Button */}
         <button
           type="button"
