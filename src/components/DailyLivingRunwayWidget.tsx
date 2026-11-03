@@ -189,6 +189,40 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
     };
   }, [dailyItems, dateMetrics]);
 
+  // Smart Pacing Calculation (Comparing % of month elapsed vs % of budget consumed)
+  const pacingStats = useMemo(() => {
+    const { elapsedDays, daysInMonth, isPast, isFuture } = dateMetrics;
+    if (isPast || isFuture || daysInMonth <= 0) return null;
+
+    const monthElapsedPct = (elapsedDays / daysInMonth) * 100;
+
+    const fastBurners = items
+      .filter((cat) => {
+        if (cat.effectiveBudget <= 0 || cat.spent <= 200000) return false;
+        const spentPct = (cat.spent / cat.effectiveBudget) * 100;
+        const ratio = spentPct / Math.max(1, monthElapsedPct);
+        return ratio >= 1.25;
+      })
+      .map((cat) => {
+        const spentPct = (cat.spent / cat.effectiveBudget) * 100;
+        const ratio = spentPct / Math.max(1, monthElapsedPct);
+        return {
+          category: cat.category,
+          spent: cat.spent,
+          budget: cat.effectiveBudget,
+          spentPct,
+          ratio,
+        };
+      })
+      .sort((a, b) => b.ratio - a.ratio);
+
+    return {
+      monthElapsedPct,
+      fastBurners,
+      isPacingSafe: fastBurners.length === 0,
+    };
+  }, [items, dateMetrics]);
+
   // Handlers modal setting
   const openSettings = () => {
     setTempLivingCats([...livingCategories]);
@@ -371,6 +405,51 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
               </div>
             </div>
           </div>
+
+          {/* Smart Budget Pacing Alert Box (Answers Requirement 5) */}
+          {pacingStats && (
+            <div
+              className={`p-3 sm:p-3.5 rounded-xl border flex items-start gap-2.5 text-xs transition-colors ${
+                pacingStats.fastBurners.length > 0
+                  ? 'bg-amber-500/10 border-amber-300/80 text-amber-950 dark:text-amber-200'
+                  : 'bg-emerald-500/10 border-emerald-300/60 text-emerald-950 dark:text-emerald-200'
+              }`}
+            >
+              {pacingStats.fastBurners.length > 0 ? (
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-bold">
+                    {pacingStats.fastBurners.length > 0
+                      ? '⚡ Cảnh báo nhịp độ chi tiêu thông minh:'
+                      : '🛡️ Nhịp độ chi tiêu an toàn:'}
+                  </span>
+                  <span className="text-[11px] opacity-80 font-mono-tabular">
+                    (Tháng đã qua {pacingStats.monthElapsedPct.toFixed(0)}% thời gian)
+                  </span>
+                </div>
+                <p className="text-[11px] mt-1 leading-relaxed">
+                  {pacingStats.fastBurners.length > 0 ? (
+                    <>
+                      Có <strong>{pacingStats.fastBurners.length}</strong> danh mục đang chi tiêu vượt tốc độ của tháng:{' '}
+                      {pacingStats.fastBurners.map((b, idx) => (
+                        <span key={b.category} className="inline-block mr-2 font-semibold text-amber-900 dark:text-amber-100">
+                          {b.category} ({b.spentPct.toFixed(0)}% ngân sách, nhanh {b.ratio.toFixed(1)}x)
+                          {idx < pacingStats.fastBurners.length - 1 ? ',' : '.'}
+                        </span>
+                      ))}
+                      Bạn nên lưu ý cân đối các ngày còn lại để không hụt ngân sách cuối tháng.
+                    </>
+                  ) : (
+                    'Mọi danh mục sinh hoạt đều đang chi tiêu dưới tốc độ ngày của tháng. Hai bạn đang kiểm soát chi tiêu rất tốt, tiếp tục phát huy nhé!'
+                  )}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Grid of Individual Daily Living Categories */}
           <div>

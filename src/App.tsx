@@ -17,11 +17,17 @@ import {
   Eye,
   EyeOff,
   Smartphone,
+  Moon,
+  Sun,
+  Share2,
 } from 'lucide-react';
 import { PigIcon, SiameseCatIcon } from './utils/categoryIcons';
 import { AppLockScreen, isDeviceUnlocked, lockDevice } from './components/AppLockScreen';
 import { usePrivacyMode } from './utils/privacyService';
+import { useThemeMode } from './utils/themeService';
 import { PwaInstallModal } from './components/PwaInstallModal';
+import { CalendarHeatmapView } from './components/CalendarHeatmapView';
+import { MonthlyReportCardModal } from './components/MonthlyReportCardModal';
 import { User } from 'firebase/auth';
 import {
   BudgetTransferRecord,
@@ -201,6 +207,12 @@ export default function App() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);
+
+  // Theme mode (Light / Dark)
+  const { isDark, toggleTheme } = useThemeMode();
+
+  // Monthly Report Card Modal state
+  const [isReportModalOpen, setIsReportModalOpen] = useState<boolean>(false);
 
   // Toggle for secondary analytics charts (Bar & Donut)
   const [showCharts, setShowCharts] = useState<boolean>(false);
@@ -1462,6 +1474,27 @@ export default function App() {
 
           {/* Right Action Buttons */}
           <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Dark Mode Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center bg-white/10 hover:bg-white/20 text-white border border-white/20 cursor-pointer shadow-xs"
+              title={isDark ? 'Chuyển sang chế độ Sáng (Light Mode)' : 'Chuyển sang chế độ Tối (Dark Mode)'}
+            >
+              {isDark ? <Sun className="w-3.5 h-3.5 text-amber-300" /> : <Moon className="w-3.5 h-3.5 text-slate-200" />}
+            </button>
+
+            {/* Monthly Report Card Button */}
+            <button
+              type="button"
+              onClick={() => setIsReportModalOpen(true)}
+              className="px-3 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 bg-gradient-to-r from-amber-500/20 to-pink-500/20 hover:from-amber-500/30 hover:to-pink-500/30 text-amber-200 border border-amber-300/30 cursor-pointer shadow-xs"
+              title="Xem & xuất thiệp tổng kết báo cáo tài chính tháng"
+            >
+              <Share2 className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+              <span className="hidden sm:inline">Báo cáo tháng</span>
+            </button>
+
             {/* Privacy Mode Toggle Button */}
             <button
               type="button"
@@ -1987,6 +2020,18 @@ export default function App() {
                   />
                 )}
 
+                {/* ═══════ LỊCH CHI TIÊU TRỰC QUAN (CALENDAR HEATMAP VIEW) ═══════ */}
+                <CalendarHeatmapView
+                  records={periodRecords}
+                  allRecords={allRecords}
+                  selectedMonth={selectedMonth}
+                  onOpenAddModalWithPreset={(preset) => {
+                    setAddModalPreset(preset);
+                    setIsAddModalOpen(true);
+                  }}
+                  onSelectTransaction={(tx) => setEditingTransaction(tx)}
+                />
+
                 {/* ═══════ BOTTOM ROW: TWO DUAL DATA TABLES ═══════ */}
                 <DashboardDualTables
                   records={periodRecords}
@@ -2174,6 +2219,14 @@ export default function App() {
         onClose={() => setIsInstallModalOpen(false)}
         deferredPrompt={deferredPrompt}
         onInstallSuccess={() => setIsStandalone(true)}
+      />
+
+      {/* Monthly Report Card Modal (Infographic Card & Image Export) */}
+      <MonthlyReportCardModal
+        isOpen={isReportModalOpen}
+        onClose={() => setIsReportModalOpen(false)}
+        selectedMonth={selectedMonth}
+        allRecords={allRecords}
       />
     </div>
   );

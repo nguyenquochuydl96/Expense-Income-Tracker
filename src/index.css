@@ -53,6 +53,72 @@
   background: #94A3B8;
 }
 
+/* ═══════ DARK MODE THEME ENHANCEMENTS ═══════ */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #0B1120 !important;
+  color: #F1F5F9;
+}
+
+html.dark .min-h-screen {
+  background-color: #0B1120 !important;
+}
+
+/* Card surfaces and containers in dark mode */
+html.dark .bg-white {
+  background-color: #131C31 !important;
+  color: #F8FAFC;
+}
+
+html.dark .bg-slate-50,
+html.dark .bg-slate-50\/50,
+html.dark .bg-slate-50\/80,
+html.dark .bg-slate-50\/40,
+html.dark .bg-slate-50\/30 {
+  background-color: #17223B !important;
+}
+
+html.dark .bg-slate-100,
+html.dark .bg-slate-100\/80 {
+  background-color: #1E293B !important;
+  color: #E2E8F0;
+}
+
+html.dark .border-slate-200,
+html.dark .border-slate-200\/80,
+html.dark .border-slate-200\/90,
+html.dark .border-slate-100 {
+  border-color: #334155 !important;
+}
+
+html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #27354F !important;
+}
+
+html.dark .text-slate-900,
+html.dark .text-slate-800 {
+  color: #F8FAFC !important;
+}
+
+html.dark .text-slate-700,
+html.dark .text-slate-600 {
+  color: #CBD5E1 !important;
+}
+
+html.dark .text-slate-500 {
+  color: #94A3B8 !important;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  color-scheme: dark;
+}
+
 /* Official Google Sign-In Material Button Styling */
 .gsi-material-button {
   -moz-user-select: none;
