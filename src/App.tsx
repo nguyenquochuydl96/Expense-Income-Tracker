@@ -14,9 +14,14 @@ import {
   Trash2,
   Lock,
   KeyRound,
+  Eye,
+  EyeOff,
+  Smartphone,
 } from 'lucide-react';
 import { PigIcon, SiameseCatIcon } from './utils/categoryIcons';
 import { AppLockScreen, isDeviceUnlocked, lockDevice } from './components/AppLockScreen';
+import { usePrivacyMode } from './utils/privacyService';
+import { PwaInstallModal } from './components/PwaInstallModal';
 import { User } from 'firebase/auth';
 import {
   BudgetTransferRecord,
@@ -170,6 +175,32 @@ export default function App() {
   const [beCorpEndDay, setBeCorpEndDay] = useState<number>(25);
   const [creditStartDay, setCreditStartDay] = useState<number>(20);
   const [creditEndDay, setCreditEndDay] = useState<number>(19);
+
+  // Privacy mode (Masking/Unmasking financial numbers)
+  const { isPrivate, togglePrivacy } = usePrivacyMode();
+
+  // PWA Install state
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState<boolean>(false);
+  const [isStandalone, setIsStandalone] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as any).standalone === true
+    );
+  });
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
 
   // Toggle for secondary analytics charts (Bar & Donut)
   const [showCharts, setShowCharts] = useState<boolean>(false);
@@ -1338,9 +1369,9 @@ export default function App() {
     const body = allRecords
       .filter((r) => r.sheetType === 'Expenses')
       .map((r) => {
-        const amt = formatNumberForSheet(r.amount, true);
-        const be = r.beCorp !== 0 ? formatNumberForSheet(r.beCorp) : '';
-        const cr = r.credit !== 0 ? formatNumberForSheet(r.credit) : '';
+        const amt = formatNumberForSheet(r.amount, true, true);
+        const be = r.beCorp !== 0 ? formatNumberForSheet(r.beCorp, false, true) : '';
+        const cr = r.credit !== 0 ? formatNumberForSheet(r.credit, false, true) : '';
         const note = r.note ? escapeCell(r.note) : '';
         return [
           escapeCell(r.purchaseDate),
@@ -1430,7 +1461,48 @@ export default function App() {
           </div>
 
           {/* Right Action Buttons */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Privacy Mode Toggle Button */}
+            <button
+              type="button"
+              onClick={togglePrivacy}
+              className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 border cursor-pointer ${
+                isPrivate
+                  ? 'bg-amber-400/25 hover:bg-amber-400/35 text-amber-200 border-amber-300/40 shadow-xs'
+                  : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
+              }`}
+              title={
+                isPrivate
+                  ? 'Đang bật chế độ riêng tư (ẩn số tiền) — Nhấp để hiện lại'
+                  : 'Bật chế độ riêng tư (Ẩn toàn bộ số tiền khi ở nơi công cộng)'
+              }
+            >
+              {isPrivate ? (
+                <>
+                  <EyeOff className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                  <span className="hidden md:inline">Đang ẩn tiền</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="w-3.5 h-3.5 text-slate-200 shrink-0" />
+                  <span className="hidden md:inline">Ẩn số tiền</span>
+                </>
+              )}
+            </button>
+
+            {/* PWA Install Button (Only show if not already in standalone app mode) */}
+            {!isStandalone && (
+              <button
+                type="button"
+                onClick={() => setIsInstallModalOpen(true)}
+                className="px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 cursor-pointer shadow-xs"
+                title="Cài đặt Heo & Mèo vào màn hình chính điện thoại"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
+                <span className="hidden md:inline">Cài App</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={handleLockApp}
@@ -2095,6 +2167,14 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* PWA Install Guide Modal */}
+      <PwaInstallModal
+        isOpen={isInstallModalOpen}
+        onClose={() => setIsInstallModalOpen(false)}
+        deferredPrompt={deferredPrompt}
+        onInstallSuccess={() => setIsStandalone(true)}
+      />
     </div>
   );
 }

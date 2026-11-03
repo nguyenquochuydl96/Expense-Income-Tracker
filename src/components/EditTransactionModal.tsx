@@ -62,9 +62,9 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
       }
 
       setPurchaseItem(record.purchaseItem || '');
-      setAmountStr(record.amount ? formatNumberForSheet(record.amount, false) : '0');
-      setBeCorpStr(record.beCorp ? formatNumberForSheet(record.beCorp, false) : '');
-      setCreditStr(record.credit ? formatNumberForSheet(record.credit, false) : '');
+      setAmountStr(record.amount ? formatNumberForSheet(record.amount, false, true) : '0');
+      setBeCorpStr(record.beCorp ? formatNumberForSheet(record.beCorp, false, true) : '');
+      setCreditStr(record.credit ? formatNumberForSheet(record.credit, false, true) : '');
       setNote(record.note || '');
     }
   }, [isOpen, record]);

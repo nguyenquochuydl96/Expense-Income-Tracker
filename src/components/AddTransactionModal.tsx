@@ -104,17 +104,17 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         setPurchaseItem(initialPreset.purchaseItem || '');
         setAmountStr(
           initialPreset.amount !== undefined
-            ? formatNumberForSheet(initialPreset.amount, false)
+            ? formatNumberForSheet(initialPreset.amount, false, true)
             : ''
         );
         setBeCorpStr(
           initialPreset.beCorp
-            ? formatNumberForSheet(initialPreset.beCorp, false)
+            ? formatNumberForSheet(initialPreset.beCorp, false, true)
             : ''
         );
         setCreditStr(
           initialPreset.credit
-            ? formatNumberForSheet(initialPreset.credit, false)
+            ? formatNumberForSheet(initialPreset.credit, false, true)
             : ''
         );
         setNote(initialPreset.note || '');
@@ -173,9 +173,9 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     setPurchaseItem(s.item);
     setCategory(s.category);
     if (!amountStr && s.lastAmount > 0) {
-      setAmountStr(formatNumberForSheet(s.lastAmount));
-      if (s.typicalBeCorp) setBeCorpStr(formatNumberForSheet(s.lastAmount));
-      if (s.typicalCredit) setCreditStr(formatNumberForSheet(s.lastAmount));
+      setAmountStr(formatNumberForSheet(s.lastAmount, false, true));
+      if (s.typicalBeCorp) setBeCorpStr(formatNumberForSheet(s.lastAmount, false, true));
+      if (s.typicalCredit) setCreditStr(formatNumberForSheet(s.lastAmount, false, true));
     }
     setShowSuggestions(false);
   };

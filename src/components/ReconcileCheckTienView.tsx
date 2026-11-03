@@ -29,6 +29,7 @@ import { getBillingCycleRange } from '../utils/cycleUtils';
 import { NewTransactionPayload } from './AddTransactionModal';
 import { MoneyCalculatorInput } from './MoneyCalculatorInput';
 import { evaluateMoneyExpression } from '../utils/mathExpression';
+import { usePrivacyMode } from '../utils/privacyService';
 
 export interface WalletCategory {
   cash: number;       // Tiền mặt
@@ -77,6 +78,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
   checkTienData,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<ReconcileSubTab>('reconcile');
+  const { isPrivate } = usePrivacyMode();
 
   // ═══════ WALLET FUNDS: 4 FIXED FIELDS FOR HEO & 4 FOR MÈO ═══════
   const [wallets, setWallets] = useState<HeoMeoWallets>(() => {
@@ -675,13 +677,13 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                         <div key={f.key} className="flex items-center justify-between gap-1">
                           <span className="text-slate-600 truncate">{f.label}:</span>
                           <MoneyCalculatorInput
-                            value={wallets.heo[f.key] === 0 ? '' : formatNumberForSheet(wallets.heo[f.key], false)}
+                            value={wallets.heo[f.key] === 0 ? '' : formatNumberForSheet(wallets.heo[f.key], false, true)}
                             onChange={(_str, num) => handleWalletChange('heo', f.key, num)}
                             placeholder="0"
                             size="xs"
                             theme="rose"
                             className="w-28 shrink-0"
-                            inputClassName="text-right font-bold text-rose-950"
+                            inputClassName={`text-right font-bold text-rose-950 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                           />
                         </div>
                       ))}
@@ -704,13 +706,13 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                         <div key={f.key} className="flex items-center justify-between gap-1">
                           <span className="text-slate-600 truncate">{f.label}:</span>
                           <MoneyCalculatorInput
-                            value={wallets.meo[f.key] === 0 ? '' : formatNumberForSheet(wallets.meo[f.key], false)}
+                            value={wallets.meo[f.key] === 0 ? '' : formatNumberForSheet(wallets.meo[f.key], false, true)}
                             onChange={(_str, num) => handleWalletChange('meo', f.key, num)}
                             placeholder="0"
                             size="xs"
                             theme="sky"
                             className="w-28 shrink-0"
-                            inputClassName="text-right font-bold text-sky-950"
+                            inputClassName={`text-right font-bold text-sky-950 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                           />
                         </div>
                       ))}
@@ -877,13 +879,13 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
 
                       <div className="flex items-center gap-2 shrink-0">
                         <MoneyCalculatorInput
-                          value={wallets.heo[f.key] === 0 ? '' : formatNumberForSheet(wallets.heo[f.key], false)}
+                          value={wallets.heo[f.key] === 0 ? '' : formatNumberForSheet(wallets.heo[f.key], false, true)}
                           onChange={(_str, num) => handleWalletChange('heo', f.key, num)}
                           placeholder="0 ₫"
                           size="md"
                           theme="rose"
                           className="w-44 shrink-0"
-                          inputClassName="text-right text-sm font-extrabold text-slate-900 bg-slate-50/50"
+                          inputClassName={`text-right text-sm font-extrabold text-slate-900 bg-slate-50/50 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                         />
                       </div>
                     </div>
@@ -931,13 +933,13 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
 
                       <div className="flex items-center gap-2 shrink-0">
                         <MoneyCalculatorInput
-                          value={wallets.meo[f.key] === 0 ? '' : formatNumberForSheet(wallets.meo[f.key], false)}
+                          value={wallets.meo[f.key] === 0 ? '' : formatNumberForSheet(wallets.meo[f.key], false, true)}
                           onChange={(_str, num) => handleWalletChange('meo', f.key, num)}
                           placeholder="0 ₫"
                           size="md"
                           theme="sky"
                           className="w-44 shrink-0"
-                          inputClassName="text-right text-sm font-extrabold text-slate-900 bg-slate-50/50"
+                          inputClassName={`text-right text-sm font-extrabold text-slate-900 bg-slate-50/50 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                         />
                       </div>
                     </div>

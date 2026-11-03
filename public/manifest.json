@@ -1,0 +1,44 @@
+{
+  "name": "Heo & Mèo — Sổ chi tiêu",
+  "short_name": "Heo & Mèo",
+  "description": "Sổ chi tiêu của ba mẹ Chuối, Đậu, Vịt — Quản lý tài chính cá nhân & gia đình",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#132247",
+  "theme_color": "#132247",
+  "orientation": "portrait",
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 import { ItemSuggestion, TransactionRecord } from '../types/finance';
+import { isPrivacyActive } from './privacyService';
 
 /**
  * Parses a number formatted like "6,548,000", "-4,100,000", "193,600", or "79000"
@@ -35,15 +36,21 @@ export function parseSheetNumber(raw: string | number | undefined | null): numbe
 /**
  * Formats a number with thousand commas to match the user's Google Sheet ("48,000")
  */
-export function formatNumberForSheet(val: number, showZero = false): string {
+export function formatNumberForSheet(val: number, showZero = false, forceVisible = false): string {
   if (!val && !showZero) return '';
+  if (!forceVisible && isPrivacyActive()) {
+    return '••••••';
+  }
   return Math.round(val).toLocaleString('en-US');
 }
 
 /**
  * Formats a VND currency value for UI display
  */
-export function formatCurrency(val: number, showSign = false): string {
+export function formatCurrency(val: number, showSign = false, forceVisible = false): string {
+  if (!forceVisible && isPrivacyActive()) {
+    return '•••••• ₫';
+  }
   const absFormatted = Math.abs(Math.round(val)).toLocaleString('en-US');
   if (val < 0) return `-${absFormatted} ₫`;
   if (val > 0 && showSign) return `+${absFormatted} ₫`;
