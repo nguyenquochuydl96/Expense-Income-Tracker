@@ -189,16 +189,41 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
     };
   }, [dailyItems, dateMetrics]);
 
-  // Smart Pacing Calculation (Comparing % of month elapsed vs % of budget consumed)
+  // Smart Pacing Calculation (Chỉ áp dụng cho các hạng mục chi tiêu thường nhật / daily transactions)
   const pacingStats = useMemo(() => {
     const { elapsedDays, daysInMonth, isPast, isFuture } = dateMetrics;
     if (isPast || isFuture || daysInMonth <= 0) return null;
 
     const monthElapsedPct = (elapsedDays / daysInMonth) * 100;
+    const livingSet = new Set(livingCategories);
+
+    const isExcludedFromPacing = (catName: string) => {
+      const clean = catName.trim().toLowerCase();
+      return (
+        clean === 'thuê nhà' ||
+        clean.startsWith('tiết kiệm') ||
+        clean.includes('đầu tư')
+      );
+    };
 
     const fastBurners = items
       .filter((cat) => {
+        // 1. Loại bỏ hoàn toàn các hạng mục chi tiêu cố định / chuyển khoản 1 lần trong tháng (Thuê nhà, Tiết kiệm)
+        if (isExcludedFromPacing(cat.category)) return false;
+
+        // 2. Không xét các hạng mục không có ngân sách hoặc phát sinh quá nhỏ (<= 200k)
         if (cat.effectiveBudget <= 0 || cat.spent <= 200000) return false;
+
+        // 3. Chỉ xét các dạng chi tiêu thường nhật (daily transactions):
+        // - Nằm trong nhóm sinh hoạt thường nhật đã cấu hình (livingSet)
+        // - Hoặc có nhiều hơn 1 giao dịch phát sinh trong tháng (txCount > 1)
+        // Nếu một hạng mục chỉ phát sinh đúng 1 lần (txCount <= 1) và vẫn nằm trong hạn mức (spent <= effectiveBudget),
+        // đây là khoản thanh toán trọn gói 1 lần hợp lệ, không phải nhịp độ thường nhật cần cảnh báo.
+        const isDailySpending = livingSet.has(cat.category) || cat.txCount > 1;
+        if (!isDailySpending && cat.spent <= cat.effectiveBudget) {
+          return false;
+        }
+
         const spentPct = (cat.spent / cat.effectiveBudget) * 100;
         const ratio = spentPct / Math.max(1, monthElapsedPct);
         return ratio >= 1.25;
@@ -221,7 +246,7 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
       fastBurners,
       isPacingSafe: fastBurners.length === 0,
     };
-  }, [items, dateMetrics]);
+  }, [items, dateMetrics, livingCategories]);
 
   // Handlers modal setting
   const openSettings = () => {
@@ -430,8 +455,8 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
                     }`}
                   >
                     {pacingStats.fastBurners.length > 0
-                      ? '⚡ Cảnh báo nhịp độ chi tiêu thông minh:'
-                      : '🛡️ Nhịp độ chi tiêu an toàn:'}
+                      ? '⚡ Cảnh báo nhịp độ chi tiêu thường nhật:'
+                      : '🛡️ Nhịp độ chi tiêu sinh hoạt an toàn:'}
                   </span>
                   <span
                     className={`text-[11px] font-bold font-mono-tabular px-2 py-0.5 rounded-full border ${
@@ -452,7 +477,7 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
                 >
                   {pacingStats.fastBurners.length > 0 ? (
                     <>
-                      Có <strong>{pacingStats.fastBurners.length}</strong> danh mục đang chi tiêu vượt tốc độ của tháng:{' '}
+                      Có <strong>{pacingStats.fastBurners.length}</strong> danh mục sinh hoạt đang chi tiêu vượt tốc độ của tháng:{' '}
                       {pacingStats.fastBurners.map((b, idx) => (
                         <span
                           key={b.category}
@@ -462,10 +487,10 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
                           {idx < pacingStats.fastBurners.length - 1 ? ',' : '.'}
                         </span>
                       ))}
-                      Bạn nên lưu ý cân đối các ngày còn lại để không hụt ngân sách cuối tháng.
+                      Bạn nên lưu ý cân đối các ngày còn lại để không hụt ngân sách sinh hoạt cuối tháng.
                     </>
                   ) : (
-                    'Mọi danh mục sinh hoạt đều đang chi tiêu dưới tốc độ ngày của tháng. Hai bạn đang kiểm soát chi tiêu rất tốt, tiếp tục phát huy nhé!'
+                    'Mọi danh mục sinh hoạt thường nhật đều đang chi tiêu dưới tốc độ ngày của tháng. Hai bạn đang kiểm soát chi tiêu rất tốt, tiếp tục phát huy nhé!'
                   )}
                 </p>
               </div>
