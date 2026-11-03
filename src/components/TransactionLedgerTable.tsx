@@ -1,5 +1,20 @@
 import React, { useMemo, useState } from 'react';
-import { Search, Plus, ArrowUpDown, FilterX, RefreshCw, CheckCircle2, Edit3, Trash2, UploadCloud, AlertCircle, X } from 'lucide-react';
+import {
+  Search,
+  Plus,
+  ArrowUpDown,
+  FilterX,
+  RefreshCw,
+  CheckCircle2,
+  Edit3,
+  Trash2,
+  UploadCloud,
+  AlertCircle,
+  X,
+  Zap,
+  Calendar,
+  Sparkles,
+} from 'lucide-react';
 import {
   CATEGORY_COLORS,
   EXPENSE_CATEGORIES,
@@ -34,6 +49,8 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [quickFilter, setQuickFilter] = useState<QuickLedgerFilter>('all');
+  const [filterBigExpense, setFilterBigExpense] = useState<boolean>(false);
+  const [filterWeekendOnly, setFilterWeekendOnly] = useState<boolean>(false);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'amount_desc'>('newest');
   const [visibleLimit, setVisibleLimit] = useState<number>(80);
 
@@ -58,6 +75,16 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
       if (quickFilter === 'credit' && rec.credit === 0) return false;
       if (quickFilter === 'savings' && rec.category !== 'Tiết kiệm') return false;
 
+      // Smart Quick Filters
+      if (filterBigExpense && Math.abs(rec.amount) < 1000000) return false;
+
+      if (filterWeekendOnly) {
+        if (!rec.isoDate) return false;
+        const d = new Date(rec.isoDate + 'T12:00:00');
+        const day = d.getDay();
+        if (day !== 0 && day !== 6) return false;
+      }
+
       if (q) {
         const hay = `${rec.purchaseDate} ${rec.category} ${rec.purchaseItem} ${rec.note || ''} ${rec.amount}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -78,7 +105,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
       const idxB = b.rowIndex || (b.source === 'local_new' ? 999999 : 0);
       return sortOrder === 'newest' ? idxB - idxA : idxA - idxB;
     });
-  }, [records, selectedCategory, quickFilter, searchQuery, sortOrder]);
+  }, [records, selectedCategory, quickFilter, searchQuery, sortOrder, filterBigExpense, filterWeekendOnly]);
 
   const totals = useMemo(() => {
     let expenseSum = 0;
@@ -303,13 +330,16 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
               </span>
             </button>
 
-            {(selectedCategory !== 'ALL' || quickFilter !== 'all' || searchQuery) && (
+            {(selectedCategory !== 'ALL' || quickFilter !== 'all' || searchQuery || filterBigExpense || filterWeekendOnly) && (
               <button
                 type="button"
                 onClick={() => {
                   onSelectCategory('ALL');
                   setQuickFilter('all');
                   setSearchQuery('');
+                  setFilterBigExpense(false);
+                  setFilterWeekendOnly(false);
+                  setVisibleLimit(80);
                 }}
                 className="px-2.5 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50 border border-rose-200 rounded-lg flex items-center gap-1 whitespace-nowrap shrink-0"
               >
@@ -318,6 +348,70 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
               </button>
             )}
           </div>
+        </div>
+
+        {/* Smart Quick Filter Chips (Lọc thông minh 1 chạm) */}
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 shrink-0">
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <span>Lọc thông minh:</span>
+          </span>
+
+          <button
+            type="button"
+            onClick={() => {
+              setFilterBigExpense((prev) => !prev);
+              setVisibleLimit(80);
+            }}
+            className={`px-3 py-1 text-xs rounded-full border transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
+              filterBigExpense
+                ? 'bg-amber-100 text-amber-950 border-amber-300 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-600 font-bold shadow-2xs'
+                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 dark:bg-slate-800/80 dark:text-slate-300 dark:border-slate-700 font-medium'
+            }`}
+          >
+            <Zap className={`w-3.5 h-3.5 ${filterBigExpense ? 'text-amber-600 dark:text-amber-400 fill-amber-500' : 'text-slate-400'}`} />
+            <span>⚡ Món lớn (≥ 1M)</span>
+            {filterBigExpense && (
+              <span className="text-[10px] bg-amber-200/90 text-amber-950 dark:bg-amber-800 dark:text-amber-100 px-1.5 py-0.2 rounded-full font-bold">
+                Bật
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setFilterWeekendOnly((prev) => !prev);
+              setVisibleLimit(80);
+            }}
+            className={`px-3 py-1 text-xs rounded-full border transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
+              filterWeekendOnly
+                ? 'bg-indigo-100 text-indigo-950 border-indigo-300 dark:bg-indigo-950/80 dark:text-indigo-200 dark:border-indigo-600 font-bold shadow-2xs'
+                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 dark:bg-slate-800/80 dark:text-slate-300 dark:border-slate-700 font-medium'
+            }`}
+          >
+            <Calendar className={`w-3.5 h-3.5 ${filterWeekendOnly ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`} />
+            <span>🏖️ Cuối tuần (T7 & CN)</span>
+            {filterWeekendOnly && (
+              <span className="text-[10px] bg-indigo-200/90 text-indigo-950 dark:bg-indigo-800 dark:text-indigo-100 px-1.5 py-0.2 rounded-full font-bold">
+                Bật
+              </span>
+            )}
+          </button>
+
+          {(filterBigExpense || filterWeekendOnly) && (
+            <button
+              type="button"
+              onClick={() => {
+                setFilterBigExpense(false);
+                setFilterWeekendOnly(false);
+                setVisibleLimit(80);
+              }}
+              className="text-[11px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 underline ml-1 cursor-pointer shrink-0"
+            >
+              Bỏ lọc thông minh
+            </button>
+          )}
         </div>
       </div>
 

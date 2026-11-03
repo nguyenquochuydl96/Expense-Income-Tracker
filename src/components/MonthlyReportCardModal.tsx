@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   X,
   Share2,
@@ -76,6 +76,72 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
   const totalCredit = expenseRecords.reduce((sum, r) => sum + r.credit, 0);
   const totalBeCorp = expenseRecords.reduce((sum, r) => sum + r.beCorp, 0);
 
+  // Previous month calculation
+  const prevMonthKey = useMemo(() => {
+    const d = new Date(yearNum, monthNum - 2, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }, [yearNum, monthNum]);
+
+  const prevMonthLabel = useMemo(() => {
+    const [py, pm] = prevMonthKey.split('-');
+    return `T${parseInt(pm, 10)}/${py.slice(2)}`;
+  }, [prevMonthKey]);
+
+  // Compute previous month stats for MoM comparison
+  const prevMonthStats = useMemo(() => {
+    const pRecords = allRecords.filter((r) => r.monthKey === prevMonthKey);
+    if (pRecords.length === 0) return null;
+
+    const pIncome = pRecords.filter((r) => r.sheetType === 'Income').reduce((s, r) => s + r.amount, 0);
+    const pExpenses = pRecords.filter((r) => r.sheetType === 'Expenses').reduce((s, r) => s + r.amount, 0);
+
+    const expenseDelta = totalExpense - pExpenses;
+    const expenseDeltaPct = pExpenses > 0 ? (expenseDelta / pExpenses) * 100 : 0;
+
+    const incomeDelta = totalIncome - pIncome;
+    const incomeDeltaPct = pIncome > 0 ? (incomeDelta / pIncome) * 100 : 0;
+
+    // Category shifts: which categories increased or decreased the most
+    const pCatMap = new Map<string, number>();
+    for (const r of pRecords.filter((r) => r.sheetType === 'Expenses')) {
+      pCatMap.set(r.category, (pCatMap.get(r.category) || 0) + r.amount);
+    }
+
+    const allCatNames = new Set([...catMap.keys(), ...pCatMap.keys()]);
+    const catShifts: {
+      category: string;
+      currentAmt: number;
+      prevAmt: number;
+      delta: number;
+      deltaPct: number;
+    }[] = [];
+
+    for (const cat of allCatNames) {
+      if (cat === 'Tiết kiệm' || cat === 'Thuê nhà') continue;
+      const cur = catMap.get(cat) || 0;
+      const prev = pCatMap.get(cat) || 0;
+      const delta = cur - prev;
+      const deltaPct = prev > 0 ? (delta / prev) * 100 : cur > 0 ? 100 : 0;
+      catShifts.push({ category: cat, currentAmt: cur, prevAmt: prev, delta, deltaPct });
+    }
+
+    // Top increase & Top decrease
+    const topIncrease = catShifts.filter((c) => c.delta > 50000).sort((a, b) => b.delta - a.delta)[0] || null;
+    const topDecrease = catShifts.filter((c) => c.delta < -50000).sort((a, b) => a.delta - b.delta)[0] || null;
+
+    return {
+      hasData: true,
+      pIncome,
+      pExpenses,
+      expenseDelta,
+      expenseDeltaPct,
+      incomeDelta,
+      incomeDeltaPct,
+      topIncrease,
+      topDecrease,
+    };
+  }, [allRecords, prevMonthKey, totalExpense, totalIncome, catMap]);
+
   // Health assessment
   let healthTitle = '';
   let healthDesc = '';
@@ -114,7 +180,14 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       `🛒 Tổng chi tiêu: ${formatCurrency(totalExpense)}`,
       `🏦 Số dư còn lại: ${formatCurrency(remaining, remaining > 0)} (${savingsRate.toFixed(1)}%)`,
       `⭐ Đánh giá: ${healthStars} ${healthTitle}`,
-      ``,
+      prevMonthStats && prevMonthStats.hasData ? [
+        `---------------------------------`,
+        `📈 So với tháng trước (${prevMonthLabel}):`,
+        `  • Tổng chi: ${prevMonthStats.expenseDelta <= 0 ? '' : '+'}${formatCurrency(prevMonthStats.expenseDelta)} (${prevMonthStats.expenseDelta <= 0 ? 'tiết kiệm' : 'tăng'} ${Math.abs(prevMonthStats.expenseDeltaPct).toFixed(1)}%)`,
+        prevMonthStats.topIncrease ? `  • Tăng nhiều nhất: ${prevMonthStats.topIncrease.category} (+${formatCurrency(prevMonthStats.topIncrease.delta)})` : '',
+        prevMonthStats.topDecrease ? `  • Cắt giảm tốt nhất: ${prevMonthStats.topDecrease.category} (${formatCurrency(prevMonthStats.topDecrease.delta)})` : '',
+      ].filter(Boolean).join('\n') : '',
+      `---------------------------------`,
       `🏆 Top 3 Hạng mục chi nhiều nhất:`,
       ...topCategories.map(
         (c, idx) => `  ${idx + 1}. ${c.category}: ${formatCurrency(c.amount)} (${c.pct.toFixed(0)}%)`
@@ -138,7 +211,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       const canvas = document.createElement('canvas');
       const scale = 2; // High DPI for crisp rendering
       const width = 600;
-      const height = 820;
+      const height = prevMonthStats && prevMonthStats.hasData ? 920 : 820;
 
       canvas.width = width * scale;
       canvas.height = height * scale;
@@ -279,7 +352,43 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
         topY += 56;
       });
 
-      // 6. Highlights Box (Biggest expense + Credit)
+      // 6. MoM Comparison Card (Canvas)
+      if (prevMonthStats && prevMonthStats.hasData) {
+        ctx.fillStyle = 'rgba(99, 102, 241, 0.08)';
+        ctx.beginPath();
+        ctx.roundRect(36, topY + 8, width - 72, 85, 12);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(99, 102, 241, 0.25)';
+        ctx.stroke();
+
+        ctx.fillStyle = '#A5B4FC';
+        ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif';
+        ctx.fillText(`📈 So Sánh Với Tháng Trước (${prevMonthLabel}):`, 52, topY + 30);
+
+        const expSign = prevMonthStats.expenseDelta <= 0 ? '' : '+';
+        const expColor = prevMonthStats.expenseDelta <= 0 ? '#34D399' : '#FB7185';
+        ctx.fillStyle = expColor;
+        ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
+        ctx.fillText(
+          `Tổng chi: ${expSign}${formatCurrency(prevMonthStats.expenseDelta)} (${prevMonthStats.expenseDelta <= 0 ? 'tiết kiệm' : 'tăng'} ${Math.abs(prevMonthStats.expenseDeltaPct).toFixed(1)}%)`,
+          52,
+          topY + 52
+        );
+
+        if (prevMonthStats.topIncrease || prevMonthStats.topDecrease) {
+          ctx.fillStyle = '#CBD5E1';
+          ctx.font = '11px "Segoe UI", Arial, sans-serif';
+          const shiftDetail = [
+            prevMonthStats.topIncrease ? `Tăng: ${prevMonthStats.topIncrease.category} (+${formatCurrency(prevMonthStats.topIncrease.delta)})` : '',
+            prevMonthStats.topDecrease ? `Giảm: ${prevMonthStats.topDecrease.category} (${formatCurrency(prevMonthStats.topDecrease.delta)})` : '',
+          ].filter(Boolean).join('  ·  ');
+          ctx.fillText(shiftDetail, 52, topY + 72);
+        }
+
+        topY += 98;
+      }
+
+      // 7. Highlights Box (Biggest expense + Credit)
       ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.beginPath();
       ctx.roundRect(36, topY + 10, width - 72, 120, 12);
@@ -446,6 +555,85 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
               ))}
             </div>
           </div>
+
+          {/* MoM Comparison Card (So sánh với tháng trước) */}
+          {prevMonthStats && prevMonthStats.hasData && (
+            <div className="p-3.5 rounded-2xl bg-indigo-950/40 border border-indigo-800/40 space-y-2.5 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-indigo-300 flex items-center gap-1.5">
+                  <TrendingUp className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>So với tháng trước ({prevMonthLabel}):</span>
+                </span>
+                <span
+                  className={`text-[10px] font-bold font-mono-tabular px-2 py-0.5 rounded-full border ${
+                    prevMonthStats.expenseDelta <= 0
+                      ? 'bg-emerald-950/60 text-emerald-300 border-emerald-700/60'
+                      : 'bg-rose-950/60 text-rose-300 border-rose-700/60'
+                  }`}
+                >
+                  {prevMonthStats.expenseDelta <= 0 ? '📉 Tiết kiệm hơn' : '📈 Chi nhiều hơn'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-[11px] pt-0.5">
+                {/* Tổng chi biến động */}
+                <div className="p-2 rounded-xl bg-white/5 border border-white/5">
+                  <div className="text-slate-400 text-[10px]">Tổng chi tiêu:</div>
+                  <div
+                    className={`font-bold font-mono-tabular text-xs mt-0.5 ${
+                      prevMonthStats.expenseDelta <= 0 ? 'text-emerald-300' : 'text-rose-300'
+                    }`}
+                  >
+                    {prevMonthStats.expenseDelta <= 0 ? '' : '+'}
+                    {formatCurrency(prevMonthStats.expenseDelta)}{' '}
+                    <span className="text-[10px] font-normal text-slate-400">
+                      ({prevMonthStats.expenseDeltaPct > 0 ? '+' : ''}
+                      {prevMonthStats.expenseDeltaPct.toFixed(1)}%)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Thu nhập biến động */}
+                <div className="p-2 rounded-xl bg-white/5 border border-white/5">
+                  <div className="text-slate-400 text-[10px]">Tổng thu nhập:</div>
+                  <div
+                    className={`font-bold font-mono-tabular text-xs mt-0.5 ${
+                      prevMonthStats.incomeDelta >= 0 ? 'text-emerald-300' : 'text-amber-300'
+                    }`}
+                  >
+                    {prevMonthStats.incomeDelta >= 0 ? '+' : ''}
+                    {formatCurrency(prevMonthStats.incomeDelta)}{' '}
+                    <span className="text-[10px] font-normal text-slate-400">
+                      ({prevMonthStats.incomeDeltaPct > 0 ? '+' : ''}
+                      {prevMonthStats.incomeDeltaPct.toFixed(1)}%)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Danh mục tăng / giảm nhiều nhất */}
+              {(prevMonthStats.topIncrease || prevMonthStats.topDecrease) && (
+                <div className="space-y-1 text-[11px] text-slate-300 pt-1 border-t border-indigo-900/50">
+                  {prevMonthStats.topIncrease && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">• Tăng nhiều nhất:</span>
+                      <span className="font-semibold text-rose-300">
+                        {prevMonthStats.topIncrease.category} (+{formatCurrency(prevMonthStats.topIncrease.delta)})
+                      </span>
+                    </div>
+                  )}
+                  {prevMonthStats.topDecrease && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-400">• Cắt giảm tốt nhất:</span>
+                      <span className="font-semibold text-emerald-300">
+                        {prevMonthStats.topDecrease.category} ({formatCurrency(prevMonthStats.topDecrease.delta)})
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Highlights Info Box */}
           <div className="p-3 rounded-2xl bg-white/5 border border-white/5 space-y-1.5 text-xs">
