@@ -1,8 +1,17 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { TransactionRecord } from '../types/finance';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { getBillingCycleRange } from '../utils/cycleUtils';
-import { ChevronRight, Calendar, TrendingUp, TrendingDown, Eye, EyeOff } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Calendar,
+  Eye,
+  EyeOff,
+  RotateCcw,
+} from 'lucide-react';
+
+export type SummaryTimeRangePreset = '3m' | '6m' | '12m' | 'all' | 'custom';
 
 interface MultiMonthSummaryTableProps {
   allRecords: TransactionRecord[];
@@ -29,13 +38,74 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
 
-  // Chronological order (T4 -> T10)
+  // Time-range selector state: Default to '3m' (3 tháng gần nhất)
+  const [rangePreset, setRangePreset] = useState<SummaryTimeRangePreset>('3m');
+  
+  // Chronological order of all available months (e.g. T4 -> T11)
   const sortedMonths = useMemo(() => {
     return [...availableMonths].sort((a, b) => a.localeCompare(b));
   }, [availableMonths]);
 
-  // Compute stats for each month
-  const monthlyData = useMemo(() => {
+  // Window ending index (inclusive) for sliding window in preset modes
+  // Defaults to the latest month in the dataset
+  const [windowEndIndex, setWindowEndIndex] = useState<number>(() =>
+    Math.max(0, sortedMonths.length - 1)
+  );
+
+  // Custom range start/end months
+  const [customStartMonth, setCustomStartMonth] = useState<string>(
+    () => sortedMonths[Math.max(0, sortedMonths.length - 3)] || sortedMonths[0] || ''
+  );
+  const [customEndMonth, setCustomEndMonth] = useState<string>(
+    () => sortedMonths[sortedMonths.length - 1] || ''
+  );
+
+  // Sync window when new months are loaded
+  useEffect(() => {
+    if (sortedMonths.length > 0) {
+      setWindowEndIndex((prev) => {
+        // If it was at the end or out of bounds, snap to latest month
+        if (prev >= sortedMonths.length - 1 || prev <= 0) {
+          return sortedMonths.length - 1;
+        }
+        return Math.min(prev, sortedMonths.length - 1);
+      });
+      if (!customStartMonth || !sortedMonths.includes(customStartMonth)) {
+        setCustomStartMonth(sortedMonths[Math.max(0, sortedMonths.length - 3)] || sortedMonths[0]);
+      }
+      if (!customEndMonth || !sortedMonths.includes(customEndMonth)) {
+        setCustomEndMonth(sortedMonths[sortedMonths.length - 1]);
+      }
+    }
+  }, [sortedMonths]);
+
+  // If user selects a specific month from the main Dashboard dropdown, ensure it is within view
+  const prevSelectedMonthRef = useRef<string>(selectedMonth);
+  useEffect(() => {
+    if (
+      selectedMonth !== 'ALL' &&
+      selectedMonth !== prevSelectedMonthRef.current &&
+      sortedMonths.length > 0
+    ) {
+      prevSelectedMonthRef.current = selectedMonth;
+      const targetIdx = sortedMonths.indexOf(selectedMonth);
+      if (targetIdx !== -1 && (rangePreset === '3m' || rangePreset === '6m' || rangePreset === '12m')) {
+        const windowSize = rangePreset === '3m' ? 3 : rangePreset === '6m' ? 6 : 12;
+        const currentStart = Math.max(0, windowEndIndex - windowSize + 1);
+        const currentEnd = windowEndIndex;
+
+        // If selected month is outside the currently visible window, shift window to include it
+        if (targetIdx > currentEnd) {
+          setWindowEndIndex(targetIdx);
+        } else if (targetIdx < currentStart) {
+          setWindowEndIndex(Math.min(sortedMonths.length - 1, targetIdx + windowSize - 1));
+        }
+      }
+    }
+  }, [selectedMonth, sortedMonths, rangePreset, windowEndIndex]);
+
+  // Compute stats for ALL months first so cumulative cash flow is calculated accurately
+  const allMonthlyData = useMemo(() => {
     let runningCumulative = 0;
     return sortedMonths.map((mKey) => {
       const [y, m] = mKey.split('-');
@@ -117,16 +187,70 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
     creditEndDay,
   ]);
 
-  // Aggregate stats (Total & Average across all months)
+  // Window bounds calculation
+  const windowSize = rangePreset === '3m' ? 3 : rangePreset === '6m' ? 6 : 12;
+  const clampedEndIndex = Math.min(Math.max(0, windowEndIndex), Math.max(0, allMonthlyData.length - 1));
+  const clampedStartIndex = Math.max(0, clampedEndIndex - windowSize + 1);
+
+  // Filter visible months based on selected time range
+  const visibleMonthlyData = useMemo(() => {
+    if (allMonthlyData.length === 0) return [];
+
+    if (rangePreset === 'all') {
+      return allMonthlyData;
+    }
+
+    if (rangePreset === 'custom') {
+      return allMonthlyData.filter((m) => {
+        if (customStartMonth && m.mKey < customStartMonth) return false;
+        if (customEndMonth && m.mKey > customEndMonth) return false;
+        return true;
+      });
+    }
+
+    return allMonthlyData.slice(clampedStartIndex, clampedEndIndex + 1);
+  }, [allMonthlyData, rangePreset, clampedStartIndex, clampedEndIndex, customStartMonth, customEndMonth]);
+
+  // Navigation handlers for shifting the time window
+  const canGoPrev = clampedStartIndex > 0;
+  const canGoNext = clampedEndIndex < allMonthlyData.length - 1;
+
+  const handlePrevWindow = () => {
+    if (!canGoPrev) return;
+    setWindowEndIndex((prev) => Math.max(windowSize - 1, prev - 1));
+  };
+
+  const handleNextWindow = () => {
+    if (!canGoNext) return;
+    setWindowEndIndex((prev) => Math.min(allMonthlyData.length - 1, prev + 1));
+  };
+
+  const handleResetToLatest = () => {
+    setWindowEndIndex(allMonthlyData.length - 1);
+  };
+
+  // Range label for display
+  const currentRangeLabel = useMemo(() => {
+    if (visibleMonthlyData.length === 0) return '';
+    const first = visibleMonthlyData[0].label;
+    const last = visibleMonthlyData[visibleMonthlyData.length - 1].label;
+    if (first === last) return first;
+    return `${first} – ${last}`;
+  }, [visibleMonthlyData]);
+
+  // Aggregate stats (Total & Average across visible months)
   const totals = useMemo(() => {
-    const count = Math.max(1, monthlyData.length);
-    const sumBudget = monthlyData.reduce((s, m) => s + m.budget, 0);
-    const sumLiving = monthlyData.reduce((s, m) => s + m.livingExpense, 0);
-    const sumSavings = monthlyData.reduce((s, m) => s + m.savingsExpense, 0);
-    const sumExpense = monthlyData.reduce((s, m) => s + m.totalExpense, 0);
-    const sumRemaining = monthlyData.reduce((s, m) => s + m.remaining, 0);
-    const sumBeCorp = monthlyData.reduce((s, m) => s + m.beCorpTotal, 0);
-    const sumCredit = monthlyData.reduce((s, m) => s + m.creditTotal, 0);
+    const count = Math.max(1, visibleMonthlyData.length);
+    const sumBudget = visibleMonthlyData.reduce((s, m) => s + m.budget, 0);
+    const sumLiving = visibleMonthlyData.reduce((s, m) => s + m.livingExpense, 0);
+    const sumSavings = visibleMonthlyData.reduce((s, m) => s + m.savingsExpense, 0);
+    const sumExpense = visibleMonthlyData.reduce((s, m) => s + m.totalExpense, 0);
+    const sumRemaining = visibleMonthlyData.reduce((s, m) => s + m.remaining, 0);
+    const sumBeCorp = visibleMonthlyData.reduce((s, m) => s + m.beCorpTotal, 0);
+    const sumCredit = visibleMonthlyData.reduce((s, m) => s + m.creditTotal, 0);
+
+    const lastItem = visibleMonthlyData[visibleMonthlyData.length - 1];
+    const finalCumulativeRemaining = lastItem ? lastItem.cumulativeRemaining : sumRemaining;
 
     return {
       total: {
@@ -135,6 +259,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
         savings: sumSavings,
         expense: sumExpense,
         remaining: sumRemaining,
+        cumulativeRemaining: finalCumulativeRemaining,
         beCorp: sumBeCorp,
         credit: sumCredit,
       },
@@ -148,47 +273,216 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
         credit: sumCredit / count,
       },
     };
-  }, [monthlyData]);
+  }, [visibleMonthlyData]);
 
   return (
     <section className="bg-white rounded-xl border border-slate-200/90 shadow-xs overflow-hidden">
       {/* Card Header */}
       <div className="px-5 py-3.5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 shadow-2xs">
             <Calendar className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-2">
-              <span>Bảng tổng hợp ngân sách đa tháng (Multi-Month Summary)</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-sm font-bold text-slate-800 tracking-tight">
+                Bảng tổng hợp ngân sách đa tháng (Multi–Month Summary)
+              </h2>
               <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                {monthlyData.length} tháng
+                {visibleMonthlyData.length === allMonthlyData.length
+                  ? `${allMonthlyData.length} tháng`
+                  : `${visibleMonthlyData.length} / ${allMonthlyData.length} tháng`}
               </span>
-            </h2>
-            <p className="text-[11px] text-slate-500">
-              Đối chiếu đồng thời Thu nhập, Chi tiêu &amp; Số dư còn lại (Remaining) qua các tháng · Nhấp vào cột tháng để lọc Dashboard
+              {currentRangeLabel && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-sky-50 text-sky-800 border border-sky-200 font-mono-tabular">
+                  {currentRangeLabel}
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Đối chiếu đồng thời Thu nhập, Chi tiêu &amp; Số dư còn lại qua các tháng · Nhấp vào cột tháng để lọc Dashboard
             </p>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsExpanded((prev) => !prev)}
-          className="text-xs font-semibold text-slate-600 hover:text-slate-900 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-slate-200 bg-white"
-        >
-          {isExpanded ? (
-            <>
-              <EyeOff className="w-3.5 h-3.5 text-slate-400" />
-              <span>Thu gọn</span>
-            </>
-          ) : (
-            <>
-              <Eye className="w-3.5 h-3.5 text-slate-400" />
-              <span>Mở rộng ({monthlyData.length} tháng)</span>
-            </>
-          )}
-        </button>
+        {/* Right Controls: Time Range Presets + Shift Arrows + Collapse */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Preset Buttons */}
+          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => {
+                setRangePreset('3m');
+                setWindowEndIndex(allMonthlyData.length - 1);
+              }}
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                rangePreset === '3m'
+                  ? 'bg-white text-indigo-950 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Xem 3 tháng gần nhất (Mặc định)"
+            >
+              3 tháng gần nhất
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setRangePreset('6m');
+                setWindowEndIndex(allMonthlyData.length - 1);
+              }}
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                rangePreset === '6m'
+                  ? 'bg-white text-indigo-950 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Xem 6 tháng"
+            >
+              6 tháng
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setRangePreset('12m');
+                setWindowEndIndex(allMonthlyData.length - 1);
+              }}
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                rangePreset === '12m'
+                  ? 'bg-white text-indigo-950 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Xem 12 tháng"
+            >
+              12 tháng
+            </button>
+            <button
+              type="button"
+              onClick={() => setRangePreset('all')}
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                rangePreset === 'all'
+                  ? 'bg-white text-indigo-950 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title={`Xem toàn bộ ${allMonthlyData.length} tháng`}
+            >
+              Tất cả ({allMonthlyData.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setRangePreset('custom')}
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                rangePreset === 'custom'
+                  ? 'bg-white text-indigo-950 shadow-2xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Tùy chọn khoảng tháng xem"
+            >
+              Tùy chỉnh...
+            </button>
+          </div>
+
+          {/* Sliding Window Navigator for 3M / 6M / 12M presets */}
+          {(rangePreset === '3m' || rangePreset === '6m' || rangePreset === '12m') &&
+            allMonthlyData.length > windowSize && (
+              <div className="flex items-center gap-1 bg-white border border-slate-200/90 p-0.5 rounded-lg shadow-2xs">
+                <button
+                  type="button"
+                  onClick={handlePrevWindow}
+                  disabled={!canGoPrev}
+                  className="p-1 rounded text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  title="Xem các tháng cũ hơn"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                {canGoNext && (
+                  <button
+                    type="button"
+                    onClick={handleResetToLatest}
+                    className="px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 hover:bg-indigo-50 rounded cursor-pointer"
+                    title="Trở về các tháng mới nhất"
+                  >
+                    Mới nhất
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleNextWindow}
+                  disabled={!canGoNext}
+                  className="p-1 rounded text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  title="Xem các tháng mới hơn"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+          {/* Collapse / Expand Button */}
+          <button
+            type="button"
+            onClick={() => setIsExpanded((prev) => !prev)}
+            className="text-xs font-semibold text-slate-600 hover:text-slate-900 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white shadow-2xs cursor-pointer transition-colors"
+          >
+            {isExpanded ? (
+              <>
+                <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                <span>Thu gọn</span>
+              </>
+            ) : (
+              <>
+                <Eye className="w-3.5 h-3.5 text-slate-400" />
+                <span>Mở rộng ({visibleMonthlyData.length} tháng)</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
+
+      {/* Custom Range Sub-bar */}
+      {rangePreset === 'custom' && isExpanded && (
+        <div className="px-5 py-2.5 bg-indigo-50/50 border-b border-indigo-100 flex flex-wrap items-center gap-3 text-xs">
+          <span className="font-bold text-indigo-950">Chọn khoảng tháng:</span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-600 font-medium">Từ tháng:</span>
+            <select
+              value={customStartMonth}
+              onChange={(e) => setCustomStartMonth(e.target.value)}
+              className="bg-white border border-slate-300 rounded-md px-2 py-1 font-semibold text-slate-800 shadow-2xs cursor-pointer text-xs"
+            >
+              {allMonthlyData.map((m) => (
+                <option key={m.mKey} value={m.mKey}>
+                  {m.label} ({m.mKey})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-slate-600 font-medium">Đến tháng:</span>
+            <select
+              value={customEndMonth}
+              onChange={(e) => setCustomEndMonth(e.target.value)}
+              className="bg-white border border-slate-300 rounded-md px-2 py-1 font-semibold text-slate-800 shadow-2xs cursor-pointer text-xs"
+            >
+              {allMonthlyData.map((m) => (
+                <option key={m.mKey} value={m.mKey}>
+                  {m.label} ({m.mKey})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setRangePreset('3m');
+              setWindowEndIndex(allMonthlyData.length - 1);
+            }}
+            className="inline-flex items-center gap-1 text-xs text-indigo-700 hover:text-indigo-900 font-bold ml-auto cursor-pointer"
+          >
+            <RotateCcw className="w-3 h-3" />
+            <span>Đặt về 3 tháng gần nhất</span>
+          </button>
+        </div>
+      )}
 
       {isExpanded && (
         <div className="overflow-x-auto">
@@ -198,7 +492,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                 <th className="py-2.5 px-4 sticky left-0 bg-slate-50 z-10 w-44 shadow-xs">
                   Chỉ số tài chính
                 </th>
-                {monthlyData.map((m) => {
+                {visibleMonthlyData.map((m) => {
                   const isCurrent = selectedMonth === m.mKey;
                   return (
                     <th
@@ -209,7 +503,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                           ? 'bg-sky-100/90 text-sky-900 font-bold border-b-2 border-sky-600'
                           : 'hover:bg-slate-100 text-slate-700'
                       }`}
-                      title={`Xem chi tiết ${m.label}`}
+                      title={`Xem chi tiết ${m.label} (Nhấp để lọc Dashboard)`}
                     >
                       <div className="flex items-center justify-end gap-1">
                         <span>{m.label}</span>
@@ -233,7 +527,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                 <td className="py-2.5 px-4 font-sans font-medium text-emerald-900 sticky left-0 bg-white z-10 whitespace-nowrap shadow-xs">
                   Tổng thu nhập
                 </td>
-                {monthlyData.map((m) => (
+                {visibleMonthlyData.map((m) => (
                   <td
                     key={m.mKey}
                     className={`py-2.5 px-3 text-right ${
@@ -256,7 +550,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                 <td className="py-2 px-4 font-sans text-slate-600 sticky left-0 bg-white z-10 whitespace-nowrap pl-7 text-[11px] shadow-xs">
                   • Chi sinh hoạt
                 </td>
-                {monthlyData.map((m) => (
+                {visibleMonthlyData.map((m) => (
                   <td
                     key={m.mKey}
                     className={`py-2 px-3 text-right text-slate-600 ${
@@ -279,7 +573,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                 <td className="py-2 px-4 font-sans text-slate-600 sticky left-0 bg-white z-10 whitespace-nowrap pl-7 text-[11px] shadow-xs">
                   • Tiết kiệm / Đầu tư
                 </td>
-                {monthlyData.map((m) => (
+                {visibleMonthlyData.map((m) => (
                   <td
                     key={m.mKey}
                     className={`py-2 px-3 text-right text-blue-700 ${
@@ -302,7 +596,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                 <td className="py-2.5 px-4 font-sans font-bold text-slate-900 sticky left-0 bg-slate-50/80 z-10 whitespace-nowrap shadow-xs">
                   Tổng chi tiêu
                 </td>
-                {monthlyData.map((m) => (
+                {visibleMonthlyData.map((m) => (
                   <td
                     key={m.mKey}
                     className={`py-2.5 px-3 text-right text-rose-700 font-bold ${
@@ -325,7 +619,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                 <td className="py-2.5 px-4 font-sans font-extrabold text-slate-900 sticky left-0 bg-white z-10 whitespace-nowrap shadow-xs">
                   Còn lại (Remaining)
                 </td>
-                {monthlyData.map((m) => {
+                {visibleMonthlyData.map((m) => {
                   const isPositive = m.remaining >= 0;
                   return (
                     <td
@@ -373,7 +667,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                 <td className="py-2 px-4 font-sans font-semibold text-indigo-900 sticky left-0 bg-indigo-50/40 z-10 whitespace-nowrap shadow-xs">
                   Lũy kế số dư chuyển tiếp
                 </td>
-                {monthlyData.map((m) => (
+                {visibleMonthlyData.map((m) => (
                   <td
                     key={m.mKey}
                     className={`py-2 px-3 text-right font-semibold ${
@@ -395,7 +689,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                   —
                 </td>
                 <td className="py-2 px-4 text-right bg-indigo-100/60 font-mono-tabular font-extrabold text-indigo-950">
-                  {formatCurrency(totals.total.remaining, true)}
+                  {formatCurrency(totals.total.cumulativeRemaining, true)}
                 </td>
               </tr>
 
@@ -404,7 +698,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                 <td className="py-2 px-4 font-sans text-slate-500 sticky left-0 bg-white z-10 whitespace-nowrap shadow-xs">
                   Tỷ lệ chi / Thu nhập
                 </td>
-                {monthlyData.map((m) => (
+                {visibleMonthlyData.map((m) => (
                   <td
                     key={m.mKey}
                     className={`py-2 px-3 text-right ${
@@ -425,19 +719,19 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                   </td>
                 ))}
                 <td className="py-2 px-3 text-right bg-slate-50 font-semibold text-slate-700 border-l border-slate-200">
-                  {((totals.avg.expense / totals.avg.budget) * 100).toFixed(0)}%
+                  {totals.avg.budget > 0 ? `${((totals.avg.expense / totals.avg.budget) * 100).toFixed(0)}%` : '—'}
                 </td>
                 <td className="py-2 px-4 text-right bg-slate-50 font-bold text-slate-800">
-                  {((totals.total.expense / totals.total.budget) * 100).toFixed(0)}%
+                  {totals.total.budget > 0 ? `${((totals.total.expense / totals.total.budget) * 100).toFixed(0)}%` : '—'}
                 </td>
               </tr>
 
               {/* Row 7: BE Corp Cycle */}
               <tr className="hover:bg-slate-50/80 transition-colors">
                 <td className="py-2 px-4 font-sans text-amber-800 font-medium sticky left-0 bg-white z-10 whitespace-nowrap shadow-xs">
-                  Ví BE Corp (Chu kỳ 26–25)
+                  Ví BE Corp (Chu kỳ {beCorpStartDay}–{beCorpEndDay})
                 </td>
-                {monthlyData.map((m) => (
+                {visibleMonthlyData.map((m) => (
                   <td
                     key={m.mKey}
                     className={`py-2 px-3 text-right text-amber-800 ${
@@ -465,9 +759,9 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
               {/* Row 8: Credit Card Statement Cycle */}
               <tr className="hover:bg-slate-50/80 transition-colors">
                 <td className="py-2 px-4 font-sans text-indigo-800 font-medium sticky left-0 bg-white z-10 whitespace-nowrap shadow-xs">
-                  Thẻ Credit (Sao kê 25–24)
+                  Thẻ Credit (Sao kê {creditStartDay}–{creditEndDay})
                 </td>
-                {monthlyData.map((m) => (
+                {visibleMonthlyData.map((m) => (
                   <td
                     key={m.mKey}
                     className={`py-2 px-3 text-right text-indigo-800 ${
