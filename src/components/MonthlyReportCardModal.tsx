@@ -44,7 +44,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
   const monthNum = parseInt(monthStr, 10);
   const yearNum = parseInt(yearStr, 10);
 
-  // Helper to detect Savings / Investment categories
+  // Helper to detect Savings / Investment categories or records
   const isSavingsCategory = (catName: string) => {
     const clean = (catName || '').trim().toLowerCase();
     return (
@@ -52,6 +52,17 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       clean.startsWith('tiết kiệm') ||
       clean.includes('tích lũy') ||
       clean.includes('đầu tư')
+    );
+  };
+
+  const isSavingsRecord = (r: { category?: string; purchaseItem?: string }) => {
+    if (isSavingsCategory(r.category || '')) return true;
+    const cleanItem = (r.purchaseItem || '').toLowerCase();
+    return (
+      cleanItem.includes('tiết kiệm') ||
+      cleanItem.includes('chỉ vàng') ||
+      cleanItem.includes('cây vàng') ||
+      cleanItem.includes('gửi tk')
     );
   };
 
@@ -64,8 +75,8 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
   const totalExpense = expenseRecords.reduce((sum, r) => sum + r.amount, 0);
 
   // Separate Savings from Living Expenses
-  const savingsRecords = expenseRecords.filter((r) => isSavingsCategory(r.category));
-  const livingExpenseRecords = expenseRecords.filter((r) => !isSavingsCategory(r.category));
+  const savingsRecords = expenseRecords.filter((r) => isSavingsRecord(r));
+  const livingExpenseRecords = expenseRecords.filter((r) => !isSavingsRecord(r));
 
   const savingsAmount = savingsRecords.reduce((sum, r) => sum + r.amount, 0);
   const livingExpense = livingExpenseRecords.reduce((sum, r) => sum + r.amount, 0);
@@ -93,9 +104,9 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       pctOfTotal: totalExpense > 0 ? (amt / totalExpense) * 100 : 0,
     }));
 
-  // Top biggest single expense item
-  const sortedExpenses = [...expenseRecords].sort((a, b) => b.amount - a.amount);
-  const biggestExpense = sortedExpenses[0] || null;
+  // Top biggest single living expense item (Loại trừ hoàn toàn các khoản Tiết kiệm / Tích lũy / Đầu tư)
+  const sortedLivingExpenses = [...livingExpenseRecords].sort((a, b) => b.amount - a.amount);
+  const biggestExpense = sortedLivingExpenses[0] || null;
 
   // Credit & BE totals
   const totalCredit = expenseRecords.reduce((sum, r) => sum + r.credit, 0);
@@ -116,7 +127,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
     const pExpenses = pRecords.filter((r) => r.sheetType === 'Expenses').reduce((s, r) => s + r.amount, 0);
 
     const pSavings = pRecords
-      .filter((r) => r.sheetType === 'Expenses' && isSavingsCategory(r.category))
+      .filter((r) => r.sheetType === 'Expenses' && isSavingsRecord(r))
       .reduce((s, r) => s + r.amount, 0);
     const pLiving = pExpenses - pSavings;
 
@@ -150,7 +161,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
     }[] = [];
 
     for (const cat of allCatNames) {
-      if (isSavingsCategory(cat) || cat === 'Thuê nhà') continue;
+      if (isSavingsRecord({ category: cat }) || cat === 'Thuê nhà') continue;
       const cur = allCatMap.get(cat) || 0;
       const prev = pCatMap.get(cat) || 0;
       const delta = cur - prev;
@@ -298,7 +309,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       ...topLivingCategories.map(
         (c, idx) => `  ${idx + 1}. ${c.category}: ${formatCurrency(c.amount)} (${c.pctOfLiving.toFixed(0)}% sinh hoạt)`
       ),
-      biggestExpense ? `🌟 Món chi lớn nhất: ${biggestExpense.purchaseItem} (${formatCurrency(biggestExpense.amount)})` : '',
+      biggestExpense ? `🌟 Món chi sinh hoạt lớn nhất: ${biggestExpense.purchaseItem} (${formatCurrency(biggestExpense.amount)})` : '',
       totalCredit > 0 ? `💳 Quẹt thẻ tín dụng: ${formatCurrency(totalCredit)}` : '',
       `---------------------------------`,
       `🔗 Xem chi tiết tại https://nguyenquochuydl96.github.io/Expense-Income-Tracker/`,
@@ -580,7 +591,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
 
       ctx.fillStyle = '#FDE047';
       ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('🌟 Món chi tiêu lớn nhất:', 54, curY + 28);
+      ctx.fillText('🌟 Món chi sinh hoạt lớn nhất:', 54, curY + 28);
 
       if (biggestExpense) {
         ctx.fillStyle = '#FFFFFF';
@@ -933,9 +944,9 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
           <div className="p-3 rounded-2xl bg-white/5 border border-white/5 space-y-1.5 text-xs">
             {biggestExpense && (
               <div className="flex items-center justify-between">
-                <span className="text-slate-400 flex items-center gap-1.5">
+                <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Món chi lớn nhất:</span>
+                  <span>Món chi sinh hoạt lớn nhất:</span>
                 </span>
                 <span className="font-bold text-amber-300 text-right truncate max-w-[240px]">
                   {biggestExpense.purchaseItem}{' '}

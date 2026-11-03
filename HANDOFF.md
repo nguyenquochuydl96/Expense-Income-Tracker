@@ -106,6 +106,9 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
   - **Tách riêng Top Hạng mục Sinh hoạt & Banner Tiết kiệm:**
     - Khối nổi bật màu xanh ngọc (Emerald): `🏦 Đã trích gửi Tiết kiệm / Tích lũy` (hiển thị số tiền và % thu nhập).
     - Top 3 hạng mục hiển thị chuẩn xác **Top Chi Tiêu Sinh Hoạt** (Ăn uống, Thuê nhà,...) thay vì bị Tiết kiệm chiếm mất vị trí #1.
+  - **Món chi sinh hoạt lớn nhất (Highlights Box):**
+    - Lọc bỏ hoàn toàn các giao dịch thuộc danh mục hoặc tên món hàng liên quan đến `Tiết kiệm`, `Tích lũy`, `Đầu tư`, `Chỉ vàng`, `Cây vàng` (`isSavingsRecord`).
+    - Chỉ hiển thị món chi tiêu **sinh hoạt tiêu dùng thực tế lớn nhất** của tháng (ví dụ: Thuê nhà, Mua sắm sinh hoạt), không còn bị nhầm lẫn hiển thị các khoản mua vàng tích lũy hay gửi tiết kiệm (như "Chỉ vàng mẹ Hiền" hay "Cho mượn").
   - **3 Thẻ KPI Metrics phản ánh chân thực:**
     - Card `Chi tiêu`: Nền Slate/Indigo dịu mắt khi sinh hoạt trong tầm kiểm soát, chỉ đỏ khi sinh hoạt vượt thu nhập; có dòng chú thích `Sinh hoạt: X · TK: Y`.
     - Card `Còn lại`: Nền Xanh dương khi dư tiền mặt, Nền Vàng cam hổ phách khi âm nhẹ do đã trích gửi tiết kiệm (kèm note `Đã gửi TK: 20M`), và Đỏ khi thực sự thâm hụt sinh hoạt.
