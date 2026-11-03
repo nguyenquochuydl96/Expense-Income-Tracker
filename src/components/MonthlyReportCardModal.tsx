@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   X,
   Share2,
@@ -77,18 +77,13 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
   const totalBeCorp = expenseRecords.reduce((sum, r) => sum + r.beCorp, 0);
 
   // Previous month calculation
-  const prevMonthKey = useMemo(() => {
-    const d = new Date(yearNum, monthNum - 2, 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  }, [yearNum, monthNum]);
-
-  const prevMonthLabel = useMemo(() => {
-    const [py, pm] = prevMonthKey.split('-');
-    return `T${parseInt(pm, 10)}/${py.slice(2)}`;
-  }, [prevMonthKey]);
+  const prevDate = new Date(yearNum, monthNum - 2, 1);
+  const prevMonthKey = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+  const [py, pm] = prevMonthKey.split('-');
+  const prevMonthLabel = `T${parseInt(pm, 10)}/${py.slice(2)}`;
 
   // Compute previous month stats for MoM comparison
-  const prevMonthStats = useMemo(() => {
+  const prevMonthStats = (() => {
     const pRecords = allRecords.filter((r) => r.monthKey === prevMonthKey);
     if (pRecords.length === 0) return null;
 
@@ -140,7 +135,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       topIncrease,
       topDecrease,
     };
-  }, [allRecords, prevMonthKey, totalExpense, totalIncome, catMap]);
+  })();
 
   // Health assessment
   let healthTitle = '';
