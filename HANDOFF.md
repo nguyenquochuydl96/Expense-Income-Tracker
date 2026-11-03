@@ -87,9 +87,9 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
 * **Bộ lọc nhanh:** Xem `Tất cả`, `Bội chi`, `Trong hạn mức`.
 * **Nút mở Biểu đồ bổ trợ:** Nút `Xem biểu đồ` cho phép mở rộng 2 biểu đồ phân tích (Top chi tiêu & Tỷ trọng) khi người dùng muốn xem.
 
-### 2.6 Hàng bảng dữ liệu đáy (Bottom Dual Tables)
-* **Bảng trái ("Tổng hợp chi tiêu theo phân loại"):** Ma trận Danh mục vs Phương thức thanh toán (Tiền mặt/Ví, BE Corp, Credit, Tổng chi).
-* **Bảng phải ("Giao dịch chi tiêu gần nhất"):** Danh sách giao dịch chi tiêu mới nhất kèm CategoryBadge.
+### 2.6 Tối giản Dashboard (Đã lược bỏ Bottom Dual Tables)
+* Đã gỡ bỏ 2 bảng ở đáy Dashboard (*"Tổng hợp chi tiêu theo phân loại"* và *"Giao dịch chi tiêu gần nhất"*). 
+* Toàn bộ dữ liệu ngân sách theo danh mục đã được tập trung trọn vẹn trong **Bảng Ngân sách Hạng mục (`CategoryBudgetTable`)**, và lịch sử chi tiêu đã có riêng tab **Sổ giao dịch** cùng lịch **Calendar Heatmap View**, giúp Dashboard thoáng gọn, tinh gọn và tối ưu trải nghiệm cuộn trang trên mobile.
 
 ### 2.7 Tính năng Riêng tư & Bảo mật hiển thị (Privacy Mode by Default)
 * **Mặc định BẬT khi mở app (`globalPrivacyMode = true`):** Mọi số tiền (KPIs, số dư ví, ngân sách, danh sách giao dịch, thẻ đối soát) được che dấu an toàn thành `••••••` ngay khi mở app trên công ty hoặc nơi đông người.

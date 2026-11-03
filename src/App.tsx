@@ -80,7 +80,6 @@ import {
 } from './components/AddTransactionModal';
 import { EditTransactionModal } from './components/EditTransactionModal';
 import { TransactionLedgerTable } from './components/TransactionLedgerTable';
-import { DashboardDualTables } from './components/DashboardDualTables';
 import { MultiMonthSummaryTable } from './components/MultiMonthSummaryTable';
 import {
   CategoryBudgetTable,
@@ -2149,19 +2148,6 @@ export default function App() {
                     setIsAddModalOpen(true);
                   }}
                   onSelectTransaction={(tx) => setEditingTransaction(tx)}
-                />
-
-                {/* ═══════ BOTTOM ROW: TWO DUAL DATA TABLES ═══════ */}
-                <DashboardDualTables
-                  records={periodRecords}
-                  allRecords={allRecords}
-                  selectedCategory={selectedCategory}
-                  onSelectCategory={setSelectedCategory}
-                  onOpenAddModal={() => {
-                    setAddModalPreset(null);
-                    setIsAddModalOpen(true);
-                  }}
-                  onViewFullLedger={() => setActiveTab('ledger')}
                 />
               </div>
             )}
