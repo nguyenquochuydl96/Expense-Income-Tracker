@@ -96,16 +96,32 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
 * **Phím tắt nhanh `Alt + P`:** Bật / tắt chế độ riêng tư tức thì mọi lúc.
 * **Bảo vệ xóa:** Hộp thoại xác nhận xóa luôn hiển thị số tiền thực tế để người dùng tránh xóa nhầm giao dịch.
 
-### 2.8 So sánh 2 tháng kề nhau (Month-over-Month MoM Breakdown)
+### 2.8 Báo cáo Tháng (Monthly Report Card) & So sánh MoM Ngưỡng 5%
 * **Vị trí tích hợp:** Tích hợp trực tiếp vào popup **Báo cáo tháng (`MonthlyReportCardModal.tsx`)** — không làm phát sinh thêm tab.
-* **Các chỉ số so sánh ($T$ vs $T-1$):**
-  - Biến động Tổng chi tiêu: chênh lệch số tiền và phần trăm ($\pm X\%$, gắn tag 📉 Tiết kiệm hơn hoặc 📈 Chi nhiều hơn).
-  - Biến động Tổng thu nhập: so sánh thu nhập thực tế.
-  - Hạng mục tăng nhiều nhất & Hạng mục cắt giảm tiết kiệm tốt nhất (đã loại trừ các khoản định phí cố định như `Thuê nhà`, `Tiết kiệm` để phản ánh đúng biến động chi tiêu sinh hoạt).
-* **Tích hợp đa kênh:**
+* **Tách bạch Tiết kiệm / Tích lũy khỏi Chi tiêu Sinh hoạt (Không đánh đồng thành Thâm hụt):**
+  - Nhận diện các khoản thuộc danh mục `Tiết kiệm`, `Tích lũy`, `Đầu tư` (`isSavingsCategory`).
+  - **Logic đánh giá sức khỏe tài chính thông minh:**
+    - Nếu chi tiêu sinh hoạt không vượt thu nhập (`livingRemaining >= 0`), ngay cả khi dòng tiền ví tạm thời âm nhẹ do chủ động gửi tiết kiệm nhiều (như Tháng 10: thu 53.8M, sinh hoạt 35.5M, gửi tiết kiệm 20M, tiền mặt -1.64M), hệ thống đánh giá: `💎 Tích lũy vượt mức — Dòng tiền mặt âm nhẹ` (badge tím Indigo `Đã trích tiết kiệm: 37.2%`), tuyệt đối **không** báo động "Thâm hụt ngân sách / Cần hãm phanh chi tiêu".
+    - Chỉ báo động thâm hụt sinh hoạt khi chi tiêu sinh hoạt thuần túy vượt quá thu nhập (`livingRemaining < 0`).
+  - **Tách riêng Top Hạng mục Sinh hoạt & Banner Tiết kiệm:**
+    - Khối nổi bật màu xanh ngọc (Emerald): `🏦 Đã trích gửi Tiết kiệm / Tích lũy` (hiển thị số tiền và % thu nhập).
+    - Top 3 hạng mục hiển thị chuẩn xác **Top Chi Tiêu Sinh Hoạt** (Ăn uống, Thuê nhà,...) thay vì bị Tiết kiệm chiếm mất vị trí #1.
+  - **3 Thẻ KPI Metrics phản ánh chân thực:**
+    - Card `Chi tiêu`: Nền Slate/Indigo dịu mắt khi sinh hoạt trong tầm kiểm soát, chỉ đỏ khi sinh hoạt vượt thu nhập; có dòng chú thích `Sinh hoạt: X · TK: Y`.
+    - Card `Còn lại`: Nền Xanh dương khi dư tiền mặt, Nền Vàng cam hổ phách khi âm nhẹ do đã trích gửi tiết kiệm (kèm note `Đã gửi TK: 20M`), và Đỏ khi thực sự thâm hụt sinh hoạt.
+* **Hệ thống Màu Đèn Giao Thông MoM Ngưỡng 5% ($T$ vs $T-1$):**
+  - **Chi tiêu (Tổng chi):**
+    - Giảm chi $> 5\%$ ($<-5\%$): 🟢 Xanh lá (`text-emerald-300`, badge `📉 Tiết kiệm hơn`).
+    - Tăng chi $> 5\%$ ($>+5\%$): 🔴 Đỏ (`text-rose-400`, badge `📈 Chi nhiều hơn`).
+    - Dao động trong $\pm 5\%$: 🟡 Vàng cam (`text-amber-300`, badge `⚖️ Chi tiêu ổn định`).
+  - **Thu nhập (Tổng thu):**
+    - Tăng thu $> 5\%$ ($>+5\%$): 🟢 Xanh lá (`text-emerald-300`).
+    - Giảm thu $> 5\%$ ($<-5\%$): 🔴 Đỏ (`text-rose-400`).
+    - Dao động trong $\pm 5\%$: 🟡 Vàng cam (`text-amber-300`).
+* **Đồng bộ đa kênh:**
   - Hiển thị trực quan trong modal.
   - Tự động xuất hiện trong nội dung copy tóm tắt nhanh gửi qua Telegram / Zalo (`handleCopySummary`).
-  - Tự động vẽ vào thiệp ảnh PNG chất lượng cao để tải về máy hoặc chia sẻ (`handleDownloadImage`, canvas tự mở rộng chiều cao lên 920px).
+  - Tự động vẽ vào thiệp ảnh PNG chất lượng cao để tải về máy hoặc chia sẻ (`handleDownloadImage`, canvas tự mở rộng chiều cao, text wrapping an toàn).
 
 ### 2.9 Bộ lọc thông minh 1 chạm (Smart Quick Filter Chips) trong Sổ giao dịch
 * **Vị trí tích hợp:** Ngay dưới thanh tìm kiếm của **Sổ cái (`TransactionLedgerTable.tsx`)**.

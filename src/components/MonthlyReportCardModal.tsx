@@ -44,6 +44,17 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
   const monthNum = parseInt(monthStr, 10);
   const yearNum = parseInt(yearStr, 10);
 
+  // Helper to detect Savings / Investment categories
+  const isSavingsCategory = (catName: string) => {
+    const clean = (catName || '').trim().toLowerCase();
+    return (
+      clean === 'tiết kiệm' ||
+      clean.startsWith('tiết kiệm') ||
+      clean.includes('tích lũy') ||
+      clean.includes('đầu tư')
+    );
+  };
+
   // Compute month stats
   const monthRecords = allRecords.filter((r) => r.monthKey === targetMonth);
   const incomeRecords = monthRecords.filter((r) => r.sheetType === 'Income');
@@ -51,21 +62,35 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
 
   const totalIncome = incomeRecords.reduce((sum, r) => sum + r.amount, 0);
   const totalExpense = expenseRecords.reduce((sum, r) => sum + r.amount, 0);
-  const remaining = totalIncome - totalExpense;
-  const savingsRate = totalIncome > 0 ? (remaining / totalIncome) * 100 : 0;
 
-  // Top 3 categories
-  const catMap = new Map<string, number>();
-  for (const r of expenseRecords) {
-    catMap.set(r.category, (catMap.get(r.category) || 0) + r.amount);
+  // Separate Savings from Living Expenses
+  const savingsRecords = expenseRecords.filter((r) => isSavingsCategory(r.category));
+  const livingExpenseRecords = expenseRecords.filter((r) => !isSavingsCategory(r.category));
+
+  const savingsAmount = savingsRecords.reduce((sum, r) => sum + r.amount, 0);
+  const livingExpense = livingExpenseRecords.reduce((sum, r) => sum + r.amount, 0);
+
+  // Remaining cash & living budget balances
+  const cashRemaining = totalIncome - totalExpense;
+  const livingRemaining = totalIncome - livingExpense;
+
+  const savingsPctOfIncome = totalIncome > 0 ? (savingsAmount / totalIncome) * 100 : 0;
+  const livingPctOfIncome = totalIncome > 0 ? (livingExpense / totalIncome) * 100 : 0;
+  const cashSavingsRate = totalIncome > 0 ? (cashRemaining / totalIncome) * 100 : 0;
+
+  // Top Living Categories (excluding Savings)
+  const livingCatMap = new Map<string, number>();
+  for (const r of livingExpenseRecords) {
+    livingCatMap.set(r.category, (livingCatMap.get(r.category) || 0) + r.amount);
   }
-  const topCategories = Array.from(catMap.entries())
+  const topLivingCategories = Array.from(livingCatMap.entries())
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
     .map(([cat, amt]) => ({
       category: cat,
       amount: amt,
-      pct: totalExpense > 0 ? (amt / totalExpense) * 100 : 0,
+      pctOfLiving: livingExpense > 0 ? (amt / livingExpense) * 100 : 0,
+      pctOfTotal: totalExpense > 0 ? (amt / totalExpense) * 100 : 0,
     }));
 
   // Top biggest single expense item
@@ -90,19 +115,32 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
     const pIncome = pRecords.filter((r) => r.sheetType === 'Income').reduce((s, r) => s + r.amount, 0);
     const pExpenses = pRecords.filter((r) => r.sheetType === 'Expenses').reduce((s, r) => s + r.amount, 0);
 
+    const pSavings = pRecords
+      .filter((r) => r.sheetType === 'Expenses' && isSavingsCategory(r.category))
+      .reduce((s, r) => s + r.amount, 0);
+    const pLiving = pExpenses - pSavings;
+
     const expenseDelta = totalExpense - pExpenses;
     const expenseDeltaPct = pExpenses > 0 ? (expenseDelta / pExpenses) * 100 : 0;
+
+    const livingDelta = livingExpense - pLiving;
+    const livingDeltaPct = pLiving > 0 ? (livingDelta / pLiving) * 100 : 0;
 
     const incomeDelta = totalIncome - pIncome;
     const incomeDeltaPct = pIncome > 0 ? (incomeDelta / pIncome) * 100 : 0;
 
-    // Category shifts: which categories increased or decreased the most
+    // Category shifts: which categories increased or decreased the most (excluding rent and savings)
     const pCatMap = new Map<string, number>();
     for (const r of pRecords.filter((r) => r.sheetType === 'Expenses')) {
       pCatMap.set(r.category, (pCatMap.get(r.category) || 0) + r.amount);
     }
 
-    const allCatNames = new Set([...catMap.keys(), ...pCatMap.keys()]);
+    const allCatMap = new Map<string, number>();
+    for (const r of expenseRecords) {
+      allCatMap.set(r.category, (allCatMap.get(r.category) || 0) + r.amount);
+    }
+
+    const allCatNames = new Set([...allCatMap.keys(), ...pCatMap.keys()]);
     const catShifts: {
       category: string;
       currentAmt: number;
@@ -112,8 +150,8 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
     }[] = [];
 
     for (const cat of allCatNames) {
-      if (cat === 'Tiết kiệm' || cat === 'Thuê nhà') continue;
-      const cur = catMap.get(cat) || 0;
+      if (isSavingsCategory(cat) || cat === 'Thuê nhà') continue;
+      const cur = allCatMap.get(cat) || 0;
       const prev = pCatMap.get(cat) || 0;
       const delta = cur - prev;
       const deltaPct = prev > 0 ? (delta / prev) * 100 : cur > 0 ? 100 : 0;
@@ -128,8 +166,12 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       hasData: true,
       pIncome,
       pExpenses,
+      pSavings,
+      pLiving,
       expenseDelta,
       expenseDeltaPct,
+      livingDelta,
+      livingDeltaPct,
       incomeDelta,
       incomeDeltaPct,
       topIncrease,
@@ -137,32 +179,97 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
     };
   })();
 
-  // Health assessment
+  // 5% Rule Constants for Traffic Light Evaluation (Đỏ - Vàng - Xanh)
+  const MOM_THRESHOLD = 5.0; // 5%
+
+  // Expense MoM status:
+  // deltaPct < -5%  => Green (Tiết kiệm hơn)
+  // deltaPct > +5%  => Red (Chi nhiều hơn)
+  // [-5%, +5%]      => Yellow (Chi tiêu ổn định)
+  const isExpenseDecreased = prevMonthStats ? prevMonthStats.expenseDeltaPct < -MOM_THRESHOLD : false;
+  const isExpenseIncreased = prevMonthStats ? prevMonthStats.expenseDeltaPct > MOM_THRESHOLD : false;
+
+  // Income MoM status:
+  // deltaPct > +5%  => Green (Thu nhập tăng)
+  // deltaPct < -5%  => Red (Thu nhập giảm)
+  // [-5%, +5%]      => Yellow (Thu nhập ổn định)
+  const isIncomeIncreased = prevMonthStats ? prevMonthStats.incomeDeltaPct > MOM_THRESHOLD : false;
+  const isIncomeDecreased = prevMonthStats ? prevMonthStats.incomeDeltaPct < -MOM_THRESHOLD : false;
+
+  // Health assessment (Separating Savings from Living Deficit)
   let healthTitle = '';
   let healthDesc = '';
   let healthBadge = '';
+  let healthBadgeText = '';
   let healthStars = '';
 
-  if (savingsRate >= 30) {
-    healthStars = '⭐⭐⭐';
-    healthTitle = 'Xuất sắc — Tích lũy thần tốc';
-    healthDesc = `Bạn đã tiết kiệm được ${savingsRate.toFixed(1)}% thu nhập tháng này, vượt xa tiêu chuẩn vàng 20%!`;
-    healthBadge = 'bg-emerald-100 text-emerald-900 border-emerald-300';
-  } else if (savingsRate >= 15) {
-    healthStars = '⭐⭐';
-    healthTitle = 'Tốt & Cân bằng tài chính';
-    healthDesc = `Dòng tiền dương khỏe mạnh (+${savingsRate.toFixed(1)}%), chi tiêu điều độ và kiểm soát tốt.`;
-    healthBadge = 'bg-teal-100 text-teal-900 border-teal-300';
-  } else if (savingsRate >= 0) {
-    healthStars = '⭐';
-    healthTitle = 'Hòa vốn — Cần tích lũy thêm';
-    healthDesc = 'Thu vừa đủ bù chi. Nên rà soát bớt các khoản ăn uống/mua sắm để có quỹ dự phòng an toàn.';
-    healthBadge = 'bg-amber-100 text-amber-900 border-amber-300';
+  if (savingsAmount > 0) {
+    if (livingRemaining >= 0) {
+      if (cashRemaining >= 0) {
+        if (savingsPctOfIncome >= 30) {
+          healthStars = '⭐⭐⭐';
+          healthTitle = 'Xuất sắc — Tích lũy thần tốc';
+          healthDesc = `Bạn đã trích gửi tiết kiệm ${formatCurrency(savingsAmount)} (${savingsPctOfIncome.toFixed(1)}% thu nhập), chi tiêu sinh hoạt ${formatCurrency(livingExpense)} rất hợp lý. Dư tiền mặt ${formatCurrency(cashRemaining)}!`;
+          healthBadge = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+          healthBadgeText = `Tích lũy: ${savingsPctOfIncome.toFixed(1)}%`;
+        } else if (savingsPctOfIncome >= 15) {
+          healthStars = '⭐⭐';
+          healthTitle = 'Tốt & Cân bằng tài chính';
+          healthDesc = `Đã trích tiết kiệm ${formatCurrency(savingsAmount)} (${savingsPctOfIncome.toFixed(1)}% thu nhập), chi tiêu sinh hoạt ${formatCurrency(livingExpense)} trong tầm kiểm soát. Dư tiền mặt ${formatCurrency(cashRemaining)}.`;
+          healthBadge = 'bg-teal-500/20 text-teal-300 border-teal-500/30';
+          healthBadgeText = `Tích lũy: ${savingsPctOfIncome.toFixed(1)}%`;
+        } else {
+          healthStars = '⭐';
+          healthTitle = 'Tích lũy ổn định';
+          healthDesc = `Đã trích tiết kiệm ${formatCurrency(savingsAmount)} (${savingsPctOfIncome.toFixed(1)}% thu nhập), sinh hoạt trong ngân sách và vẫn dư ${formatCurrency(cashRemaining)} tiền mặt.`;
+          healthBadge = 'bg-sky-500/20 text-sky-300 border-sky-500/30';
+          healthBadgeText = `Tích lũy: ${savingsPctOfIncome.toFixed(1)}%`;
+        }
+      } else {
+        // livingRemaining >= 0 but cashRemaining < 0 because savings transfer was aggressive
+        healthStars = '💎';
+        healthTitle = 'Tích lũy vượt mức — Dòng tiền mặt âm nhẹ';
+        healthDesc = `Chi sinh hoạt thực tế chỉ ${formatCurrency(livingExpense)} (thặng dư +${formatCurrency(livingRemaining)}). Dòng tiền ví âm ${formatCurrency(Math.abs(cashRemaining))} là do chủ động trích gửi Tiết kiệm ${formatCurrency(savingsAmount)} (${savingsPctOfIncome.toFixed(1)}% thu nhập), tài sản tích lũy tăng trưởng rất tốt!`;
+        healthBadge = 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30';
+        healthBadgeText = `Đã trích tiết kiệm: ${savingsPctOfIncome.toFixed(1)}%`;
+      }
+    } else {
+      // livingRemaining < 0
+      healthStars = '⚠️';
+      healthTitle = 'Chi tiêu sinh hoạt vượt thu nhập';
+      healthDesc = `Chi tiêu sinh hoạt (${formatCurrency(livingExpense)}) đã vượt thu nhập ${formatCurrency(Math.abs(livingRemaining))} (chưa tính khoản tiết kiệm ${formatCurrency(savingsAmount)}). Cần rà soát cắt giảm chi tiêu tháng tới!`;
+      healthBadge = 'bg-rose-500/20 text-rose-300 border-rose-500/30';
+      healthBadgeText = `Thâm hụt sinh hoạt: ${((Math.abs(livingRemaining) / totalIncome) * 100).toFixed(1)}%`;
+    }
   } else {
-    healthStars = '⚠️';
-    healthTitle = 'Thâm hụt ngân sách';
-    healthDesc = `Chi tiêu vượt thu nhập ${formatCurrency(Math.abs(remaining))}. Cần hãm phanh chi tiêu tháng tới!`;
-    healthBadge = 'bg-rose-100 text-rose-900 border-rose-300';
+    // No savings recorded
+    if (cashRemaining >= 0) {
+      if (cashSavingsRate >= 30) {
+        healthStars = '⭐⭐⭐';
+        healthTitle = 'Xuất sắc — Thặng dư cao';
+        healthDesc = `Dư ${formatCurrency(cashRemaining)} (${cashSavingsRate.toFixed(1)}% thu nhập). Nên trích một phần vào quỹ tiết kiệm hoặc đầu tư!`;
+        healthBadge = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+        healthBadgeText = `Thặng dư: +${cashSavingsRate.toFixed(1)}%`;
+      } else if (cashSavingsRate >= 15) {
+        healthStars = '⭐⭐';
+        healthTitle = 'Tốt & Cân bằng tài chính';
+        healthDesc = `Dòng tiền dương khỏe mạnh (+${cashSavingsRate.toFixed(1)}%), chi tiêu sinh hoạt điều độ và kiểm soát tốt.`;
+        healthBadge = 'bg-teal-500/20 text-teal-300 border-teal-500/30';
+        healthBadgeText = `Dư tiền: +${cashSavingsRate.toFixed(1)}%`;
+      } else {
+        healthStars = '⭐';
+        healthTitle = 'Hòa vốn — Cần tích lũy thêm';
+        healthDesc = 'Thu vừa đủ bù chi. Nên rà soát bớt các khoản ăn uống/mua sắm để có quỹ dự phòng an toàn.';
+        healthBadge = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
+        healthBadgeText = `Dư tiền: +${cashSavingsRate.toFixed(1)}%`;
+      }
+    } else {
+      healthStars = '⚠️';
+      healthTitle = 'Thâm hụt ngân sách';
+      healthDesc = `Chi tiêu vượt thu nhập ${formatCurrency(Math.abs(cashRemaining))}. Cần hãm phanh chi tiêu tháng tới!`;
+      healthBadge = 'bg-rose-500/20 text-rose-300 border-rose-500/30';
+      healthBadgeText = `Thâm hụt: -${((Math.abs(cashRemaining) / totalIncome) * 100).toFixed(1)}%`;
+    }
   }
 
   // Copy Summary text for Telegram / Zalo
@@ -172,20 +279,24 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       `👨‍👩‍👧‍👦 Sổ chi tiêu của ba mẹ Chuối, Đậu, Vịt`,
       `---------------------------------`,
       `💰 Tổng thu nhập: ${formatCurrency(totalIncome)}`,
-      `🛒 Tổng chi tiêu: ${formatCurrency(totalExpense)}`,
-      `🏦 Số dư còn lại: ${formatCurrency(remaining, remaining > 0)} (${savingsRate.toFixed(1)}%)`,
+      `🛒 Chi sinh hoạt: ${formatCurrency(livingExpense)} (${livingPctOfIncome.toFixed(1)}% thu nhập)`,
+      savingsAmount > 0 ? `🏦 Trích gửi tiết kiệm: ${formatCurrency(savingsAmount)} (${savingsPctOfIncome.toFixed(1)}% thu nhập)` : '',
+      `💳 Tổng chi thực tế: ${formatCurrency(totalExpense)}`,
+      `💵 Dòng tiền mặt còn lại: ${formatCurrency(cashRemaining, cashRemaining > 0)}`,
       `⭐ Đánh giá: ${healthStars} ${healthTitle}`,
+      `💡 Chi tiết: ${healthDesc}`,
       prevMonthStats && prevMonthStats.hasData ? [
         `---------------------------------`,
         `📈 So với tháng trước (${prevMonthLabel}):`,
-        `  • Tổng chi: ${prevMonthStats.expenseDelta <= 0 ? '' : '+'}${formatCurrency(prevMonthStats.expenseDelta)} (${prevMonthStats.expenseDelta <= 0 ? 'tiết kiệm' : 'tăng'} ${Math.abs(prevMonthStats.expenseDeltaPct).toFixed(1)}%)`,
+        `  • Tổng chi: ${prevMonthStats.expenseDelta <= 0 ? '' : '+'}${formatCurrency(prevMonthStats.expenseDelta)} (${isExpenseDecreased ? 'tiết kiệm' : isExpenseIncreased ? 'tăng' : 'ổn định'} ${prevMonthStats.expenseDeltaPct.toFixed(1)}%)`,
+        `  • Tổng thu nhập: ${prevMonthStats.incomeDelta >= 0 ? '+' : ''}${formatCurrency(prevMonthStats.incomeDelta)} (${prevMonthStats.incomeDeltaPct.toFixed(1)}%)`,
         prevMonthStats.topIncrease ? `  • Tăng nhiều nhất: ${prevMonthStats.topIncrease.category} (+${formatCurrency(prevMonthStats.topIncrease.delta)})` : '',
         prevMonthStats.topDecrease ? `  • Cắt giảm tốt nhất: ${prevMonthStats.topDecrease.category} (${formatCurrency(prevMonthStats.topDecrease.delta)})` : '',
       ].filter(Boolean).join('\n') : '',
       `---------------------------------`,
-      `🏆 Top 3 Hạng mục chi nhiều nhất:`,
-      ...topCategories.map(
-        (c, idx) => `  ${idx + 1}. ${c.category}: ${formatCurrency(c.amount)} (${c.pct.toFixed(0)}%)`
+      `🏆 Top Hạng Mục Chi Tiêu Sinh Hoạt:`,
+      ...topLivingCategories.map(
+        (c, idx) => `  ${idx + 1}. ${c.category}: ${formatCurrency(c.amount)} (${c.pctOfLiving.toFixed(0)}% sinh hoạt)`
       ),
       biggestExpense ? `🌟 Món chi lớn nhất: ${biggestExpense.purchaseItem} (${formatCurrency(biggestExpense.amount)})` : '',
       totalCredit > 0 ? `💳 Quẹt thẻ tín dụng: ${formatCurrency(totalCredit)}` : '',
@@ -206,7 +317,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       const canvas = document.createElement('canvas');
       const scale = 2; // High DPI for crisp rendering
       const width = 600;
-      const height = prevMonthStats && prevMonthStats.hasData ? 920 : 820;
+      const height = (prevMonthStats && prevMonthStats.hasData ? 930 : 830) + (savingsAmount > 0 ? 56 : 0);
 
       canvas.width = width * scale;
       canvas.height = height * scale;
@@ -263,18 +374,39 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       // 3. Health Assessment Banner
       ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
       ctx.beginPath();
-      ctx.roundRect(36, 115, width - 72, 72, 14);
+      ctx.roundRect(36, 115, width - 72, 74, 14);
       ctx.fill();
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
       ctx.stroke();
 
       ctx.fillStyle = '#FDE047';
-      ctx.font = 'bold 16px "Segoe UI", Arial, sans-serif';
-      ctx.fillText(`${healthStars}  ${healthTitle}`, 54, 145);
+      ctx.font = 'bold 15px "Segoe UI", Arial, sans-serif';
+      ctx.fillText(`${healthStars}  ${healthTitle}`, 54, 142);
+
+      // Health badge text on the right
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = 'bold 11px "Segoe UI", Arial, sans-serif';
+      const badgeW = ctx.measureText(healthBadgeText).width;
+      ctx.fillText(healthBadgeText, width - 54 - badgeW, 142);
 
       ctx.fillStyle = '#CBD5E1';
       ctx.font = '12px "Segoe UI", Arial, sans-serif';
-      ctx.fillText(healthDesc, 54, 168);
+      // Word wrap for healthDesc
+      const words = healthDesc.split(' ');
+      let line = '';
+      let descY = 164;
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + ' ';
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > (width - 108) && n > 0) {
+          ctx.fillText(line, 54, descY);
+          line = words[n] + ' ';
+          descY += 16;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, 54, descY);
 
       // 4. Three Big KPI Cards
       const cardW = (width - 72 - 24) / 3;
@@ -291,84 +423,139 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       ctx.fillText('TỔNG THU NHẬP', 50, 230);
       ctx.fillStyle = '#FFFFFF';
       ctx.font = 'bold 16px "Segoe UI", Arial, sans-serif';
-      ctx.fillText(formatCurrency(totalIncome), 50, 260);
+      ctx.fillText(formatCurrency(totalIncome), 50, 258);
+      ctx.fillStyle = 'rgba(110, 231, 183, 0.7)';
+      ctx.font = '10px "Segoe UI", Arial, sans-serif';
+      ctx.fillText(`${incomeRecords.length} giao dịch`, 50, 280);
 
       // Card 2: Chi tiêu
-      ctx.fillStyle = 'rgba(244, 63, 94, 0.12)';
+      const card2Bg = livingRemaining >= 0 ? 'rgba(99, 102, 241, 0.12)' : 'rgba(244, 63, 94, 0.12)';
+      const card2Border = livingRemaining >= 0 ? 'rgba(99, 102, 241, 0.3)' : 'rgba(244, 63, 94, 0.3)';
+      const card2TitleCol = livingRemaining >= 0 ? '#C7D2FE' : '#FDA4AF';
+      ctx.fillStyle = card2Bg;
       ctx.beginPath();
       ctx.roundRect(36 + cardW + 12, 205, cardW, 95, 12);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(244, 63, 94, 0.3)';
+      ctx.strokeStyle = card2Border;
       ctx.stroke();
-      ctx.fillStyle = '#FDA4AF';
+      ctx.fillStyle = card2TitleCol;
       ctx.font = 'bold 11px "Segoe UI", Arial, sans-serif';
       ctx.fillText('TỔNG CHI TIÊU', 50 + cardW + 12, 230);
       ctx.fillStyle = '#FFFFFF';
       ctx.font = 'bold 16px "Segoe UI", Arial, sans-serif';
-      ctx.fillText(formatCurrency(totalExpense), 50 + cardW + 12, 260);
+      ctx.fillText(formatCurrency(totalExpense), 50 + cardW + 12, 258);
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '10px "Segoe UI", Arial, sans-serif';
+      const c2Sub = savingsAmount > 0 ? `Sinh hoạt: ${formatNumberForSheet(livingExpense)}` : '100% sinh hoạt';
+      ctx.fillText(c2Sub, 50 + cardW + 12, 280);
 
       // Card 3: Còn lại
-      const remColor = remaining >= 0 ? '#38BDF8' : '#FB7185';
-      ctx.fillStyle = remaining >= 0 ? 'rgba(14, 165, 233, 0.12)' : 'rgba(244, 63, 94, 0.15)';
+      const card3Color = cashRemaining >= 0 ? '#38BDF8' : livingRemaining >= 0 && savingsAmount > 0 ? '#FBBF24' : '#FB7185';
+      const card3Bg = cashRemaining >= 0 ? 'rgba(14, 165, 233, 0.12)' : livingRemaining >= 0 && savingsAmount > 0 ? 'rgba(245, 158, 11, 0.12)' : 'rgba(244, 63, 94, 0.15)';
+      const card3Border = cashRemaining >= 0 ? 'rgba(14, 165, 233, 0.3)' : livingRemaining >= 0 && savingsAmount > 0 ? 'rgba(245, 158, 11, 0.3)' : 'rgba(244, 63, 94, 0.4)';
+      ctx.fillStyle = card3Bg;
       ctx.beginPath();
       ctx.roundRect(36 + (cardW + 12) * 2, 205, cardW, 95, 12);
       ctx.fill();
-      ctx.strokeStyle = remaining >= 0 ? 'rgba(14, 165, 233, 0.3)' : 'rgba(244, 63, 94, 0.4)';
+      ctx.strokeStyle = card3Border;
       ctx.stroke();
-      ctx.fillStyle = remColor;
+      ctx.fillStyle = card3Color;
       ctx.font = 'bold 11px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('CÒN LẠI / TÍCH LŨY', 50 + (cardW + 12) * 2, 230);
+      const c3Label = cashRemaining >= 0 ? 'CÒN LẠI' : livingRemaining >= 0 && savingsAmount > 0 ? 'DÒNG TIỀN VÍ' : 'THÂM HỤT';
+      ctx.fillText(c3Label, 50 + (cardW + 12) * 2, 230);
       ctx.fillStyle = '#FFFFFF';
       ctx.font = 'bold 16px "Segoe UI", Arial, sans-serif';
-      ctx.fillText(formatCurrency(remaining, remaining > 0), 50 + (cardW + 12) * 2, 260);
+      ctx.fillText(formatCurrency(cashRemaining, cashRemaining > 0), 50 + (cardW + 12) * 2, 258);
+      ctx.fillStyle = card3Color;
+      ctx.font = '10px "Segoe UI", Arial, sans-serif';
+      const c3Sub = savingsAmount > 0 ? `Đã gửi TK: ${formatNumberForSheet(savingsAmount)}` : (cashRemaining >= 0 ? 'Thặng dư ví' : 'Bội chi');
+      ctx.fillText(c3Sub, 50 + (cardW + 12) * 2, 280);
 
-      // 5. Top Categories Section
+      // 5. Savings Banner (if any) + Top Living Categories Section
+      let curY = 325;
+
+      if (savingsAmount > 0) {
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.12)';
+        ctx.beginPath();
+        ctx.roundRect(36, curY, width - 72, 46, 10);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.35)';
+        ctx.stroke();
+
+        ctx.fillStyle = '#6EE7B7';
+        ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
+        ctx.fillText('🏦 Đã trích Tiết kiệm / Tích lũy:', 52, curY + 28);
+
+        ctx.fillStyle = '#A7F3D0';
+        ctx.font = 'bold 14px "Segoe UI", Arial, sans-serif';
+        const savText = `${formatCurrency(savingsAmount)} (${savingsPctOfIncome.toFixed(1)}% thu nhập)`;
+        ctx.fillText(savText, width - 52 - ctx.measureText(savText).width, curY + 28);
+
+        curY += 56;
+      }
+
       ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 15px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('🏆 Top Hạng Mục Chi Nhiều Nhất', 36, 335);
+      ctx.font = 'bold 14px "Segoe UI", Arial, sans-serif';
+      ctx.fillText('🏆 Top Hạng Mục Chi Tiêu Sinh Hoạt', 36, curY + 16);
+      curY += 28;
 
-      let topY = 360;
-      topCategories.forEach((cat, idx) => {
-        // Container box
+      topLivingCategories.forEach((cat, idx) => {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
         ctx.beginPath();
-        ctx.roundRect(36, topY, width - 72, 48, 10);
+        ctx.roundRect(36, curY, width - 72, 44, 10);
         ctx.fill();
 
         ctx.fillStyle = '#F8FAFC';
         ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
-        ctx.fillText(`${idx + 1}. ${cat.category}`, 54, topY + 28);
+        ctx.fillText(`${idx + 1}. ${cat.category}`, 54, curY + 27);
 
         ctx.fillStyle = '#F43F5E';
-        ctx.font = 'bold 14px "Segoe UI", Arial, sans-serif';
-        const amtText = `${formatCurrency(cat.amount)}  (${cat.pct.toFixed(0)}%)`;
-        ctx.fillText(amtText, width - 54 - ctx.measureText(amtText).width, topY + 28);
+        ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
+        const amtText = `${formatCurrency(cat.amount)}  (${cat.pctOfLiving.toFixed(0)}% sinh hoạt)`;
+        ctx.fillText(amtText, width - 54 - ctx.measureText(amtText).width, curY + 27);
 
-        topY += 56;
+        curY += 50;
       });
 
       // 6. MoM Comparison Card (Canvas)
       if (prevMonthStats && prevMonthStats.hasData) {
         ctx.fillStyle = 'rgba(99, 102, 241, 0.08)';
         ctx.beginPath();
-        ctx.roundRect(36, topY + 8, width - 72, 85, 12);
+        ctx.roundRect(36, curY + 6, width - 72, 88, 12);
         ctx.fill();
         ctx.strokeStyle = 'rgba(99, 102, 241, 0.25)';
         ctx.stroke();
 
         ctx.fillStyle = '#A5B4FC';
         ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif';
-        ctx.fillText(`📈 So Sánh Với Tháng Trước (${prevMonthLabel}):`, 52, topY + 30);
+        ctx.fillText(`📈 So Sánh Với Tháng Trước (${prevMonthLabel}):`, 52, curY + 28);
 
+        // MoM badge on canvas
+        const momBadgeText = isExpenseDecreased ? 'Tiết kiệm hơn' : isExpenseIncreased ? 'Chi nhiều hơn' : 'Chi tiêu ổn định';
+        const momBadgeColor = isExpenseDecreased ? '#34D399' : isExpenseIncreased ? '#FB7185' : '#FBBF24';
+        ctx.fillStyle = momBadgeColor;
+        ctx.font = 'bold 11px "Segoe UI", Arial, sans-serif';
+        const mbW = ctx.measureText(momBadgeText).width;
+        ctx.fillText(momBadgeText, width - 52 - mbW, curY + 28);
+
+        // Expense delta (5% rule)
+        const expColor = isExpenseDecreased ? '#34D399' : isExpenseIncreased ? '#FB7185' : '#FBBF24';
         const expSign = prevMonthStats.expenseDelta <= 0 ? '' : '+';
-        const expColor = prevMonthStats.expenseDelta <= 0 ? '#34D399' : '#FB7185';
         ctx.fillStyle = expColor;
-        ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
+        ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif';
         ctx.fillText(
-          `Tổng chi: ${expSign}${formatCurrency(prevMonthStats.expenseDelta)} (${prevMonthStats.expenseDelta <= 0 ? 'tiết kiệm' : 'tăng'} ${Math.abs(prevMonthStats.expenseDeltaPct).toFixed(1)}%)`,
+          `Tổng chi: ${expSign}${formatCurrency(prevMonthStats.expenseDelta)} (${prevMonthStats.expenseDeltaPct > 0 ? '+' : ''}${prevMonthStats.expenseDeltaPct.toFixed(1)}%)`,
           52,
-          topY + 52
+          curY + 50
         );
+
+        // Income delta (5% rule)
+        const incColor = isIncomeIncreased ? '#34D399' : isIncomeDecreased ? '#FB7185' : '#FBBF24';
+        const incSign = prevMonthStats.incomeDelta >= 0 ? '+' : '';
+        ctx.fillStyle = incColor;
+        ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif';
+        const incText = `Tổng thu: ${incSign}${formatCurrency(prevMonthStats.incomeDelta)} (${prevMonthStats.incomeDeltaPct > 0 ? '+' : ''}${prevMonthStats.incomeDeltaPct.toFixed(1)}%)`;
+        ctx.fillText(incText, 320, curY + 50);
 
         if (prevMonthStats.topIncrease || prevMonthStats.topDecrease) {
           ctx.fillStyle = '#CBD5E1';
@@ -377,45 +564,46 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
             prevMonthStats.topIncrease ? `Tăng: ${prevMonthStats.topIncrease.category} (+${formatCurrency(prevMonthStats.topIncrease.delta)})` : '',
             prevMonthStats.topDecrease ? `Giảm: ${prevMonthStats.topDecrease.category} (${formatCurrency(prevMonthStats.topDecrease.delta)})` : '',
           ].filter(Boolean).join('  ·  ');
-          ctx.fillText(shiftDetail, 52, topY + 72);
+          ctx.fillText(shiftDetail, 52, curY + 74);
         }
 
-        topY += 98;
+        curY += 104;
       }
 
       // 7. Highlights Box (Biggest expense + Credit)
       ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
       ctx.beginPath();
-      ctx.roundRect(36, topY + 10, width - 72, 120, 12);
+      ctx.roundRect(36, curY + 6, width - 72, 85, 12);
       ctx.fill();
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
       ctx.stroke();
 
       ctx.fillStyle = '#FDE047';
-      ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('🌟 Món chi tiêu lớn nhất:', 54, topY + 38);
+      ctx.font = 'bold 12px "Segoe UI", Arial, sans-serif';
+      ctx.fillText('🌟 Món chi tiêu lớn nhất:', 54, curY + 28);
 
       if (biggestExpense) {
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = '13px "Segoe UI", Arial, sans-serif';
-        ctx.fillText(`${biggestExpense.purchaseItem} (${biggestExpense.category})`, 54, topY + 60);
+        ctx.font = '12px "Segoe UI", Arial, sans-serif';
+        ctx.fillText(`${biggestExpense.purchaseItem} (${biggestExpense.category})`, 54, curY + 48);
         ctx.fillStyle = '#F43F5E';
         ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
-        ctx.fillText(formatCurrency(biggestExpense.amount), 54, topY + 80);
+        const amtW = ctx.measureText(formatCurrency(biggestExpense.amount)).width;
+        ctx.fillText(formatCurrency(biggestExpense.amount), width - 54 - amtW, curY + 48);
       } else {
         ctx.fillStyle = '#94A3B8';
         ctx.font = '12px "Segoe UI", Arial, sans-serif';
-        ctx.fillText('Không có chi tiêu', 54, topY + 60);
+        ctx.fillText('Không có chi tiêu', 54, curY + 48);
       }
 
       ctx.fillStyle = '#CBD5E1';
       ctx.font = '11px "Segoe UI", Arial, sans-serif';
-      ctx.fillText(`💳 Quẹt thẻ tín dụng: ${formatCurrency(totalCredit)}  ·  Ví BE Corp: ${formatCurrency(totalBeCorp)}`, 54, topY + 112);
+      ctx.fillText(`💳 Quẹt thẻ tín dụng: ${formatCurrency(totalCredit)}  ·  Ví BE Corp: ${formatCurrency(totalBeCorp)}`, 54, curY + 72);
 
-      // 7. Footer
+      // 8. Footer
       ctx.fillStyle = '#64748B';
       ctx.font = '10px "Segoe UI", Arial, sans-serif';
-      ctx.fillText('Được tạo tự động từ ứng dụng Heo & Mèo Finance · Đồng bộ Google Sheets', 36, height - 24);
+      ctx.fillText('Được tạo tự động từ ứng dụng Heo & Mèo Finance · Đồng bộ Google Sheets', 36, height - 20);
 
       // Download
       const dataUrl = canvas.toDataURL('image/png');
@@ -484,7 +672,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
                 <span>{healthTitle}</span>
               </span>
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${healthBadge}`}>
-                Tỷ lệ tích lũy: {savingsRate.toFixed(1)}%
+                {healthBadgeText}
               </span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">{healthDesc}</p>
@@ -492,6 +680,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
 
           {/* 3 Main KPI Metrics */}
           <div className="grid grid-cols-3 gap-2.5">
+            {/* Card 1: Thu nhập */}
             <div className="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-800/40 text-center">
               <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide">
                 Thu nhập
@@ -499,40 +688,136 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
               <div className="text-sm sm:text-base font-extrabold font-mono-tabular text-emerald-200 mt-1 truncate">
                 {formatCurrency(totalIncome)}
               </div>
+              <div className="text-[10px] text-emerald-400/70 font-medium mt-0.5 truncate">
+                {incomeRecords.length} giao dịch
+              </div>
             </div>
 
-            <div className="p-3 rounded-2xl bg-rose-950/40 border border-rose-800/40 text-center">
-              <div className="text-[10px] font-bold text-rose-400 uppercase tracking-wide">
+            {/* Card 2: Chi tiêu */}
+            <div
+              className={`p-3 rounded-2xl text-center border ${
+                livingRemaining >= 0
+                  ? 'bg-slate-800/40 border-slate-700/60'
+                  : 'bg-rose-950/40 border-rose-800/40'
+              }`}
+            >
+              <div
+                className={`text-[10px] font-bold uppercase tracking-wide ${
+                  livingRemaining >= 0 ? 'text-slate-300' : 'text-rose-400'
+                }`}
+              >
                 Chi tiêu
-              </div>
-              <div className="text-sm sm:text-base font-extrabold font-mono-tabular text-rose-200 mt-1 truncate">
-                {formatCurrency(totalExpense)}
-              </div>
-            </div>
-
-            <div className="p-3 rounded-2xl bg-sky-950/40 border border-sky-800/40 text-center">
-              <div className="text-[10px] font-bold text-sky-400 uppercase tracking-wide">
-                Còn lại
               </div>
               <div
                 className={`text-sm sm:text-base font-extrabold font-mono-tabular mt-1 truncate ${
-                  remaining >= 0 ? 'text-sky-200' : 'text-rose-300'
+                  livingRemaining >= 0 ? 'text-white' : 'text-rose-200'
                 }`}
               >
-                {formatCurrency(remaining, remaining > 0)}
+                {formatCurrency(totalExpense)}
+              </div>
+              <div className="text-[10px] text-slate-400 font-medium mt-0.5 truncate">
+                {savingsAmount > 0 ? (
+                  <span>
+                    Sinh hoạt: <strong className="text-slate-200 font-mono-tabular">{formatNumberForSheet(livingExpense)}</strong>
+                  </span>
+                ) : (
+                  <span>100% sinh hoạt</span>
+                )}
+              </div>
+            </div>
+
+            {/* Card 3: Còn lại / Tích lũy */}
+            <div
+              className={`p-3 rounded-2xl text-center border ${
+                cashRemaining >= 0
+                  ? 'bg-sky-950/40 border-sky-800/40'
+                  : livingRemaining >= 0 && savingsAmount > 0
+                  ? 'bg-amber-950/30 border-amber-800/40'
+                  : 'bg-rose-950/40 border-rose-800/40'
+              }`}
+            >
+              <div
+                className={`text-[10px] font-bold uppercase tracking-wide ${
+                  cashRemaining >= 0
+                    ? 'text-sky-400'
+                    : livingRemaining >= 0 && savingsAmount > 0
+                    ? 'text-amber-400'
+                    : 'text-rose-400'
+                }`}
+              >
+                {cashRemaining >= 0 ? 'Còn lại' : livingRemaining >= 0 && savingsAmount > 0 ? 'Dòng tiền ví' : 'Thâm hụt'}
+              </div>
+              <div
+                className={`text-sm sm:text-base font-extrabold font-mono-tabular mt-1 truncate ${
+                  cashRemaining >= 0
+                    ? 'text-sky-200'
+                    : livingRemaining >= 0 && savingsAmount > 0
+                    ? 'text-amber-200'
+                    : 'text-rose-300'
+                }`}
+              >
+                {formatCurrency(cashRemaining, cashRemaining > 0)}
+              </div>
+              <div
+                className={`text-[10px] font-medium mt-0.5 truncate ${
+                  cashRemaining >= 0
+                    ? 'text-sky-400/80'
+                    : livingRemaining >= 0 && savingsAmount > 0
+                    ? 'text-amber-300/80'
+                    : 'text-rose-300/80'
+                }`}
+              >
+                {savingsAmount > 0 ? (
+                  <span>
+                    Đã gửi TK: <strong className="font-mono-tabular">{formatNumberForSheet(savingsAmount)}</strong>
+                  </span>
+                ) : cashRemaining >= 0 ? (
+                  <span>Thặng dư ví</span>
+                ) : (
+                  <span>Bội chi sinh hoạt</span>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Top 3 Categories */}
+          {/* Top Categories Section (Separating Savings & Top Living Expenses) */}
           <div className="space-y-2">
-            <div className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
-              <Award className="w-3.5 h-3.5 text-amber-400" />
-              <span>Top Hạng Mục Chi Nhiều Nhất:</span>
+            <div className="text-xs font-bold text-slate-300 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Award className="w-3.5 h-3.5 text-amber-400" />
+                <span>Top Hạng Mục Chi Tiêu Sinh Hoạt:</span>
+              </span>
+              {livingExpense > 0 && (
+                <span className="text-[10px] text-slate-400 font-mono-tabular">
+                  Tổng sinh hoạt: {formatCurrency(livingExpense)}
+                </span>
+              )}
             </div>
 
+            {/* Dedicated Savings Banner if user saved money this month */}
+            {savingsAmount > 0 && (
+              <div className="p-2.5 rounded-xl bg-gradient-to-r from-emerald-950/60 to-teal-950/50 border border-emerald-600/40 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🏦</span>
+                  <div>
+                    <div className="font-bold text-emerald-300">Đã trích gửi Tiết kiệm / Tích lũy</div>
+                    <div className="text-[10px] text-emerald-400/80">
+                      Chiếm {savingsPctOfIncome.toFixed(1)}% thu nhập ({((savingsAmount / totalExpense) * 100).toFixed(0)}% tổng chi)
+                    </div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="font-bold font-mono-tabular text-emerald-300 text-xs sm:text-sm">
+                    {formatCurrency(savingsAmount)}
+                  </div>
+                  <div className="text-[10px] text-emerald-400/70 font-medium">Tài sản tích lũy</div>
+                </div>
+              </div>
+            )}
+
+            {/* Top 3 Living Categories */}
             <div className="space-y-1.5 text-xs">
-              {topCategories.map((c, idx) => (
+              {topLivingCategories.map((c, idx) => (
                 <div
                   key={c.category}
                   className="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between"
@@ -543,7 +828,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
                   <span className="font-bold font-mono-tabular text-rose-300">
                     {formatCurrency(c.amount)}{' '}
                     <span className="text-[10px] text-slate-400 font-normal">
-                      ({c.pct.toFixed(0)}%)
+                      ({c.pctOfLiving.toFixed(0)}% sinh hoạt)
                     </span>
                   </span>
                 </div>
@@ -551,7 +836,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
             </div>
           </div>
 
-          {/* MoM Comparison Card (So sánh với tháng trước) */}
+          {/* MoM Comparison Card (So sánh với tháng trước với ngưỡng 5%) */}
           {prevMonthStats && prevMonthStats.hasData && (
             <div className="p-3.5 rounded-2xl bg-indigo-950/40 border border-indigo-800/40 space-y-2.5 text-xs">
               <div className="flex items-center justify-between">
@@ -560,23 +845,33 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
                   <span>So với tháng trước ({prevMonthLabel}):</span>
                 </span>
                 <span
-                  className={`text-[10px] font-bold font-mono-tabular px-2 py-0.5 rounded-full border ${
-                    prevMonthStats.expenseDelta <= 0
+                  className={`text-[10px] font-bold font-mono-tabular px-2.5 py-0.5 rounded-full border ${
+                    isExpenseDecreased
                       ? 'bg-emerald-950/60 text-emerald-300 border-emerald-700/60'
-                      : 'bg-rose-950/60 text-rose-300 border-rose-700/60'
+                      : isExpenseIncreased
+                      ? 'bg-rose-950/60 text-rose-300 border-rose-700/60'
+                      : 'bg-amber-950/60 text-amber-300 border-amber-700/60'
                   }`}
                 >
-                  {prevMonthStats.expenseDelta <= 0 ? '📉 Tiết kiệm hơn' : '📈 Chi nhiều hơn'}
+                  {isExpenseDecreased
+                    ? '📉 Tiết kiệm hơn'
+                    : isExpenseIncreased
+                    ? '📈 Chi nhiều hơn'
+                    : '⚖️ Chi tiêu ổn định'}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 text-[11px] pt-0.5">
-                {/* Tổng chi biến động */}
+                {/* Tổng chi biến động: Giảm chi > 5% = Xanh, Tăng chi > 5% = Đỏ, Dao động ±5% = Vàng */}
                 <div className="p-2 rounded-xl bg-white/5 border border-white/5">
                   <div className="text-slate-400 text-[10px]">Tổng chi tiêu:</div>
                   <div
                     className={`font-bold font-mono-tabular text-xs mt-0.5 ${
-                      prevMonthStats.expenseDelta <= 0 ? 'text-emerald-300' : 'text-rose-300'
+                      isExpenseDecreased
+                        ? 'text-emerald-300'
+                        : isExpenseIncreased
+                        ? 'text-rose-400'
+                        : 'text-amber-300'
                     }`}
                   >
                     {prevMonthStats.expenseDelta <= 0 ? '' : '+'}
@@ -588,12 +883,16 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
                   </div>
                 </div>
 
-                {/* Thu nhập biến động */}
+                {/* Thu nhập biến động: Tăng thu > 5% = Xanh, Giảm thu < -5% = Đỏ, Dao động ±5% = Vàng */}
                 <div className="p-2 rounded-xl bg-white/5 border border-white/5">
                   <div className="text-slate-400 text-[10px]">Tổng thu nhập:</div>
                   <div
                     className={`font-bold font-mono-tabular text-xs mt-0.5 ${
-                      prevMonthStats.incomeDelta >= 0 ? 'text-emerald-300' : 'text-amber-300'
+                      isIncomeIncreased
+                        ? 'text-emerald-300'
+                        : isIncomeDecreased
+                        ? 'text-rose-400'
+                        : 'text-amber-300'
                     }`}
                   >
                     {prevMonthStats.incomeDelta >= 0 ? '+' : ''}
@@ -638,8 +937,11 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                   <span>Món chi lớn nhất:</span>
                 </span>
-                <span className="font-bold text-amber-300">
-                  {biggestExpense.purchaseItem} ({formatCurrency(biggestExpense.amount)})
+                <span className="font-bold text-amber-300 text-right truncate max-w-[240px]">
+                  {biggestExpense.purchaseItem}{' '}
+                  <span className="font-mono-tabular text-rose-300">
+                    ({formatCurrency(biggestExpense.amount)})
+                  </span>
                 </span>
               </div>
             )}
