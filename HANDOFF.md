@@ -2,7 +2,7 @@
 
 > **Tài liệu bàn giao phiên làm việc.** Khi chuyển sang tài khoản Gemini mới hoặc agent khác (Antigravity / Hermes) tiếp nhận, chỉ cần đọc file này là nắm toàn bộ bối cảnh, kiến trúc giao diện mới và tiếp tục công việc ngay lập tức mà không cần hỏi lại.
 
-**Cập nhật lần cuối:** 27/10/2026 (Tích hợp Firebase Auth chính chủ `heomeo-finance`, Live GitHub Pages)  
+**Cập nhật lần cuối:** 03/11/2026 (Hoàn tất MoM Breakdown trong Báo cáo tháng, Smart Filter Chips trong Sổ giao dịch, Privacy Mode mặc định ON, Pacing Alert tối ưu hóa)  
 **Repo GitHub:** https://github.com/nguyenquochuydl96/Expense-Income-Tracker  
 **Live Website URL:** https://nguyenquochuydl96.github.io/Expense-Income-Tracker/  
 **Firebase Project:** `heomeo-finance` (`heomeo-finance.firebaseapp.com`)  
@@ -90,6 +90,34 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
 ### 2.6 Hàng bảng dữ liệu đáy (Bottom Dual Tables)
 * **Bảng trái ("Tổng hợp chi tiêu theo phân loại"):** Ma trận Danh mục vs Phương thức thanh toán (Tiền mặt/Ví, BE Corp, Credit, Tổng chi).
 * **Bảng phải ("Giao dịch chi tiêu gần nhất"):** Danh sách giao dịch chi tiêu mới nhất kèm CategoryBadge.
+
+### 2.7 Tính năng Riêng tư & Bảo mật hiển thị (Privacy Mode by Default)
+* **Mặc định BẬT khi mở app (`globalPrivacyMode = true`):** Mọi số tiền (KPIs, số dư ví, ngân sách, danh sách giao dịch, thẻ đối soát) được che dấu an toàn thành `••••••` ngay khi mở app trên công ty hoặc nơi đông người.
+* **Phím tắt nhanh `Alt + P`:** Bật / tắt chế độ riêng tư tức thì mọi lúc.
+* **Bảo vệ xóa:** Hộp thoại xác nhận xóa luôn hiển thị số tiền thực tế để người dùng tránh xóa nhầm giao dịch.
+
+### 2.8 So sánh 2 tháng kề nhau (Month-over-Month MoM Breakdown)
+* **Vị trí tích hợp:** Tích hợp trực tiếp vào popup **Báo cáo tháng (`MonthlyReportCardModal.tsx`)** — không làm phát sinh thêm tab.
+* **Các chỉ số so sánh ($T$ vs $T-1$):**
+  - Biến động Tổng chi tiêu: chênh lệch số tiền và phần trăm ($\pm X\%$, gắn tag 📉 Tiết kiệm hơn hoặc 📈 Chi nhiều hơn).
+  - Biến động Tổng thu nhập: so sánh thu nhập thực tế.
+  - Hạng mục tăng nhiều nhất & Hạng mục cắt giảm tiết kiệm tốt nhất (đã loại trừ các khoản định phí cố định như `Thuê nhà`, `Tiết kiệm` để phản ánh đúng biến động chi tiêu sinh hoạt).
+* **Tích hợp đa kênh:**
+  - Hiển thị trực quan trong modal.
+  - Tự động xuất hiện trong nội dung copy tóm tắt nhanh gửi qua Telegram / Zalo (`handleCopySummary`).
+  - Tự động vẽ vào thiệp ảnh PNG chất lượng cao để tải về máy hoặc chia sẻ (`handleDownloadImage`, canvas tự mở rộng chiều cao lên 920px).
+
+### 2.9 Bộ lọc thông minh 1 chạm (Smart Quick Filter Chips) trong Sổ giao dịch
+* **Vị trí tích hợp:** Ngay dưới thanh tìm kiếm của **Sổ cái (`TransactionLedgerTable.tsx`)**.
+* **Các nút lọc 1 chạm (Toggle Chips):**
+  - `⚡ Món lớn (≥ 1M)`: Lọc tức thì các khoản chi $\ge 1.000.000\text{ ₫}$.
+  - `🏖️ Cuối tuần (T7 & CN)`: Lọc các khoản chi phát sinh vào thứ 7 và Chủ nhật.
+* **Cơ chế:** Bấm để bật, bấm lại để tắt; có nút "Bỏ lọc thông minh" và tích hợp mượt mà với nút "Xóa lọc" tổng.
+* **Tối ưu trải nghiệm:** Giữ nguyên 4 tab chính (`Dashboard`, `Sổ giao dịch`, `Check tiền & Đối soát`, `Đồng bộ`), loại bỏ hoàn toàn tình trạng tab bloat.
+
+### 2.10 Cải tiến Cảnh báo Nhịp độ chi tiêu sinh hoạt (Pacing Alert)
+* **Loại trừ định phí cố định:** Không cảnh báo lạm phát nhịp độ đối với `Thuê nhà` và `Tiết kiệm` (các khoản chi cố định 1 lần/tháng), chỉ tập trung giám sát các danh mục chi tiêu thường nhật/daily.
+* **Tương phản màu sắc:** Hoàn thiện màu chữ đậm trên nền nhạt ở cả chế độ sáng (Light) và tối (Dark), khắc phục triệt để hiện tượng chữ vàng nhạt chìm vào nền trắng.
 
 ---
 
