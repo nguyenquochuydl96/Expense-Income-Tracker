@@ -343,14 +343,14 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
         {/* Action Controls */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* View Tab Switcher */}
-          <div className="flex items-center bg-slate-100 p-0.5 rounded-lg text-xs">
+          <div className="flex items-center bg-slate-200/80 dark:bg-slate-800/90 p-1 rounded-lg text-xs border border-slate-300/60 dark:border-slate-700/80">
             <button
               type="button"
               onClick={() => setViewTab('month_detail')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+              className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
                 viewTab === 'month_detail'
-                  ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white shadow-xs font-bold border border-slate-200/80 dark:border-indigo-500'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
               }`}
             >
               Chi tiết tháng
@@ -358,10 +358,10 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
             <button
               type="button"
               onClick={() => setViewTab('multi_month_matrix')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+              className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
                 viewTab === 'multi_month_matrix'
-                  ? 'bg-white text-indigo-700 shadow-xs font-semibold'
-                  : 'text-slate-600 hover:text-indigo-700'
+                  ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white shadow-xs font-bold border border-slate-200/80 dark:border-indigo-500'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
               }`}
             >
               Ma trận Đa tháng ({allChronologicalMonths.length}T)

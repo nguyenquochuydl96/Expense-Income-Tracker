@@ -132,14 +132,14 @@ export const TelegramBotModal: React.FC<TelegramBotModalProps> = ({
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-slate-100 px-6 pt-2 bg-slate-50/50">
+        <div className="flex border-b border-slate-200 dark:border-slate-700 px-6 pt-2 bg-slate-100/60 dark:bg-slate-800/60">
           <button
             type="button"
             onClick={() => setActiveTab('syntax')}
-            className={`pb-2.5 px-4 text-xs font-semibold border-b-2 transition-all ${
+            className={`pb-2.5 px-4 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
               activeTab === 'syntax'
-                ? 'border-indigo-600 text-indigo-600 font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-indigo-600 dark:border-indigo-400 text-indigo-700 dark:text-indigo-300 font-bold'
+                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             💬 Cú pháp nhập nhanh
@@ -147,10 +147,10 @@ export const TelegramBotModal: React.FC<TelegramBotModalProps> = ({
           <button
             type="button"
             onClick={() => setActiveTab('guide')}
-            className={`pb-2.5 px-4 text-xs font-semibold border-b-2 transition-all ${
+            className={`pb-2.5 px-4 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
               activeTab === 'guide'
-                ? 'border-indigo-600 text-indigo-600 font-bold'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-indigo-600 dark:border-indigo-400 text-indigo-700 dark:text-indigo-300 font-bold'
+                : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             🚀 Hướng dẫn cài đặt 3 phút

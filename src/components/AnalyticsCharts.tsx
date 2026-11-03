@@ -224,14 +224,14 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                 Top chi tiêu theo danh mục
               </h2>
             </div>
-            <div className="flex items-center gap-1.5 text-xs">
+            <div className="flex items-center gap-1.5 text-xs bg-slate-200/80 dark:bg-slate-800/90 p-1 rounded-lg border border-slate-300/60 dark:border-slate-700/80">
               <button
                 type="button"
                 onClick={() => setActiveChartTab('categories')}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition-all cursor-pointer ${
                   activeChartTab === 'categories'
-                    ? 'bg-sky-100 text-sky-800 font-semibold'
-                    : 'text-slate-500 hover:text-slate-800'
+                    ? 'bg-white dark:bg-sky-600 text-sky-900 dark:text-white font-bold shadow-2xs border border-slate-200/80 dark:border-sky-500'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
                 }`}
               >
                 Top danh mục
@@ -239,10 +239,10 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveChartTab('monthly')}
-                className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
+                className={`px-2.5 py-1 rounded text-xs font-semibold transition-all cursor-pointer ${
                   activeChartTab === 'monthly'
-                    ? 'bg-sky-100 text-sky-800 font-semibold'
-                    : 'text-slate-500 hover:text-slate-800'
+                    ? 'bg-white dark:bg-sky-600 text-sky-900 dark:text-white font-bold shadow-2xs border border-slate-200/80 dark:border-sky-500'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
                 }`}
               >
                 Dòng tiền tháng

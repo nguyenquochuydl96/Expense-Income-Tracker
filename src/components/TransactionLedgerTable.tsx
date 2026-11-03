@@ -158,7 +158,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
         {/* Filter Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Interactive Segmented Filter Tabs */}
-          <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 rounded-lg">
+          <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-200/80 dark:bg-slate-800/90 rounded-lg border border-slate-300/60 dark:border-slate-700/80">
             {(
               [
                 { id: 'all', label: 'Tất cả' },
@@ -176,10 +176,10 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                   setQuickFilter(tab.id);
                   setVisibleLimit(80);
                 }}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0 ${
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all whitespace-nowrap shrink-0 cursor-pointer ${
                   quickFilter === tab.id
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white shadow-xs border border-slate-200/80 dark:border-indigo-500'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
                 }`}
               >
                 {tab.label}

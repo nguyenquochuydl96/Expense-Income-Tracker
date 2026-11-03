@@ -329,14 +329,14 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Target Mode Switcher (3 Tabs) */}
           <div>
-            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-100 rounded-xl">
+            <div className="grid grid-cols-3 gap-1 p-1 bg-slate-200/80 dark:bg-slate-800/90 rounded-xl border border-slate-300/60 dark:border-slate-700/80">
               <button
                 type="button"
                 onClick={() => handleModeChange('Expenses')}
-                className={`py-2 px-2.5 text-xs font-semibold rounded-lg transition-all truncate ${
+                className={`py-2 px-2.5 text-xs font-semibold rounded-lg transition-all truncate cursor-pointer ${
                   modalMode === 'Expenses'
-                    ? 'bg-white text-rose-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-rose-950/80 text-rose-700 dark:text-rose-200 shadow-xs font-bold border border-slate-200/80 dark:border-rose-700/80'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
                 }`}
               >
                 💸 Chi tiêu
@@ -344,10 +344,10 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               <button
                 type="button"
                 onClick={() => handleModeChange('Income')}
-                className={`py-2 px-2.5 text-xs font-semibold rounded-lg transition-all truncate ${
+                className={`py-2 px-2.5 text-xs font-semibold rounded-lg transition-all truncate cursor-pointer ${
                   modalMode === 'Income'
-                    ? 'bg-white text-emerald-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-200 shadow-xs font-bold border border-slate-200/80 dark:border-emerald-700/80'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
                 }`}
               >
                 💰 Thu nhập
@@ -355,10 +355,10 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               <button
                 type="button"
                 onClick={() => handleModeChange('Transfer')}
-                className={`py-2 px-2.5 text-xs font-semibold rounded-lg transition-all truncate ${
+                className={`py-2 px-2.5 text-xs font-semibold rounded-lg transition-all truncate cursor-pointer ${
                   modalMode === 'Transfer'
-                    ? 'bg-white text-purple-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-purple-950/80 text-purple-700 dark:text-purple-200 shadow-xs font-bold border border-slate-200/80 dark:border-purple-700/80'
+                    : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
                 }`}
               >
                 🔄 Chuyển Budget

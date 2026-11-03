@@ -308,7 +308,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
         {/* Right Controls: Time Range Presets + Shift Arrows + Collapse */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Preset Buttons */}
-          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg text-xs font-semibold">
+          <div className="flex items-center gap-1 p-1 bg-slate-200/80 dark:bg-slate-800/90 rounded-lg text-xs font-semibold border border-slate-300/60 dark:border-slate-700/80">
             <button
               type="button"
               onClick={() => {
@@ -317,8 +317,8 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
               }}
               className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                 rangePreset === '3m'
-                  ? 'bg-white text-indigo-950 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white shadow-2xs font-bold border border-slate-200/80 dark:border-indigo-500'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
               }`}
               title="Xem 3 tháng gần nhất (Mặc định)"
             >
@@ -332,8 +332,8 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
               }}
               className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                 rangePreset === '6m'
-                  ? 'bg-white text-indigo-950 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white shadow-2xs font-bold border border-slate-200/80 dark:border-indigo-500'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
               }`}
               title="Xem 6 tháng"
             >
@@ -347,8 +347,8 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
               }}
               className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                 rangePreset === '12m'
-                  ? 'bg-white text-indigo-950 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white shadow-2xs font-bold border border-slate-200/80 dark:border-indigo-500'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
               }`}
               title="Xem 12 tháng"
             >
@@ -359,8 +359,8 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
               onClick={() => setRangePreset('all')}
               className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                 rangePreset === 'all'
-                  ? 'bg-white text-indigo-950 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white shadow-2xs font-bold border border-slate-200/80 dark:border-indigo-500'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
               }`}
               title={`Xem toàn bộ ${allMonthlyData.length} tháng`}
             >
@@ -371,8 +371,8 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
               onClick={() => setRangePreset('custom')}
               className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                 rangePreset === 'custom'
-                  ? 'bg-white text-indigo-950 shadow-2xs font-bold'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white shadow-2xs font-bold border border-slate-200/80 dark:border-indigo-500'
+                  : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
               }`}
               title="Tùy chọn khoảng tháng xem"
             >

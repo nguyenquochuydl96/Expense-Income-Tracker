@@ -1563,11 +1563,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => setActiveTab(activeTab === 'dashboard' ? 'ledger' : 'dashboard')}
-              className="px-4 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5"
-              style={{
-                backgroundColor: '#E0E7FF',
-                color: '#3730A3',
-              }}
+              className="px-4 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/80 dark:hover:bg-indigo-800 text-indigo-900 dark:text-indigo-100 border border-indigo-200/80 dark:border-indigo-700/80 cursor-pointer shadow-xs"
             >
               <Layers className="w-3.5 h-3.5" />
               <span>{activeTab === 'dashboard' ? 'Xem sổ chi tiết' : 'Về Dashboard'}</span>
@@ -1579,10 +1575,7 @@ export default function App() {
                 setAddModalPreset(null);
                 setIsAddModalOpen(true);
               }}
-              className="px-4 py-2 text-xs font-semibold text-white rounded-lg transition-colors flex items-center gap-1.5 shadow-sm"
-              style={{
-                backgroundColor: '#2E1065',
-              }}
+              className="px-4 py-2 text-xs font-semibold text-white rounded-lg transition-colors flex items-center gap-1.5 shadow-sm bg-purple-950 hover:bg-purple-900 dark:bg-purple-800 dark:hover:bg-purple-700 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>+ Thêm giao dịch</span>
@@ -1593,14 +1586,14 @@ export default function App() {
 
       {/* Navigation Sub-bar */}
       <div className="max-w-[1400px] w-full mx-auto px-4 sm:px-6 pt-3 flex flex-wrap items-center justify-between gap-2">
-        <nav className="flex items-center gap-1.5 sm:gap-2 text-xs font-semibold overflow-x-auto max-w-full py-1">
+        <nav className="flex items-center gap-1 sm:gap-1.5 text-xs font-semibold overflow-x-auto max-w-full p-1 bg-slate-200/80 dark:bg-slate-800/90 rounded-xl border border-slate-300/60 dark:border-slate-700/80 shadow-2xs">
           <button
             type="button"
             onClick={() => setActiveTab('dashboard')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'dashboard'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white font-bold shadow-xs border border-slate-200/80 dark:border-indigo-500'
+                : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/60'
             }`}
           >
             Dashboard
@@ -1608,10 +1601,10 @@ export default function App() {
           <button
             type="button"
             onClick={() => setActiveTab('ledger')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'ledger'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white font-bold shadow-xs border border-slate-200/80 dark:border-indigo-500'
+                : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/60'
             }`}
           >
             Sổ giao dịch ({periodRecords.length})
@@ -1619,10 +1612,10 @@ export default function App() {
           <button
             type="button"
             onClick={() => setActiveTab('reconcile')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'reconcile'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white font-bold shadow-xs border border-slate-200/80 dark:border-indigo-500'
+                : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/60'
             }`}
           >
             Check tiền &amp; Đối soát
@@ -1630,10 +1623,10 @@ export default function App() {
           <button
             type="button"
             onClick={() => setActiveTab('sync')}
-            className={`px-3 py-1.5 rounded-lg transition-all ${
+            className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'sync'
-                ? 'bg-white text-slate-900 shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
+                ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white font-bold shadow-xs border border-slate-200/80 dark:border-indigo-500'
+                : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/60'
             }`}
           >
             Đồng bộ dữ liệu ({sheetRecords && sheetRecords.length > 0 ? (accessToken ? 'Đã kết nối' : 'Đã lưu máy') : 'Chưa kết nối'})
@@ -1641,12 +1634,12 @@ export default function App() {
           <button
             type="button"
             onClick={() => setIsTelegramModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100 border border-indigo-200/70 transition-all shadow-2xs font-semibold"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-indigo-700 dark:text-indigo-300 bg-indigo-50/90 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200/70 dark:border-indigo-700/60 transition-all shadow-2xs font-semibold cursor-pointer"
             title="Mở hướng dẫn & cú pháp Telegram Bot Quick-Add"
           >
-            <Bot className="w-3.5 h-3.5 text-indigo-600" />
+            <Bot className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             <span>Bot Telegram</span>
-            <span className="hidden sm:inline-block px-1.5 py-0.2 rounded text-[10px] bg-indigo-200 text-indigo-800 font-bold">Mới</span>
+            <span className="hidden sm:inline-block px-1.5 py-0.2 rounded text-[10px] bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 font-bold">Mới</span>
           </button>
         </nav>
 

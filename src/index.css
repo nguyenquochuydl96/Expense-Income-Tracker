@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
   :root {
@@ -53,7 +54,7 @@
   background: #94A3B8;
 }
 
-/* ═══════ DARK MODE THEME ENHANCEMENTS ═══════ */
+/* ═══════ COMPREHENSIVE DARK & LIGHT MODE COLOR HARMONY ═══════ */
 html.dark {
   color-scheme: dark;
 }
@@ -73,32 +74,43 @@ html.dark .bg-white {
   color: #F8FAFC;
 }
 
+/* Table row alternating backgrounds and subtle surfaces */
 html.dark .bg-slate-50,
 html.dark .bg-slate-50\/50,
 html.dark .bg-slate-50\/80,
 html.dark .bg-slate-50\/40,
-html.dark .bg-slate-50\/30 {
+html.dark .bg-slate-50\/30,
+html.dark .bg-slate-50\/60 {
   background-color: #17223B !important;
 }
 
 html.dark .bg-slate-100,
-html.dark .bg-slate-100\/80 {
+html.dark .bg-slate-100\/90,
+html.dark .bg-slate-100\/80,
+html.dark .bg-slate-100\/70 {
   background-color: #1E293B !important;
   color: #E2E8F0;
 }
 
+/* Borders in dark mode */
 html.dark .border-slate-200,
 html.dark .border-slate-200\/80,
 html.dark .border-slate-200\/90,
+html.dark .border-slate-200\/70,
 html.dark .border-slate-100 {
+  border-color: #27354F !important;
+}
+
+html.dark .border-slate-300 {
   border-color: #334155 !important;
 }
 
 html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
 html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
-  border-color: #27354F !important;
+  border-color: #1E293B !important;
 }
 
+/* Text hierarchy in dark mode */
 html.dark .text-slate-900,
 html.dark .text-slate-800 {
   color: #F8FAFC !important;
@@ -113,10 +125,150 @@ html.dark .text-slate-500 {
   color: #94A3B8 !important;
 }
 
+/* Near-black colored texts mapped to bright readable tints in dark mode */
+html.dark .text-indigo-950,
+html.dark .text-indigo-900 {
+  color: #C7D2FE !important;
+}
+
+html.dark .text-amber-950,
+html.dark .text-amber-900 {
+  color: #FDE68A !important;
+}
+
+html.dark .text-emerald-950,
+html.dark .text-emerald-900 {
+  color: #A7F3D0 !important;
+}
+
+html.dark .text-teal-950,
+html.dark .text-teal-900 {
+  color: #99F6E4 !important;
+}
+
+html.dark .text-sky-950,
+html.dark .text-sky-900 {
+  color: #BAE6FD !important;
+}
+
+html.dark .text-rose-950,
+html.dark .text-rose-900 {
+  color: #FECDD3 !important;
+}
+
+/* Pastel alert & banner backgrounds mapped to sleek translucent dark tones */
+html.dark .bg-amber-50,
+html.dark .bg-amber-50\/40,
+html.dark .bg-amber-50\/80 {
+  background-color: rgba(69, 26, 3, 0.4) !important;
+}
+html.dark .border-amber-200,
+html.dark .border-amber-200\/90,
+html.dark .border-amber-300 {
+  border-color: rgba(217, 119, 6, 0.45) !important;
+}
+
+html.dark .bg-emerald-50,
+html.dark .bg-emerald-50\/50 {
+  background-color: rgba(6, 78, 59, 0.4) !important;
+}
+html.dark .border-emerald-200,
+html.dark .border-emerald-300 {
+  border-color: rgba(5, 150, 105, 0.45) !important;
+}
+
+html.dark .bg-sky-50,
+html.dark .bg-sky-50\/50,
+html.dark .bg-sky-50\/60 {
+  background-color: rgba(12, 74, 110, 0.4) !important;
+}
+html.dark .border-sky-200,
+html.dark .border-sky-300 {
+  border-color: rgba(2, 132, 199, 0.45) !important;
+}
+
+html.dark .bg-indigo-50,
+html.dark .bg-indigo-50\/50,
+html.dark .bg-indigo-50\/60,
+html.dark .bg-indigo-50\/70,
+html.dark .bg-indigo-50\/80 {
+  background-color: rgba(30, 27, 75, 0.45) !important;
+}
+html.dark .border-indigo-100,
+html.dark .border-indigo-200 {
+  border-color: rgba(99, 102, 241, 0.4) !important;
+}
+
+html.dark .bg-rose-50,
+html.dark .bg-rose-50\/50,
+html.dark .bg-rose-50\/80 {
+  background-color: rgba(76, 5, 25, 0.4) !important;
+}
+html.dark .border-rose-200,
+html.dark .border-rose-300 {
+  border-color: rgba(225, 29, 72, 0.45) !important;
+}
+
+html.dark .bg-teal-50,
+html.dark .bg-teal-50\/50 {
+  background-color: rgba(19, 78, 74, 0.4) !important;
+}
+html.dark .border-teal-200 {
+  border-color: rgba(13, 148, 136, 0.45) !important;
+}
+
+/* Category Badge pills in Dark Mode */
+html.dark .bg-rose-100 {
+  background-color: rgba(225, 29, 72, 0.22) !important;
+  color: #FDA4AF !important;
+}
+html.dark .bg-\[\#F5EBE1\] {
+  background-color: rgba(217, 119, 6, 0.22) !important;
+  color: #FDE68A !important;
+}
+html.dark .bg-orange-100 {
+  background-color: rgba(234, 88, 12, 0.22) !important;
+  color: #FDBA74 !important;
+}
+html.dark .bg-amber-100 {
+  background-color: rgba(217, 119, 6, 0.22) !important;
+  color: #FCD34D !important;
+}
+html.dark .bg-teal-100 {
+  background-color: rgba(13, 148, 136, 0.22) !important;
+  color: #5EEAD4 !important;
+}
+html.dark .bg-emerald-100 {
+  background-color: rgba(5, 150, 105, 0.22) !important;
+  color: #6EE7B7 !important;
+}
+html.dark .bg-indigo-100 {
+  background-color: rgba(79, 70, 229, 0.22) !important;
+  color: #A5B4FC !important;
+}
+html.dark .bg-sky-100 {
+  background-color: rgba(2, 132, 199, 0.22) !important;
+  color: #7DD3FC !important;
+}
+html.dark .bg-purple-100 {
+  background-color: rgba(147, 51, 234, 0.22) !important;
+  color: #D8B4FE !important;
+}
+
+/* Form inputs & dropdowns in dark mode */
 html.dark input,
 html.dark select,
 html.dark textarea {
   color-scheme: dark;
+  background-color: #1A2642 !important;
+  color: #F8FAFC !important;
+  border-color: #334155 !important;
+}
+
+/* Floating Month & Category select pills in App.tsx */
+html.dark .relative.bg-white {
+  background-color: #17223B !important;
+  border-color: #334155 !important;
 }
 
 /* Official Google Sign-In Material Button Styling */

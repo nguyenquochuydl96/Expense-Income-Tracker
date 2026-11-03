@@ -406,37 +406,40 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
             </div>
           </div>
 
-          {/* Smart Budget Pacing Alert Box (Answers Requirement 5) */}
+          {/* Smart Budget Pacing Alert Box */}
           {pacingStats && (
             <div
-              className={`p-3 sm:p-3.5 rounded-xl border flex items-start gap-2.5 text-xs transition-colors ${
+              className={`p-3.5 sm:p-4 rounded-xl border flex items-start gap-3 text-xs transition-colors shadow-2xs ${
                 pacingStats.fastBurners.length > 0
-                  ? 'bg-amber-500/10 border-amber-300/80 text-amber-950 dark:text-amber-200'
-                  : 'bg-emerald-500/10 border-emerald-300/60 text-emerald-950 dark:text-emerald-200'
+                  ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/60 text-amber-950 dark:text-amber-200'
+                  : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700/60 text-emerald-950 dark:text-emerald-200'
               }`}
             >
               {pacingStats.fastBurners.length > 0 ? (
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <AlertTriangle className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
               ) : (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-700 dark:text-emerald-400 shrink-0 mt-0.5" />
               )}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="font-bold">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-amber-950 dark:text-amber-100 text-xs sm:text-sm">
                     {pacingStats.fastBurners.length > 0
                       ? '⚡ Cảnh báo nhịp độ chi tiêu thông minh:'
                       : '🛡️ Nhịp độ chi tiêu an toàn:'}
                   </span>
-                  <span className="text-[11px] opacity-80 font-mono-tabular">
-                    (Tháng đã qua {pacingStats.monthElapsedPct.toFixed(0)}% thời gian)
+                  <span className="text-[11px] font-bold font-mono-tabular px-2 py-0.5 rounded-full bg-amber-200/70 text-amber-950 dark:bg-amber-900/60 dark:text-amber-200 border border-amber-300/50 dark:border-amber-700/60">
+                    Tháng đã qua {pacingStats.monthElapsedPct.toFixed(0)}% thời gian
                   </span>
                 </div>
-                <p className="text-[11px] mt-1 leading-relaxed">
+                <p className="text-xs mt-1.5 leading-relaxed text-amber-900 dark:text-amber-100/90 font-medium">
                   {pacingStats.fastBurners.length > 0 ? (
                     <>
                       Có <strong>{pacingStats.fastBurners.length}</strong> danh mục đang chi tiêu vượt tốc độ của tháng:{' '}
                       {pacingStats.fastBurners.map((b, idx) => (
-                        <span key={b.category} className="inline-block mr-2 font-semibold text-amber-900 dark:text-amber-100">
+                        <span
+                          key={b.category}
+                          className="inline-block mr-2 font-bold text-amber-950 dark:text-amber-200 underline decoration-amber-400 dark:decoration-amber-500 decoration-1 underline-offset-2"
+                        >
                           {b.category} ({b.spentPct.toFixed(0)}% ngân sách, nhanh {b.ratio.toFixed(1)}x)
                           {idx < pacingStats.fastBurners.length - 1 ? ',' : '.'}
                         </span>
