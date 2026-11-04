@@ -19,7 +19,9 @@
 - **Frontend:** React 19.0.1 + Vite 8.3.0
 - **Ngôn ngữ:** TypeScript 7.0.2
 - **Styling:** Tailwind CSS 4.3.3 (plugin `@tailwindcss/vite`)
-- **Icons & Animation:** Lucide-react (0.546.0), Motion (12.23.24)
+- **Icons & Animation:** Lucide-react (0.546.0), Motion (12.43.0), `@animate-ui/react` (2.4.2)
+- **UI Utilities:** `clsx` (2.1.1) + `tailwind-merge` (3.7.0) gói trong hàm tiện ích `cn()` tại `src/utils/cn.ts`
+- **Tiêu chuẩn phát triển:** Tuân thủ `UI_UX_AND_DEV_GUIDE.md` (Impeccable UI/UX & Superpowers TDD/Spec-first)
 - **Backend / Sync:** Firebase Auth (13.1.0) + Google Sheets API v4
 
 ---

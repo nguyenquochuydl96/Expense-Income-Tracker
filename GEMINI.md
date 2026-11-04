@@ -3,7 +3,13 @@
 Dự án này là ứng dụng web quản lý thu chi cá nhân tích hợp Google Sheets API và Firebase Auth.
 
 ## Bắt buộc đọc khi bắt đầu phiên làm việc
-Đọc file `HANDOFF.md` ở thư mục gốc để nắm toàn bộ tiến độ, kiến trúc và các việc đang mở.
+1. Đọc file `HANDOFF.md` ở thư mục gốc để nắm toàn bộ tiến độ, kiến trúc và các việc đang mở.
+2. Tuân thủ nghiêm ngặt cẩm nang `UI_UX_AND_DEV_GUIDE.md` về tiêu chuẩn thiết kế UI/UX (Impeccable & Tailwind v4) và kỷ luật phát triển Superpowers (Quy trình 6 bước, không code mò, TDD bắt buộc cho logic tính toán).
+
+## Quy tắc thiết kế UI/UX & Kỷ luật Code
+- **Bảng màu:** Trung tính sạch (Slate/Gray), Xanh ngọc (Emerald) cho thu nhập/tài sản dương, Đỏ (Rose) cho chi tiêu/cảnh báo.
+- **Tiện ích class:** Sử dụng hàm `cn()` tại `src/utils/cn.ts` (`clsx` + `tailwind-merge`) khi ghép class động hoặc conditional classes.
+- **Kỷ luật phát triển:** Lên kế hoạch rõ ràng trước khi sửa code, kiểm tra kỹ lưỡng `tsc --noEmit && npm run build` trước khi commit.
 
 ## Quy tắc làm việc & Git
 1. **Phối hợp song song với Agent Hermes:**
