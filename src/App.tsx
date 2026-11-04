@@ -1560,7 +1560,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#EEF2F6' }}>
+    <div className="min-h-screen flex flex-col bg-[#EEF2F6] dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
       {/* ═══════ TOP HEADER (Xero Coupler Curved Dark Navy Banner) ═══════ */}
       <div className="w-full pt-0">
         <header
@@ -1902,7 +1902,7 @@ export default function App() {
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
                           Ngân sách khả dụng · {categoryKpiStats.category}
                         </div>
-                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
                           {formatCurrency(categoryKpiStats.budget)}
                         </div>
                         <div className="text-[11px] text-white/80 font-medium truncate flex items-center gap-1.5 flex-wrap">
@@ -1925,7 +1925,7 @@ export default function App() {
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
                           Đã chi · {categoryKpiStats.category}
                         </div>
-                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
                           {formatCurrency(categoryKpiStats.spent)}
                         </div>
                         <div className="text-xs text-white/70 font-medium">
@@ -1941,7 +1941,7 @@ export default function App() {
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
                           {categoryKpiStats.remaining >= 0 ? 'Còn lại (Dư)' : 'Bội chi (Âm)'}
                         </div>
-                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
                           {formatCurrency(categoryKpiStats.remaining)}
                         </div>
                         <div className="text-xs text-white/80 font-medium truncate">
@@ -1957,7 +1957,7 @@ export default function App() {
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
                           BE Corp ({categoryKpiStats.category})
                         </div>
-                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
                           {formatCurrency(categoryKpiStats.beCorp)}
                         </div>
                         <div className="text-xs text-white/80 font-medium">
@@ -1973,7 +1973,7 @@ export default function App() {
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
                           Credit ({categoryKpiStats.category})
                         </div>
-                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
                           {formatCurrency(categoryKpiStats.credit)}
                         </div>
                         <div className="text-xs text-white/80 font-medium">
@@ -1999,7 +1999,7 @@ export default function App() {
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
                           Tổng thu nhập
                         </div>
-                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
                           {formatCurrency(kpiStats.effectiveIncome)}
                         </div>
                         <div className="text-xs text-white/70 font-medium">
@@ -2022,7 +2022,7 @@ export default function App() {
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
                           Tổng chi tiêu
                         </div>
-                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
                           {formatCurrency(kpiStats.totalExpense)}
                         </div>
                         <div className="text-xs text-white/70 font-medium">
@@ -2043,7 +2043,7 @@ export default function App() {
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
                           Số dư khả dụng (Net)
                         </div>
-                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
                           {formatCurrency(kpiStats.netBalance)}
                         </div>
                         <div className="text-xs text-white/70 font-medium">
@@ -2060,7 +2060,7 @@ export default function App() {
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
                           Ví BE Corp
                         </div>
-                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
                           {formatCurrency(kpiStats.beCorpCycleTotal)}
                         </div>
                         <div className="text-xs text-white/80 font-medium flex items-center gap-1 font-mono-tabular">
@@ -2078,7 +2078,7 @@ export default function App() {
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
                           Thẻ tín dụng (Credit)
                         </div>
-                        <div className="text-2xl sm:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
                           {formatCurrency(kpiStats.creditCycleTotal)}
                         </div>
                         <div className="text-xs text-white/80 font-medium flex items-center gap-1 font-mono-tabular">

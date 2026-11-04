@@ -129,48 +129,48 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
   const displayedRows = filteredRecords.slice(0, visibleLimit);
 
   return (
-    <section className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+    <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs">
       {/* Toolbar */}
-      <div className="p-5 border-b border-slate-200 space-y-4">
+      <div className="p-5 border-b border-slate-200 dark:border-slate-800 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h2 className="text-base font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
               Sổ Cái Lịch Sử Giao Dịch
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Hiển thị {filteredRecords.length} giao dịch{periodLabel ? ` (${periodLabel})` : ''}
               {quickFilter === 'income' ? (
                 <>
                   {' '}· Tổng thu nhập:{' '}
-                  <strong className="font-mono-tabular text-emerald-700">
+                  <strong className="font-mono-tabular text-emerald-700 dark:text-emerald-400">
                     {formatCurrency(totals.incomeSum, true)}
                   </strong>
                 </>
               ) : quickFilter === 'expenses' ? (
                 <>
                   {' '}· Tổng chi tiêu:{' '}
-                  <strong className="font-mono-tabular text-slate-900">
+                  <strong className="font-mono-tabular text-slate-900 dark:text-slate-200">
                     {formatCurrency(totals.expenseSum)}
                   </strong>
                   {' '}· Tổng BE Corp:{' '}
-                  <strong className="font-mono-tabular text-amber-700">
+                  <strong className="font-mono-tabular text-amber-700 dark:text-amber-400">
                     {formatCurrency(totals.beCorp)}
                   </strong>
                   {' '}· Tổng Credit:{' '}
-                  <strong className="font-mono-tabular text-indigo-700">
+                  <strong className="font-mono-tabular text-indigo-700 dark:text-indigo-400">
                     {formatCurrency(totals.credit)}
                   </strong>
                 </>
               ) : (
                 <>
                   {' '}· Tổng chi:{' '}
-                  <strong className="font-mono-tabular text-slate-900">
+                  <strong className="font-mono-tabular text-slate-900 dark:text-slate-200">
                     {formatCurrency(totals.expenseSum)}
                   </strong>
                   {totals.incomeSum > 0 && (
                     <>
                       {' '}· Thu:{' '}
-                      <strong className="font-mono-tabular text-emerald-700">
+                      <strong className="font-mono-tabular text-emerald-700 dark:text-emerald-400">
                         {formatCurrency(totals.incomeSum, true)}
                       </strong>
                     </>
@@ -178,7 +178,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                   {totals.beCorp > 0 && (
                     <>
                       {' '}· BE Corp:{' '}
-                      <strong className="font-mono-tabular text-amber-700">
+                      <strong className="font-mono-tabular text-amber-700 dark:text-amber-400">
                         {formatCurrency(totals.beCorp)}
                       </strong>
                     </>
@@ -186,7 +186,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                   {totals.credit > 0 && (
                     <>
                       {' '}· Credit:{' '}
-                      <strong className="font-mono-tabular text-indigo-700">
+                      <strong className="font-mono-tabular text-indigo-700 dark:text-indigo-400">
                         {formatCurrency(totals.credit)}
                       </strong>
                     </>
@@ -276,7 +276,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                   setSearchQuery(e.target.value);
                   setVisibleLimit(80);
                 }}
-                className="w-full pl-8 pr-7 py-1.5 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-teal-600"
+                className="w-full pl-8 pr-7 py-1.5 text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-teal-600 dark:focus:border-teal-500"
               />
               {searchQuery && (
                 <button
@@ -285,7 +285,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                     setSearchQuery('');
                     setVisibleLimit(80);
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                   title="Xóa tìm kiếm"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -299,7 +299,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                 onSelectCategory(e.target.value);
                 setVisibleLimit(80);
               }}
-              className="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-teal-600"
+              className="px-2.5 py-1.5 text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-600 dark:focus:border-teal-500"
             >
               <option value="ALL">Tất cả danh mục</option>
               {allCategories.map((cat) => (
@@ -320,9 +320,9 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                     : 'newest'
                 )
               }
-              className="px-2.5 py-1.5 text-xs font-medium text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50 flex items-center gap-1 whitespace-nowrap shrink-0"
+              className="px-2.5 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors"
             >
-              <ArrowUpDown className="w-3.5 h-3.5 text-slate-500" />
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
               <span>
                 {sortOrder === 'newest'
                   ? 'Mới nhất'
@@ -343,7 +343,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                   setFilterWeekendOnly(false);
                   setVisibleLimit(80);
                 }}
-                className="px-2.5 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50 border border-rose-200 rounded-lg flex items-center gap-1 whitespace-nowrap shrink-0"
+                className="px-2.5 py-1.5 text-xs font-medium text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-lg flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors"
               >
                 <FilterX className="w-3.5 h-3.5" />
                 <span>Xóa lọc</span>
@@ -421,21 +421,21 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-600">
+            <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
               <th className="py-2.5 px-4 w-28">Purchase Date</th>
               <th className="py-2.5 px-4 w-40">Category</th>
               <th className="py-2.5 px-4">Purchase Item</th>
               <th className="py-2.5 px-4 text-right w-36">Amount</th>
-              <th className="py-2.5 px-4 text-right w-32 text-amber-800">BE Corp</th>
-              <th className="py-2.5 px-4 text-right w-32 text-indigo-800">Credit</th>
+              <th className="py-2.5 px-4 text-right w-32 text-amber-800 dark:text-amber-400">BE Corp</th>
+              <th className="py-2.5 px-4 text-right w-32 text-indigo-800 dark:text-indigo-400">Credit</th>
               <th className="py-2.5 px-4 w-36">Phân loại / Ghi chú</th>
               <th className="py-2.5 px-3 text-center w-20">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 text-xs">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
             {displayedRows.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-12 text-center text-slate-500">
+                <td colSpan={8} className="py-12 text-center text-slate-500 dark:text-slate-400">
                   Không tìm thấy dòng giao dịch nào khớp với bộ lọc hiện tại.
                 </td>
               </tr>
@@ -445,9 +445,9 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                 return (
                   <tr
                     key={rec.id}
-                    className="hover:bg-slate-50/90 transition-colors"
+                    className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors"
                   >
-                    <td className="py-2.5 px-4 font-mono-tabular text-slate-600 whitespace-nowrap">
+                    <td className="py-2.5 px-4 font-mono-tabular text-slate-600 dark:text-slate-400 whitespace-nowrap">
                       {rec.purchaseDate}
                     </td>
                     <td className="py-2.5 px-4 whitespace-nowrap">
@@ -461,27 +461,27 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                         compact
                       />
                     </td>
-                    <td className="py-2.5 px-4 text-slate-900 font-medium">
+                    <td className="py-2.5 px-4 text-slate-900 dark:text-slate-100 font-medium">
                       {rec.purchaseItem}
                     </td>
                     <td
                       className={`py-2.5 px-4 text-right font-mono-tabular font-semibold whitespace-nowrap ${
                         rec.sheetType === 'Income'
-                          ? 'text-emerald-700'
+                          ? 'text-emerald-700 dark:text-emerald-400'
                           : rec.amount < 0
-                          ? 'text-teal-700'
-                          : 'text-slate-900'
+                          ? 'text-teal-700 dark:text-teal-400'
+                          : 'text-slate-900 dark:text-slate-100'
                       }`}
                     >
                       {formatNumberForSheet(rec.amount, true, false, rec.sheetType === 'Income')}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-mono-tabular text-amber-700 whitespace-nowrap">
+                    <td className="py-2.5 px-4 text-right font-mono-tabular text-amber-700 dark:text-amber-400 whitespace-nowrap">
                       {rec.beCorp !== 0 ? formatNumberForSheet(rec.beCorp, true) : ''}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-mono-tabular text-indigo-700 whitespace-nowrap">
+                    <td className="py-2.5 px-4 text-right font-mono-tabular text-indigo-700 dark:text-indigo-400 whitespace-nowrap">
                       {rec.credit !== 0 ? formatNumberForSheet(rec.credit, true) : ''}
                     </td>
-                    <td className="py-2.5 px-4 text-slate-500 whitespace-nowrap">
+                    <td className="py-2.5 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
                       <span>{rec.sheetType}</span>
                       {rec.rowIndex && (
                         <>
@@ -492,21 +492,21 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                       {rec.note && (
                         <>
                           <span className="mx-1">·</span>
-                          <span className="text-slate-700">{rec.note}</span>
+                          <span className="text-slate-700 dark:text-slate-300">{rec.note}</span>
                         </>
                       )}
                       {rec.source === 'local_new' && (
                         <>
                           <span className="mx-1">·</span>
                           {rec.syncing ? (
-                            <span className="text-teal-700 font-medium inline-flex items-center gap-1">
+                            <span className="text-teal-700 dark:text-teal-400 font-medium inline-flex items-center gap-1">
                               <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-ping"></span>
                               Đang đồng bộ...
                             </span>
                           ) : rec.syncedToSheet ? (
-                            <span className="text-emerald-700 font-medium">✓ Đã đồng bộ</span>
+                            <span className="text-emerald-700 dark:text-emerald-400 font-medium">✓ Đã đồng bộ</span>
                           ) : (
-                            <span className="text-amber-700 font-medium">Chờ đồng bộ</span>
+                            <span className="text-amber-700 dark:text-amber-400 font-medium">Chờ đồng bộ</span>
                           )}
                         </>
                       )}
@@ -518,7 +518,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                             type="button"
                             title="Chỉnh sửa giao dịch này"
                             onClick={() => onEditTransaction(rec)}
-                            className="p-1.5 text-slate-500 hover:text-sky-700 hover:bg-sky-50 rounded-lg transition-colors"
+                            className="p-1.5 text-slate-500 hover:text-sky-700 hover:bg-sky-50 dark:text-slate-400 dark:hover:text-sky-400 dark:hover:bg-sky-950/40 rounded-lg transition-colors cursor-pointer"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
@@ -528,7 +528,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                             type="button"
                             title="Xóa giao dịch này"
                             onClick={() => onDeleteTransaction(rec)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -545,14 +545,14 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
 
       {/* Pagination & Totals Footer */}
       {filteredRecords.length > visibleLimit && (
-        <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-xs text-slate-600">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
           <span>
             Đang hiển thị {displayedRows.length} / {filteredRecords.length} dòng
           </span>
           <button
             type="button"
             onClick={() => setVisibleLimit((prev) => prev + 150)}
-            className="px-4 py-1.5 font-semibold text-teal-800 bg-white border border-slate-300 rounded-lg hover:bg-slate-50"
+            className="px-4 py-1.5 font-semibold text-teal-800 dark:text-teal-300 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
           >
             Xem thêm 150 dòng tiếp theo
           </button>

@@ -153,6 +153,30 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
   - **Bảng Ngân sách Hạng mục (`CategoryBudgetTable`):** Tự động tính gộp Định mức, Đã chi, Còn lại cho giai đoạn nhiều tháng và highlight các cột tương ứng trong Ma trận 7T.
   - **Bảng Tổng hợp Đa tháng (`MultiMonthSummaryTable`) & Biểu đồ (`AnalyticsCharts`):** Cho phép nhấp trực tiếp vào tên cột/cột biểu đồ để bật/tắt (toggle) tháng đó vào bộ lọc chung.
 
+### 2.12 Đồng bộ Toàn diện Dark Mode trên các Bảng số liệu & Lịch trực quan
+* **Xử lý triệt để Light Leaks:**
+  - `src/App.tsx`: Thay thế style nền cứng `style={{ backgroundColor: '#EEF2F6' }}` bằng class Tailwind linh hoạt `bg-[#EEF2F6] dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors`.
+  - [`TransactionLedgerTable.tsx`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/components/TransactionLedgerTable.tsx): Bổ sung đầy đủ dark styling cho container, thanh công cụ tìm kiếm, filter chips, dropdown danh mục, thead, từng ô tbody và phân trang.
+  - [`MultiMonthSummaryTable.tsx`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/components/MultiMonthSummaryTable.tsx): Hoàn thiện dark mode cho toàn bộ ma trận, đặc biệt là các cột dính cố định (`sticky left-0`) với nền `dark:bg-slate-900` đồng nhất, không còn viền trắng chói mắt khi cuộn ngang.
+  - [`CategoryBudgetTable.tsx`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/components/CategoryBudgetTable.tsx): Đồng bộ nền dark mode cho cả chế độ xem chi tiết tháng và ma trận lũy kế đa tháng, bao gồm cả bảng giao dịch drill-down và ô nhập % budget khi chỉnh sửa.
+  - [`CalendarHeatmapView.tsx`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/components/CalendarHeatmapView.tsx): Cung cấp hệ thống màu nhiệt độ chi tiêu (heat styles) chuyên biệt cho Dark Mode (`dark:bg-emerald-950/40`, `dark:bg-sky-950/40`, `dark:bg-amber-950/40`, `dark:bg-rose-950/50`) cùng popover chi tiết ngày thân thiện với mắt trong đêm.
+
+### 2.13 Khả năng truy cập phím tắt (Universal Escape Listener) & Tối ưu Typography Mobile
+* **Phím tắt `Escape` đóng nhanh:**
+  - Tích hợp `useEffect` lắng nghe sự kiện phím `Escape` ở cấp cao nhất (tuân thủ 100% Rules of Hooks) trên toàn bộ 5 popup modal:
+    1. [`AddTransactionModal.tsx`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/components/AddTransactionModal.tsx)
+    2. [`EditTransactionModal.tsx`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/components/EditTransactionModal.tsx)
+    3. [`MonthlyReportCardModal.tsx`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/components/MonthlyReportCardModal.tsx)
+    4. [`TelegramBotModal.tsx`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/components/TelegramBotModal.tsx)
+    5. [`PwaInstallModal.tsx`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/components/PwaInstallModal.tsx)
+* **Chống cắt chữ số KPI trên màn hình nhỏ:**
+  - Tinh chỉnh cỡ font số tiền tại cả 5 thẻ KPI tổng (`kpiStats`) và 5 thẻ KPI hạng mục (`categoryKpiStats`) từ `text-2xl sm:text-3xl` thành `text-xl sm:text-2xl lg:text-3xl` font-mono-tabular, đảm bảo hiển thị trọn vẹn số tiền lên tới hàng trăm triệu/tỷ trên mọi dòng smartphone < 400px.
+
+### 2.14 Chuẩn hóa Tiện ích `cn()` & Nâng cấp Hệ sinh thái Animation
+* Khởi tạo [`src/utils/cn.ts`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/utils/cn.ts) kết hợp `clsx` và `tailwind-merge` để xử lý class có điều kiện chuẩn xác.
+* Nâng cấp `motion` lên `^14.9.0` trong `package.json` giải quyết triệt để xung đột peer dependency với `@animate-ui/react@2.4.2`.
+* Tích hợp tài liệu hướng dẫn chuẩn mực UI/UX vào `GEMINI.md` và `UI_UX_AND_DEV_GUIDE.md`.
+
 ---
 
 ## 3. Quản lý Chu kỳ & Logic ngày (Cycle Configuration)

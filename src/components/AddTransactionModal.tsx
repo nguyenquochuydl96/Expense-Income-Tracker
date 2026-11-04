@@ -85,6 +85,15 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
 
   useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
     if (isOpen) {
       setErrorMsg(null);
       if (initialPreset) {
@@ -301,20 +310,20 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-white border border-slate-200 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden my-8 transition-all cursor-default"
+        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden my-8 transition-all cursor-default text-slate-900 dark:text-slate-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50">
           <div>
-            <h2 className="text-base font-bold text-slate-900">
+            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
               {modalMode === 'Transfer'
                 ? 'Chuyển ngân sách giữa 2 danh mục'
                 : modalMode === 'Expenses'
                 ? 'Thêm khoản chi tiêu mới'
                 : 'Thêm khoản thu nhập mới'}
             </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               {modalMode === 'Transfer'
                 ? 'Điều chuyển hạn mức ngân sách mà không làm thay đổi tổng ngân sách gia đình'
                 : modalMode === 'Expenses'

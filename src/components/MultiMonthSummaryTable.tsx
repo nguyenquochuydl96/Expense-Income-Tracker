@@ -287,30 +287,30 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
   }, [visibleMonthlyData]);
 
   return (
-    <section className="bg-white rounded-xl border border-slate-200/90 shadow-xs overflow-hidden">
+    <section className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/90 dark:border-slate-800 shadow-xs overflow-hidden">
       {/* Card Header */}
-      <div className="px-5 py-3.5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50">
+      <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-800/40">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0 shadow-2xs">
+          <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 flex items-center justify-center shrink-0 shadow-2xs">
             <Calendar className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-sm font-bold text-slate-800 tracking-tight">
+              <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 tracking-tight">
                 Bảng tổng hợp ngân sách đa tháng (Multi–Month Summary)
               </h2>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/80">
                 {visibleMonthlyData.length === allMonthlyData.length
                   ? `${allMonthlyData.length} tháng`
                   : `${visibleMonthlyData.length} / ${allMonthlyData.length} tháng`}
               </span>
               {currentRangeLabel && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-sky-50 text-sky-800 border border-sky-200 font-mono-tabular">
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-sky-50 dark:bg-sky-950/50 text-sky-800 dark:text-sky-300 border border-sky-200 dark:border-sky-800/80 font-mono-tabular">
                   {currentRangeLabel}
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-slate-500 mt-0.5">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               Đối chiếu đồng thời Thu nhập, Chi tiêu &amp; Số dư còn lại qua các tháng · Nhấp vào cột tháng để lọc Dashboard
             </p>
           </div>
@@ -394,12 +394,12 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
           {/* Sliding Window Navigator for 3M / 6M / 12M presets */}
           {(rangePreset === '3m' || rangePreset === '6m' || rangePreset === '12m') &&
             allMonthlyData.length > windowSize && (
-              <div className="flex items-center gap-1 bg-white border border-slate-200/90 p-0.5 rounded-lg shadow-2xs">
+              <div className="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200/90 dark:border-slate-700 p-0.5 rounded-lg shadow-2xs">
                 <button
                   type="button"
                   onClick={handlePrevWindow}
                   disabled={!canGoPrev}
-                  className="p-1 rounded text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  className="p-1 rounded text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   title="Xem các tháng cũ hơn"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -408,7 +408,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                   <button
                     type="button"
                     onClick={handleResetToLatest}
-                    className="px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 hover:bg-indigo-50 rounded cursor-pointer"
+                    className="px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 rounded cursor-pointer"
                     title="Trở về các tháng mới nhất"
                   >
                     Mới nhất
@@ -418,7 +418,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                   type="button"
                   onClick={handleNextWindow}
                   disabled={!canGoNext}
-                  className="p-1 rounded text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  className="p-1 rounded text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
                   title="Xem các tháng mới hơn"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -430,7 +430,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
           <button
             type="button"
             onClick={() => setIsExpanded((prev) => !prev)}
-            className="text-xs font-semibold text-slate-600 hover:text-slate-900 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white shadow-2xs cursor-pointer transition-colors"
+            className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xs cursor-pointer transition-colors"
           >
             {isExpanded ? (
               <>
@@ -449,14 +449,14 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
 
       {/* Custom Range Sub-bar */}
       {rangePreset === 'custom' && isExpanded && (
-        <div className="px-5 py-2.5 bg-indigo-50/50 border-b border-indigo-100 flex flex-wrap items-center gap-3 text-xs">
-          <span className="font-bold text-indigo-950">Chọn khoảng tháng:</span>
+        <div className="px-5 py-2.5 bg-indigo-50/50 dark:bg-indigo-950/30 border-b border-indigo-100 dark:border-slate-800 flex flex-wrap items-center gap-3 text-xs">
+          <span className="font-bold text-indigo-950 dark:text-indigo-300">Chọn khoảng tháng:</span>
           <div className="flex items-center gap-1.5">
-            <span className="text-slate-600 font-medium">Từ tháng:</span>
+            <span className="text-slate-600 dark:text-slate-400 font-medium">Từ tháng:</span>
             <select
               value={customStartMonth}
               onChange={(e) => setCustomStartMonth(e.target.value)}
-              className="bg-white border border-slate-300 rounded-md px-2 py-1 font-semibold text-slate-800 shadow-2xs cursor-pointer text-xs"
+              className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1 font-semibold text-slate-800 dark:text-slate-200 shadow-2xs cursor-pointer text-xs"
             >
               {allMonthlyData.map((m) => (
                 <option key={m.mKey} value={m.mKey}>
@@ -467,11 +467,11 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className="text-slate-600 font-medium">Đến tháng:</span>
+            <span className="text-slate-600 dark:text-slate-400 font-medium">Đến tháng:</span>
             <select
               value={customEndMonth}
               onChange={(e) => setCustomEndMonth(e.target.value)}
-              className="bg-white border border-slate-300 rounded-md px-2 py-1 font-semibold text-slate-800 shadow-2xs cursor-pointer text-xs"
+              className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-md px-2 py-1 font-semibold text-slate-800 dark:text-slate-200 shadow-2xs cursor-pointer text-xs"
             >
               {allMonthlyData.map((m) => (
                 <option key={m.mKey} value={m.mKey}>
@@ -499,8 +499,8 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-700">
-                <th className="py-2.5 px-4 sticky left-0 bg-slate-50 z-10 w-44 shadow-xs">
+              <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                <th className="py-2.5 px-4 sticky left-0 bg-slate-50 dark:bg-slate-850 text-slate-700 dark:text-slate-300 z-10 w-44 shadow-xs">
                   Chỉ số tài chính
                 </th>
                 {visibleMonthlyData.map((m) => {
@@ -517,8 +517,8 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                       }}
                       className={`py-2.5 px-3 text-right cursor-pointer transition-colors whitespace-nowrap ${
                         isCurrent
-                          ? 'bg-sky-100/90 text-sky-900 font-bold border-b-2 border-sky-600'
-                          : 'hover:bg-slate-100 text-slate-700'
+                          ? 'bg-sky-100/90 dark:bg-sky-950/70 text-sky-900 dark:text-sky-300 font-bold border-b-2 border-sky-600'
+                          : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                       }`}
                       title={`Nhấp để chọn / bỏ chọn ${m.label} vào bộ lọc`}
                     >
@@ -529,111 +529,111 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                     </th>
                   );
                 })}
-                <th className="py-2.5 px-3 text-right bg-slate-100 text-slate-800 font-bold border-l border-slate-200">
+                <th className="py-2.5 px-3 text-right bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold border-l border-slate-200 dark:border-slate-800">
                   Trung bình
                 </th>
-                <th className="py-2.5 px-4 text-right bg-slate-100/80 text-slate-900 font-bold">
+                <th className="py-2.5 px-4 text-right bg-slate-100/80 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 font-bold">
                   Tổng cộng
                 </th>
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-slate-100 text-xs font-mono-tabular">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs font-mono-tabular">
               {/* Row 1: Thu nhập (Sheet Income) */}
-              <tr className="hover:bg-slate-50/80 transition-colors">
-                <td className="py-2.5 px-4 font-sans font-medium text-emerald-900 sticky left-0 bg-white z-10 whitespace-nowrap shadow-xs">
+              <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                <td className="py-2.5 px-4 font-sans font-medium text-emerald-900 dark:text-emerald-400 sticky left-0 bg-white dark:bg-slate-900 z-10 whitespace-nowrap shadow-xs">
                   Tổng thu nhập
                 </td>
                 {visibleMonthlyData.map((m) => (
                   <td
                     key={m.mKey}
                     className={`py-2.5 px-3 text-right ${
-                      isMonthSelected(m.mKey) ? 'bg-sky-50/50 font-semibold text-emerald-800' : 'text-slate-700'
+                      isMonthSelected(m.mKey) ? 'bg-sky-50/50 dark:bg-sky-950/30 font-semibold text-emerald-800 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     {formatNumberForSheet(m.budget)}
                   </td>
                 ))}
-                <td className="py-2.5 px-3 text-right bg-slate-50 font-semibold text-slate-800 border-l border-slate-200">
+                <td className="py-2.5 px-3 text-right bg-slate-50 dark:bg-slate-850 font-semibold text-slate-800 dark:text-slate-200 border-l border-slate-200 dark:border-slate-800">
                   {formatNumberForSheet(totals.avg.budget)}
                 </td>
-                <td className="py-2.5 px-4 text-right bg-slate-50 font-bold text-emerald-800">
+                <td className="py-2.5 px-4 text-right bg-slate-50 dark:bg-slate-850 font-bold text-emerald-800 dark:text-emerald-400">
                   {formatNumberForSheet(totals.total.budget)}
                 </td>
               </tr>
 
               {/* Row 2: Chi sinh hoạt */}
-              <tr className="hover:bg-slate-50/80 transition-colors">
-                <td className="py-2 px-4 font-sans text-slate-600 sticky left-0 bg-white z-10 whitespace-nowrap pl-7 text-[11px] shadow-xs">
+              <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                <td className="py-2 px-4 font-sans text-slate-600 dark:text-slate-400 sticky left-0 bg-white dark:bg-slate-900 z-10 whitespace-nowrap pl-7 text-[11px] shadow-xs">
                   • Chi sinh hoạt
                 </td>
                 {visibleMonthlyData.map((m) => (
                   <td
                     key={m.mKey}
-                    className={`py-2 px-3 text-right text-slate-600 ${
-                      isMonthSelected(m.mKey) ? 'bg-sky-50/30 font-medium' : ''
+                    className={`py-2 px-3 text-right text-slate-600 dark:text-slate-400 ${
+                      isMonthSelected(m.mKey) ? 'bg-sky-50/30 dark:bg-sky-950/20 font-medium' : ''
                     }`}
                   >
                     {formatNumberForSheet(m.livingExpense)}
                   </td>
                 ))}
-                <td className="py-2 px-3 text-right bg-slate-50 text-slate-600 border-l border-slate-200">
+                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-850 text-slate-600 dark:text-slate-400 border-l border-slate-200 dark:border-slate-800">
                   {formatNumberForSheet(totals.avg.living)}
                 </td>
-                <td className="py-2 px-4 text-right bg-slate-50 text-slate-700">
+                <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-850 text-slate-700 dark:text-slate-300">
                   {formatNumberForSheet(totals.total.living)}
                 </td>
               </tr>
 
               {/* Row 3: Tiết kiệm */}
-              <tr className="hover:bg-slate-50/80 transition-colors">
-                <td className="py-2 px-4 font-sans text-slate-600 sticky left-0 bg-white z-10 whitespace-nowrap pl-7 text-[11px] shadow-xs">
+              <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                <td className="py-2 px-4 font-sans text-slate-600 dark:text-slate-400 sticky left-0 bg-white dark:bg-slate-900 z-10 whitespace-nowrap pl-7 text-[11px] shadow-xs">
                   • Tiết kiệm / Đầu tư
                 </td>
                 {visibleMonthlyData.map((m) => (
                   <td
                     key={m.mKey}
-                    className={`py-2 px-3 text-right text-blue-700 ${
-                      isMonthSelected(m.mKey) ? 'bg-sky-50/30 font-medium' : ''
+                    className={`py-2 px-3 text-right text-blue-700 dark:text-blue-400 ${
+                      isMonthSelected(m.mKey) ? 'bg-sky-50/30 dark:bg-sky-950/20 font-medium' : ''
                     }`}
                   >
                     {m.savingsExpense > 0 ? formatNumberForSheet(m.savingsExpense) : '—'}
                   </td>
                 ))}
-                <td className="py-2 px-3 text-right bg-slate-50 text-blue-700 border-l border-slate-200">
+                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-850 text-blue-700 dark:text-blue-400 border-l border-slate-200 dark:border-slate-800">
                   {formatNumberForSheet(totals.avg.savings)}
                 </td>
-                <td className="py-2 px-4 text-right bg-slate-50 text-blue-800 font-medium">
+                <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-850 text-blue-800 dark:text-blue-300 font-medium">
                   {formatNumberForSheet(totals.total.savings)}
                 </td>
               </tr>
 
               {/* Row 4: Tổng chi tiêu */}
-              <tr className="bg-slate-50/40 hover:bg-slate-50 transition-colors font-semibold">
-                <td className="py-2.5 px-4 font-sans font-bold text-slate-900 sticky left-0 bg-slate-50/80 z-10 whitespace-nowrap shadow-xs">
+              <tr className="bg-slate-50/40 dark:bg-slate-800/30 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors font-semibold">
+                <td className="py-2.5 px-4 font-sans font-bold text-slate-900 dark:text-slate-100 sticky left-0 bg-slate-50/80 dark:bg-slate-850 z-10 whitespace-nowrap shadow-xs">
                   Tổng chi tiêu
                 </td>
                 {visibleMonthlyData.map((m) => (
                   <td
                     key={m.mKey}
-                    className={`py-2.5 px-3 text-right text-rose-700 font-bold ${
-                      isMonthSelected(m.mKey) ? 'bg-sky-50 font-extrabold' : ''
+                    className={`py-2.5 px-3 text-right text-rose-700 dark:text-rose-400 font-bold ${
+                      isMonthSelected(m.mKey) ? 'bg-sky-50 dark:bg-sky-950/40 font-extrabold' : ''
                     }`}
                   >
                     {formatNumberForSheet(m.totalExpense)}
                   </td>
                 ))}
-                <td className="py-2.5 px-3 text-right bg-slate-100 text-rose-700 font-bold border-l border-slate-200">
+                <td className="py-2.5 px-3 text-right bg-slate-100 dark:bg-slate-800 text-rose-700 dark:text-rose-400 font-bold border-l border-slate-200 dark:border-slate-800">
                   {formatNumberForSheet(totals.avg.expense)}
                 </td>
-                <td className="py-2.5 px-4 text-right bg-slate-100 text-rose-800 font-extrabold">
+                <td className="py-2.5 px-4 text-right bg-slate-100 dark:bg-slate-800 text-rose-800 dark:text-rose-300 font-extrabold">
                   {formatNumberForSheet(totals.total.expense)}
                 </td>
               </tr>
 
               {/* Row 5: Còn lại / Remaining (Highlighted like Sheet Summary) */}
-              <tr className="hover:bg-slate-50/80 transition-colors font-bold">
-                <td className="py-2.5 px-4 font-sans font-extrabold text-slate-900 sticky left-0 bg-white z-10 whitespace-nowrap shadow-xs">
+              <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors font-bold">
+                <td className="py-2.5 px-4 font-sans font-extrabold text-slate-900 dark:text-slate-100 sticky left-0 bg-white dark:bg-slate-900 z-10 whitespace-nowrap shadow-xs">
                   Còn lại (Remaining)
                 </td>
                 {visibleMonthlyData.map((m) => {
@@ -642,14 +642,14 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                     <td
                       key={m.mKey}
                       className={`py-2.5 px-3 text-right ${
-                        isMonthSelected(m.mKey) ? 'bg-sky-50' : ''
+                        isMonthSelected(m.mKey) ? 'bg-sky-50 dark:bg-sky-950/30' : ''
                       }`}
                     >
                       <span
                         className={`inline-block px-1.5 py-0.5 rounded text-[11px] ${
                           isPositive
-                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200/60'
-                            : 'bg-rose-50 text-rose-800 border border-rose-200/60'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60'
+                            : 'bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/60'
                         }`}
                       >
                         {formatCurrency(m.remaining, true)}
@@ -657,21 +657,21 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                     </td>
                   );
                 })}
-                <td className="py-2.5 px-3 text-right bg-slate-50 border-l border-slate-200">
+                <td className="py-2.5 px-3 text-right bg-slate-50 dark:bg-slate-850 border-l border-slate-200 dark:border-slate-800">
                   <span
                     className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-bold ${
-                      totals.avg.remaining >= 0 ? 'text-emerald-800' : 'text-rose-800'
+                      totals.avg.remaining >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'
                     }`}
                   >
                     {formatCurrency(totals.avg.remaining, true)}
                   </span>
                 </td>
-                <td className="py-2.5 px-4 text-right bg-slate-50">
+                <td className="py-2.5 px-4 text-right bg-slate-50 dark:bg-slate-850">
                   <span
                     className={`inline-block px-2 py-0.5 rounded text-xs font-extrabold ${
                       totals.total.remaining >= 0
-                        ? 'bg-emerald-100 text-emerald-900'
-                        : 'bg-rose-100 text-rose-900'
+                        ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-900 dark:text-emerald-200'
+                        : 'bg-rose-100 dark:bg-rose-950/70 text-rose-900 dark:text-rose-200'
                     }`}
                   >
                     {formatCurrency(totals.total.remaining, true)}
@@ -680,125 +680,125 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
               </tr>
 
               {/* Row 5b: Lũy kế số dư chuyển tiếp (Cumulative Cash Flow) */}
-              <tr className="hover:bg-slate-50/80 transition-colors bg-indigo-50/20 text-xs">
-                <td className="py-2 px-4 font-sans font-semibold text-indigo-900 sticky left-0 bg-indigo-50/40 z-10 whitespace-nowrap shadow-xs">
+              <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors bg-indigo-50/20 dark:bg-indigo-950/10 text-xs">
+                <td className="py-2 px-4 font-sans font-semibold text-indigo-900 dark:text-indigo-300 sticky left-0 bg-indigo-50/40 dark:bg-slate-900 z-10 whitespace-nowrap shadow-xs">
                   Lũy kế số dư chuyển tiếp
                 </td>
                 {visibleMonthlyData.map((m) => (
                   <td
                     key={m.mKey}
                     className={`py-2 px-3 text-right font-semibold ${
-                      isMonthSelected(m.mKey) ? 'bg-sky-50/60 font-bold' : ''
+                      isMonthSelected(m.mKey) ? 'bg-sky-50/60 dark:bg-sky-950/30 font-bold' : ''
                     }`}
                   >
                     <span
                       className={`inline-block px-1.5 py-0.5 rounded text-[11px] ${
                         m.cumulativeRemaining >= 0
-                          ? 'text-indigo-900 bg-indigo-50/80'
-                          : 'text-rose-800 bg-rose-50'
+                          ? 'text-indigo-900 dark:text-indigo-300 bg-indigo-50/80 dark:bg-indigo-950/50'
+                          : 'text-rose-800 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/50'
                       }`}
                     >
                       {formatCurrency(m.cumulativeRemaining, true)}
                     </span>
                   </td>
                 ))}
-                <td className="py-2 px-3 text-right bg-slate-50 font-mono-tabular text-slate-400 border-l border-slate-200">
+                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-850 font-mono-tabular text-slate-400 dark:text-slate-500 border-l border-slate-200 dark:border-slate-800">
                   —
                 </td>
-                <td className="py-2 px-4 text-right bg-indigo-100/60 font-mono-tabular font-extrabold text-indigo-950">
+                <td className="py-2 px-4 text-right bg-indigo-100/60 dark:bg-indigo-950/50 font-mono-tabular font-extrabold text-indigo-950 dark:text-indigo-200">
                   {formatCurrency(totals.total.cumulativeRemaining, true)}
                 </td>
               </tr>
 
               {/* Row 6: Tỷ lệ chi / Thu nhập */}
-              <tr className="hover:bg-slate-50/80 transition-colors text-[11px]">
-                <td className="py-2 px-4 font-sans text-slate-500 sticky left-0 bg-white z-10 whitespace-nowrap shadow-xs">
+              <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors text-[11px]">
+                <td className="py-2 px-4 font-sans text-slate-500 dark:text-slate-400 sticky left-0 bg-white dark:bg-slate-900 z-10 whitespace-nowrap shadow-xs">
                   Tỷ lệ chi / Thu nhập
                 </td>
                 {visibleMonthlyData.map((m) => (
                   <td
                     key={m.mKey}
                     className={`py-2 px-3 text-right ${
-                      isMonthSelected(m.mKey) ? 'bg-sky-50/30' : ''
+                      isMonthSelected(m.mKey) ? 'bg-sky-50/30 dark:bg-sky-950/20' : ''
                     }`}
                   >
                     <span
                       className={`font-semibold ${
                         m.pctUsed > 100
-                          ? 'text-rose-700'
+                          ? 'text-rose-700 dark:text-rose-400'
                           : m.pctUsed > 80
-                          ? 'text-amber-700'
-                          : 'text-slate-600'
+                          ? 'text-amber-700 dark:text-amber-400'
+                          : 'text-slate-600 dark:text-slate-400'
                       }`}
                     >
                       {m.pctUsed.toFixed(0)}%
                     </span>
                   </td>
                 ))}
-                <td className="py-2 px-3 text-right bg-slate-50 font-semibold text-slate-700 border-l border-slate-200">
+                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-850 font-semibold text-slate-700 dark:text-slate-300 border-l border-slate-200 dark:border-slate-800">
                   {totals.avg.budget > 0 ? `${((totals.avg.expense / totals.avg.budget) * 100).toFixed(0)}%` : '—'}
                 </td>
-                <td className="py-2 px-4 text-right bg-slate-50 font-bold text-slate-800">
+                <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-850 font-bold text-slate-800 dark:text-slate-200">
                   {totals.total.budget > 0 ? `${((totals.total.expense / totals.total.budget) * 100).toFixed(0)}%` : '—'}
                 </td>
               </tr>
 
               {/* Row 7: BE Corp Cycle */}
-              <tr className="hover:bg-slate-50/80 transition-colors">
-                <td className="py-2 px-4 font-sans text-amber-800 font-medium sticky left-0 bg-white z-10 whitespace-nowrap shadow-xs">
+              <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                <td className="py-2 px-4 font-sans text-amber-800 dark:text-amber-400 font-medium sticky left-0 bg-white dark:bg-slate-900 z-10 whitespace-nowrap shadow-xs">
                   Ví BE Corp (Chu kỳ {beCorpStartDay}–{beCorpEndDay})
                 </td>
                 {visibleMonthlyData.map((m) => (
                   <td
                     key={m.mKey}
-                    className={`py-2 px-3 text-right text-amber-800 ${
-                      isMonthSelected(m.mKey) ? 'bg-sky-50/30 font-semibold' : ''
+                    className={`py-2 px-3 text-right text-amber-800 dark:text-amber-400 ${
+                      isMonthSelected(m.mKey) ? 'bg-sky-50/30 dark:bg-sky-950/20 font-semibold' : ''
                     }`}
                     title={`Chu kỳ ${m.beRangeLabel}`}
                   >
                     {m.beCorpTotal > 0 ? (
-                      <span className="bg-amber-50 px-1.5 py-0.5 rounded text-[11px] text-amber-900 border border-amber-200/50">
+                      <span className="bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded text-[11px] text-amber-900 dark:text-amber-200 border border-amber-200/50 dark:border-amber-800/50">
                         {formatNumberForSheet(m.beCorpTotal)}
                       </span>
                     ) : (
-                      <span className="text-slate-300">0</span>
+                      <span className="text-slate-300 dark:text-slate-600">0</span>
                     )}
                   </td>
                 ))}
-                <td className="py-2 px-3 text-right bg-slate-50 text-amber-800 font-semibold border-l border-slate-200">
+                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-850 text-amber-800 dark:text-amber-400 font-semibold border-l border-slate-200 dark:border-slate-800">
                   {formatNumberForSheet(totals.avg.beCorp)}
                 </td>
-                <td className="py-2 px-4 text-right bg-slate-50 text-amber-900 font-bold">
+                <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-850 text-amber-900 dark:text-amber-300 font-bold">
                   {formatNumberForSheet(totals.total.beCorp)}
                 </td>
               </tr>
 
               {/* Row 8: Credit Card Statement Cycle */}
-              <tr className="hover:bg-slate-50/80 transition-colors">
-                <td className="py-2 px-4 font-sans text-indigo-800 font-medium sticky left-0 bg-white z-10 whitespace-nowrap shadow-xs">
+              <tr className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
+                <td className="py-2 px-4 font-sans text-indigo-800 dark:text-indigo-400 font-medium sticky left-0 bg-white dark:bg-slate-900 z-10 whitespace-nowrap shadow-xs">
                   Thẻ Credit (Sao kê {creditStartDay}–{creditEndDay})
                 </td>
                 {visibleMonthlyData.map((m) => (
                   <td
                     key={m.mKey}
-                    className={`py-2 px-3 text-right text-indigo-800 ${
-                      isMonthSelected(m.mKey) ? 'bg-sky-50/30 font-semibold' : ''
+                    className={`py-2 px-3 text-right text-indigo-800 dark:text-indigo-400 ${
+                      isMonthSelected(m.mKey) ? 'bg-sky-50/30 dark:bg-sky-950/20 font-semibold' : ''
                     }`}
                     title={`Sao kê ${m.creditRangeLabel}`}
                   >
                     {m.creditTotal > 0 ? (
-                      <span className="bg-indigo-50 px-1.5 py-0.5 rounded text-[11px] text-indigo-900 border border-indigo-200/50">
+                      <span className="bg-indigo-50 dark:bg-indigo-950/50 px-1.5 py-0.5 rounded text-[11px] text-indigo-900 dark:text-indigo-200 border border-indigo-200/50 dark:border-indigo-800/50">
                         {formatNumberForSheet(m.creditTotal)}
                       </span>
                     ) : (
-                      <span className="text-slate-300">0</span>
+                      <span className="text-slate-300 dark:text-slate-600">0</span>
                     )}
                   </td>
                 ))}
-                <td className="py-2 px-3 text-right bg-slate-50 text-indigo-800 font-semibold border-l border-slate-200">
+                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-850 text-indigo-800 dark:text-indigo-400 font-semibold border-l border-slate-200 dark:border-slate-800">
                   {formatNumberForSheet(totals.avg.credit)}
                 </td>
-                <td className="py-2 px-4 text-right bg-slate-50 text-indigo-900 font-bold">
+                <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-850 text-indigo-900 dark:text-indigo-300 font-bold">
                   {formatNumberForSheet(totals.total.credit)}
                 </td>
               </tr>
