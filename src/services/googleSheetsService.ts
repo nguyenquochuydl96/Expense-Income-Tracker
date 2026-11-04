@@ -225,7 +225,15 @@ export async function fetchTabTransactions(
     const beCorp = parseSheetNumber(rawBeCorp);
     const credit = parseSheetNumber(rawCredit);
 
-    if (!rawItem && amount === 0 && beCorp === 0 && credit === 0 && !rawNote && !rawCategory) {
+    const hasContent = Boolean(
+      (rawItem && rawItem.trim() !== '' && rawItem !== '(Không ghi nội dung)') ||
+      (rawCategory && rawCategory.trim() !== '' && rawCategory !== 'Khác') ||
+      (rawNote && rawNote.trim() !== '') ||
+      amount !== 0 ||
+      beCorp !== 0 ||
+      credit !== 0
+    );
+    if (!hasContent) {
       continue;
     }
 

@@ -156,7 +156,17 @@ export async function appsScriptSyncAll(webAppUrl: string, apiKey?: string): Pro
     budgetTransfersTab: rawMeta.budgetTransfersTab || 'Budget Transfers',
   };
 
-  const expenses: TransactionRecord[] = (res.expenses || []).map((r: any, idx: number) => {
+  const expenses: TransactionRecord[] = (res.expenses || [])
+    .filter((r: any) => {
+      const amt = Number(r.amount) || 0;
+      const be = Number(r.beCorp) || 0;
+      const cr = Number(r.credit) || 0;
+      const item = (r.purchaseItem || '').trim();
+      const cat = (r.category || '').trim();
+      const note = (r.note || '').trim();
+      return amt !== 0 || be !== 0 || cr !== 0 || (item !== '' && item !== '(Không ghi nội dung)') || cat !== '' || note !== '';
+    })
+    .map((r: any, idx: number) => {
     const parsedDate = parseDateString(r.purchaseDate);
     return {
       id: r.id || `exp-${r.rowIndex || idx + 2}-${r.purchaseDate}`,
@@ -176,7 +186,15 @@ export async function appsScriptSyncAll(webAppUrl: string, apiKey?: string): Pro
     };
   });
 
-  const income: TransactionRecord[] = (res.income || []).map((r: any, idx: number) => {
+  const income: TransactionRecord[] = (res.income || [])
+    .filter((r: any) => {
+      const amt = Number(r.amount) || 0;
+      const item = (r.purchaseItem || '').trim();
+      const cat = (r.category || '').trim();
+      const note = (r.note || '').trim();
+      return amt !== 0 || (item !== '' && item !== '(Không ghi nội dung)') || cat !== '' || note !== '';
+    })
+    .map((r: any, idx: number) => {
     const parsedDate = parseDateString(r.purchaseDate);
     return {
       id: r.id || `inc-${r.rowIndex || idx + 2}-${r.purchaseDate}`,

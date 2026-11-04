@@ -222,6 +222,21 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
 * **Thác Nước So Le (Staggered Waterfall Animation):**
   - Bảng Ngân sách Hạng mục ([`CategoryBudgetTable.tsx`](file:///src/components/CategoryBudgetTable.tsx)) và Sổ giao dịch ([`TransactionLedgerTable.tsx`](file:///src/components/TransactionLedgerTable.tsx)) áp dụng hiệu ứng `staggerChildren: 0.02 - 0.035s`. Mỗi khi đổi tháng lọc, tick danh mục hoặc chuyển bộ lọc, các dòng dữ liệu không xuất hiện đồng loạt mà lướt nhẹ so le như dòng tiền đang chảy.
 
+### 2.18 Phản ứng Dữ liệu Tức thì (Live State Reactivity) & Loại trừ Dòng Rác (Ghost Records)
+* **Khắc phục triệt để lỗi không cập nhật giao dịch tức thì trong Pop-up:**
+  - **Nguyên nhân gốc rễ:** Pop-up xem chi tiết ngày trong Lịch chi tiêu ([`CalendarHeatmapView.tsx`](file:///src/components/CalendarHeatmapView.tsx)) trước đây lưu toàn bộ `DayData` tĩnh vào `useState<DayData | null>(null)`. Khi người dùng sửa giao dịch hoặc thêm giao dịch mới cho ngày đó, dữ liệu toàn app (`allRecords`) đã thay đổi và tính toán lại `days`, nhưng pop-up vẫn ôm giữ snapshot cũ trong `useState`, buộc người dùng phải tắt pop-up đi mở lại mới thấy thông tin mới.
+  - **Giải pháp triệt để:** 
+    - Chuyển `selectedDay` thành giá trị phái sinh phản ứng động (derived reactive state) qua `useMemo` kết hợp `selectedDateStr: string | null`. Mỗi khi có bất kỳ thay đổi nào từ `allRecords` (thêm, sửa, xóa giao dịch), `selectedDay` tự động cập nhật ngay lập tức mà không cần đóng pop-up.
+    - Giữ nguyên trạng thái ngày được chọn khi người dùng bấm `+ Thêm giao dịch ngày X/X` (không ép đóng pop-up như trước).
+    - Bổ sung cập nhật lạc quan `setAttachedRecords` trong `handleSaveEditedTransaction` tại [`App.tsx`](file:///src/App.tsx) để đảm bảo đồng bộ hoàn chỉnh cả khi offline.
+    - Cập nhật phân tầng `z-index` chuẩn OS modal stack: Pop-up ngày (`z-50`) < Modal Thêm/Sửa (`z-[60]`) < Modal Xác nhận xóa (`z-[70]`), giúp các cửa sổ xếp lớp mượt mà, khi đóng modal sửa/thêm thì pop-up ngày bên dưới lập tức hiển thị ngay kết quả vừa nhập.
+* **Xóa bỏ hoàn toàn hiện tượng dòng rác 0 ₫ (Ghost Records):**
+  - Bộ lọc an toàn tại 4 lớp (Data Ingestion, Google Sheets Parser, Apps Script Service và `allRecords` Combined State) tự động loại bỏ các dòng trống/dòng mẫu không có số tiền và không có nội dung mô tả, ngăn chặn hoàn toàn các dòng icon ví `0 ₫` xuất hiện trong danh sách chi tiết ngày.
+* **Rà soát toàn bộ các màn hình khác:**
+  - `TransactionLedgerTable`: Phản ứng tức thì từ `records` qua `useMemo`.
+  - `CategoryBudgetTable`: Phản ứng tức thì từ `recordsInPeriod` qua `useMemo`.
+  - `ReconcileCheckTienView`: Bổ sung `onEditTransaction` cho phép click trực tiếp vào từng dòng giao dịch của chu kỳ BE Corp & Thẻ tín dụng Credit để mở hộp thoại sửa và cập nhật lại số dư chu kỳ ngay lập tức.
+
 ---
 
 ## 3. Quản lý Chu kỳ & Logic ngày (Cycle Configuration)

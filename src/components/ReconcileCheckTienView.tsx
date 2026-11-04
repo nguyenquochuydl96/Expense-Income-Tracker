@@ -48,6 +48,7 @@ interface ReconcileCheckTienViewProps {
   selectedMonth: string;
   onOpenAddWithPreset: (preset: Partial<NewTransactionPayload>) => void;
   checkTienData?: CheckTienSheetData | null;
+  onEditTransaction?: (tx: TransactionRecord) => void;
 }
 
 type ReconcileSubTab = 'reconcile' | 'accounts' | 'becorp' | 'credit';
@@ -76,6 +77,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
   selectedMonth,
   onOpenAddWithPreset,
   checkTienData,
+  onEditTransaction,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<ReconcileSubTab>('reconcile');
   const { isPrivate } = usePrivacyMode();
@@ -1141,7 +1143,12 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                     </tr>
                   ) : (
                     beCorpCycleStats.items.map((item, idx) => (
-                      <tr key={item.id || idx} className="hover:bg-slate-50/80 transition-colors">
+                      <tr
+                        key={item.id || idx}
+                        onClick={() => onEditTransaction?.(item)}
+                        className={`hover:bg-amber-50/60 transition-colors ${onEditTransaction ? 'cursor-pointer' : ''}`}
+                        title={onEditTransaction ? 'Nhấp để chỉnh sửa giao dịch này' : undefined}
+                      >
                         <td className="py-2.5 px-3 font-semibold text-slate-600 whitespace-nowrap">
                           {item.purchaseDate}
                         </td>
@@ -1279,7 +1286,12 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
                     </tr>
                   ) : (
                     creditCycleStats.items.map((item, idx) => (
-                      <tr key={item.id || idx} className="hover:bg-slate-50/80 transition-colors">
+                      <tr
+                        key={item.id || idx}
+                        onClick={() => onEditTransaction?.(item)}
+                        className={`hover:bg-indigo-50/60 transition-colors ${onEditTransaction ? 'cursor-pointer' : ''}`}
+                        title={onEditTransaction ? 'Nhấp để chỉnh sửa giao dịch này' : undefined}
+                      >
                         <td className="py-2.5 px-3 font-semibold text-slate-600 whitespace-nowrap">
                           {item.purchaseDate}
                         </td>

@@ -481,13 +481,25 @@ export default function App() {
 
   // Combined active records
   const allRecords = useMemo(() => {
+    let combined: TransactionRecord[];
     if (sheetRecords !== null) {
       const unsynced = localNewRecords.filter((r) => !r.syncedToSheet);
       const sheetIds = new Set(sheetRecords.map((r) => r.id));
       const dedupedUnsynced = unsynced.filter((r) => !sheetIds.has(r.id));
-      return [...sheetRecords, ...dedupedUnsynced];
+      combined = [...sheetRecords, ...dedupedUnsynced];
+    } else {
+      combined = [...attachedRecords, ...localNewRecords];
     }
-    return [...attachedRecords, ...localNewRecords];
+
+    // Filter ghost / blank template rows (no amount, no credit/be, no valid item name)
+    return combined.filter(
+      (r) =>
+        (r.amount && r.amount !== 0) ||
+        (r.beCorp && r.beCorp !== 0) ||
+        (r.credit && r.credit !== 0) ||
+        (r.purchaseItem && r.purchaseItem.trim() !== '' && r.purchaseItem !== '(Không ghi nội dung)') ||
+        (r.note && r.note.trim() !== '')
+    );
   }, [sheetRecords, attachedRecords, localNewRecords]);
 
   // Unique categories list (seeded with all standard expense categories)
@@ -1470,6 +1482,9 @@ export default function App() {
     setLocalNewRecords((prev) =>
       prev.map((r) => (r.id === updated.id ? updated : r))
     );
+    setAttachedRecords((prev) =>
+      prev.map((r) => (r.id === updated.id ? updated : r))
+    );
 
     // 2. If already on Google Sheet
     if (updated.rowIndex && effectiveSheetId && (effectiveToken || isAppsScript)) {
@@ -2356,6 +2371,7 @@ export default function App() {
                     setIsAddModalOpen(true);
                   }}
                   checkTienData={checkTienData}
+                  onEditTransaction={(tx) => setEditingTransaction(tx)}
                 />
               </motion.div>
             )}
@@ -2443,7 +2459,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 cursor-pointer"
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 cursor-pointer"
             onClick={() => !isDeleting && setDeletingTransaction(null)}
           >
             <motion.div

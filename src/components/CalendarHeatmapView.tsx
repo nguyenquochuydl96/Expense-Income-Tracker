@@ -48,19 +48,7 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = ({
   onSelectTransaction,
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
-  const [selectedDay, setSelectedDay] = useState<DayData | null>(null);
-
-  // Close day detail popup on Escape
-  useEffect(() => {
-    if (!selectedDay) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setSelectedDay(null);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedDay]);
+  const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
 
   // Fallback target month if 'ALL' is selected
   const activeMonthKey = useMemo(() => {
@@ -94,6 +82,14 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = ({
     const mapByDate = new Map<string, TransactionRecord[]>();
     for (const r of allRecords) {
       if (r.isoDate && r.isoDate.startsWith(activeMonthKey)) {
+        // Filter out ghost / empty records with no amount, no item, no be/credit
+        const isGhost =
+          (r.amount === 0 || !r.amount) &&
+          (!r.beCorp || r.beCorp === 0) &&
+          (!r.credit || r.credit === 0) &&
+          (!r.purchaseItem || r.purchaseItem.trim() === '' || r.purchaseItem === '(Không ghi nội dung)');
+        if (isGhost) continue;
+
         const list = mapByDate.get(r.isoDate) || [];
         list.push(r);
         mapByDate.set(r.isoDate, list);
@@ -171,6 +167,24 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = ({
       },
     };
   }, [year, month, activeMonthKey, allRecords]);
+
+  // Derived selectedDay from live days state (guarantees instant refresh on add/edit/delete)
+  const selectedDay = useMemo(() => {
+    if (!selectedDateStr) return null;
+    return days.find((d) => d.dateStr === selectedDateStr) || null;
+  }, [days, selectedDateStr]);
+
+  // Close day detail popup on Escape
+  useEffect(() => {
+    if (!selectedDateStr) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedDateStr(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedDateStr]);
 
   // Color gradient badge for heat level
   const getDayHeatStyle = (d: DayData) => {
@@ -287,7 +301,7 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = ({
               return (
                 <div
                   key={d.dateStr}
-                  onClick={() => setSelectedDay(d)}
+                  onClick={() => setSelectedDateStr(d.dateStr)}
                   className={`h-16 sm:h-20 rounded-xl p-1.5 sm:p-2 border transition-all cursor-pointer flex flex-col justify-between relative group ${getDayHeatStyle(
                     d
                   )} ${isSelected ? 'ring-2 ring-indigo-600 ring-offset-1 scale-[1.02] z-10' : ''} ${
@@ -370,7 +384,7 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = ({
       {selectedDay && (
         <div
           className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
-          onClick={() => setSelectedDay(null)}
+          onClick={() => setSelectedDateStr(null)}
         >
           <div
             className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 dark:border-slate-800 relative space-y-4 max-h-[85vh] flex flex-col cursor-default"
@@ -405,7 +419,7 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = ({
 
               <button
                 type="button"
-                onClick={() => setSelectedDay(null)}
+                onClick={() => setSelectedDateStr(null)}
                 className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
@@ -479,12 +493,11 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = ({
                     purchaseDate: `${month}/${selectedDay.dayNum}/${year}`,
                     sheetType: 'Expenses',
                   });
-                  setSelectedDay(null);
                 }}
                 className="w-full py-2 px-3 text-xs font-bold text-white bg-indigo-950 hover:bg-indigo-900 dark:bg-indigo-600 dark:hover:bg-indigo-700 rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5 text-amber-300" />
-                <span>+ Thêm giao dịch ngày {selectedDay.dayNum}/{month}</span>
+                <span>Thêm giao dịch ngày {selectedDay.dayNum}/{month}</span>
               </button>
             </div>
           </div>
