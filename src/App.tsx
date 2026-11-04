@@ -31,6 +31,7 @@ import { MonthlyReportCardModal } from './components/MonthlyReportCardModal';
 import { MultiMonthPickerDropdown, formatSelectedMonthsDisplay } from './components/MultiMonthPickerDropdown';
 import { MultiCategoryPickerDropdown } from './components/MultiCategoryPickerDropdown';
 import { AnimatedCurrency } from './components/AnimatedCurrency';
+import { TiltCard } from './components/TiltCard';
 import { motion, AnimatePresence } from 'motion/react';
 import { User } from 'firebase/auth';
 import {
@@ -2044,9 +2045,8 @@ export default function App() {
                   {categoryKpiStats ? (
                     <>
                       {/* Category Card 1: Ngân sách danh mục (Budget) */}
-                      <motion.div
-                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
-                        className="rounded-xl p-4 sm:p-5 shadow-xs"
+                      <TiltCard
+                        className="p-4 sm:p-5"
                         style={{ backgroundColor: '#0B4B8A' }}
                       >
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
@@ -2064,13 +2064,11 @@ export default function App() {
                             <span>· Chuyển quỹ: {formatCurrency(categoryKpiStats.netTransfer, true)}</span>
                           )}
                         </div>
-                      </motion.div>
+                      </TiltCard>
 
                       {/* Category Card 2: Đã chi danh mục */}
-                      <motion.div
-                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
-                        whileTap={{ scale: 0.98 }}
-                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer"
+                      <TiltCard
+                        className="p-4 sm:p-5 cursor-pointer"
                         style={{ backgroundColor: '#0077B6' }}
                         onClick={() => setActiveTab('ledger')}
                       >
@@ -2083,12 +2081,11 @@ export default function App() {
                         <div className="text-xs text-white/70 font-medium">
                           {categoryKpiStats.count} giao dịch trong kỳ
                         </div>
-                      </motion.div>
+                      </TiltCard>
 
                       {/* Category Card 3: Còn lại danh mục (Dương / Âm) */}
-                      <motion.div
-                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
-                        className="rounded-xl p-4 sm:p-5 shadow-xs"
+                      <TiltCard
+                        className="p-4 sm:p-5"
                         style={{ backgroundColor: categoryKpiStats.remaining >= 0 ? '#059669' : '#DC2626' }}
                       >
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
@@ -2100,12 +2097,11 @@ export default function App() {
                         <div className="text-xs text-white/80 font-medium truncate">
                           {categoryKpiStats.remaining >= 0 ? 'Trong hạn mức khả dụng' : 'Vượt quá định mức tháng!'}
                         </div>
-                      </motion.div>
+                      </TiltCard>
 
                       {/* Category Card 4: BE Corp cho danh mục */}
-                      <motion.div
-                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
-                        className="rounded-xl p-4 sm:p-5 shadow-xs"
+                      <TiltCard
+                        className="p-4 sm:p-5"
                         style={{ backgroundColor: '#D97706' }}
                       >
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
@@ -2117,32 +2113,31 @@ export default function App() {
                         <div className="text-xs text-white/80 font-medium">
                           Thanh toán qua ví công ty
                         </div>
-                      </motion.div>
+                      </TiltCard>
 
                       {/* Category Card 5: Credit cho danh mục */}
-                      <motion.div
-                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
-                        className="rounded-xl p-4 sm:p-5 shadow-xs col-span-2 sm:col-span-1"
-                        style={{ backgroundColor: '#6D3894' }}
-                      >
-                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
-                          Credit ({categoryKpiStats.category})
-                        </div>
-                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          <AnimatedCurrency value={categoryKpiStats.credit} />
-                        </div>
-                        <div className="text-xs text-white/80 font-medium">
-                          Thanh toán qua thẻ tín dụng
-                        </div>
-                      </motion.div>
+                      <div className="col-span-2 sm:col-span-1">
+                        <TiltCard
+                          className="p-4 sm:p-5"
+                          style={{ backgroundColor: '#6D3894' }}
+                        >
+                          <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
+                            Credit ({categoryKpiStats.category})
+                          </div>
+                          <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                            <AnimatedCurrency value={categoryKpiStats.credit} />
+                          </div>
+                          <div className="text-xs text-white/80 font-medium">
+                            Thanh toán qua thẻ tín dụng
+                          </div>
+                        </TiltCard>
+                      </div>
                     </>
                   ) : (
                     <>
                       {/* Card 1: Tổng thu nhập (Deep Blue) */}
-                      <motion.div
-                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
-                        whileTap={{ scale: 0.98 }}
-                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer"
+                      <TiltCard
+                        className="p-4 sm:p-5 cursor-pointer"
                         style={{ backgroundColor: '#0B4B8A' }}
                         onClick={() => {
                           setAddModalPreset({
@@ -2168,13 +2163,11 @@ export default function App() {
                                 ? `${formatMonthLabel(selectedMonth)} · ${kpiStats.incomeCount} khoản thu`
                                 : `${formatMonthLabel(selectedMonth)} · Chưa có giao dịch`}
                         </div>
-                      </motion.div>
+                      </TiltCard>
 
                       {/* Card 2: Tổng chi tiêu (Ocean Blue - Calendar Month) */}
-                      <motion.div
-                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
-                        whileTap={{ scale: 0.98 }}
-                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer"
+                      <TiltCard
+                        className="p-4 sm:p-5 cursor-pointer"
                         style={{ backgroundColor: '#0077B6' }}
                         onClick={() => setActiveTab('ledger')}
                       >
@@ -2191,13 +2184,11 @@ export default function App() {
                               ? `${kpiStats.expenseCount} giao dịch (${selectedMonths.length} tháng đã chọn)`
                               : `${kpiStats.expenseCount} giao dịch (01/${selectedMonth.split('-')[1]} – Hết tháng)`}
                         </div>
-                      </motion.div>
+                      </TiltCard>
 
                       {/* Card 3: Số dư khả dụng Net Balance (Mint Green or Red) */}
-                      <motion.div
-                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
-                        whileTap={{ scale: 0.98 }}
-                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer"
+                      <TiltCard
+                        className="p-4 sm:p-5 cursor-pointer"
                         style={{ backgroundColor: kpiStats.netBalance >= 0 ? '#059669' : '#DC2626' }}
                         onClick={() => setActiveTab('reconcile')}
                       >
@@ -2210,13 +2201,11 @@ export default function App() {
                         <div className="text-xs text-white/70 font-medium">
                           Thu − Chi còn lại
                         </div>
-                      </motion.div>
+                      </TiltCard>
 
                       {/* Card 4: Ví BE Corp (Riêng biệt - Amber / Orange) */}
-                      <motion.div
-                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
-                        whileTap={{ scale: 0.98 }}
-                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer"
+                      <TiltCard
+                        className="p-4 sm:p-5 cursor-pointer"
                         style={{ backgroundColor: '#D97706' }}
                         onClick={() => setActiveTab('reconcile')}
                       >
@@ -2230,27 +2219,27 @@ export default function App() {
                           <CalendarRange className="w-3 h-3 text-white/70" />
                           <span>{kpiStats.beRange.displayLabel}</span>
                         </div>
-                      </motion.div>
+                      </TiltCard>
 
                       {/* Card 5: Thẻ tín dụng Credit (Riêng biệt - Purple / Violet) */}
-                      <motion.div
-                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
-                        whileTap={{ scale: 0.98 }}
-                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer col-span-2 sm:col-span-1"
-                        style={{ backgroundColor: '#6D3894' }}
-                        onClick={() => setActiveTab('reconcile')}
-                      >
-                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
-                          Thẻ tín dụng (Credit)
-                        </div>
-                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          <AnimatedCurrency value={kpiStats.creditCycleTotal} />
-                        </div>
-                        <div className="text-xs text-white/80 font-medium flex items-center gap-1 font-mono-tabular">
-                          <CalendarRange className="w-3 h-3 text-white/70" />
-                          <span>Sao kê: {kpiStats.creditRange.displayLabel}</span>
-                        </div>
-                      </motion.div>
+                      <div className="col-span-2 sm:col-span-1">
+                        <TiltCard
+                          className="p-4 sm:p-5 cursor-pointer"
+                          style={{ backgroundColor: '#6D3894' }}
+                          onClick={() => setActiveTab('reconcile')}
+                        >
+                          <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
+                            Thẻ tín dụng (Credit)
+                          </div>
+                          <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
+                            <AnimatedCurrency value={kpiStats.creditCycleTotal} />
+                          </div>
+                          <div className="text-xs text-white/80 font-medium flex items-center gap-1 font-mono-tabular">
+                            <CalendarRange className="w-3 h-3 text-white/70" />
+                            <span>Sao kê: {kpiStats.creditRange.displayLabel}</span>
+                          </div>
+                        </TiltCard>
+                      </div>
                     </>
                   )}
                 </div>

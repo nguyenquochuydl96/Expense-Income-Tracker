@@ -33,6 +33,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
 }) => {
   const [copied, setCopied] = useState<boolean>(false);
   const [isGeneratingImg, setIsGeneratingImg] = useState<boolean>(false);
+  const [mobileTab, setMobileTab] = useState<'cover' | 'insights'>('cover');
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -645,379 +646,425 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer"
+          transition={{ duration: 0.24 }}
+          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 cursor-pointer"
           onClick={onClose}
         >
-          <motion.div
-            key="monthly-report-modal"
-            initial={{ opacity: 0, scale: 0.94, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.94, y: 16 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-            className="bg-slate-900 text-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-700/80 relative space-y-5 max-h-[90vh] overflow-y-auto cursor-default"
+          {/* 3D BOOK CONTAINER WITH PERSPECTIVE */}
+          <div
+            style={{ perspective: 1600 }}
+            className="w-full max-w-5xl cursor-default"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Button */}
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-5 right-5 p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Infographic Card Preview Container */}
-        <div ref={cardRef} className="space-y-5">
-          {/* Brand & Title */}
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center -space-x-2.5 p-1 rounded-2xl bg-white/10 border border-white/20">
-                <div className="w-9 h-9 rounded-full bg-rose-100 flex items-center justify-center">
-                  <PigIcon className="w-5.5 h-5.5" />
-                </div>
-                <div className="w-9 h-9 rounded-full bg-[#FAF4EE] flex items-center justify-center">
-                  <SiameseCatIcon className="w-5.5 h-5.5" />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                  Heo &amp; Mèo Finance
-                </h3>
-                <p className="text-[11px] text-pink-200/90 font-medium">
-                  Sổ chi tiêu của ba mẹ Chuối, Đậu, Vịt
-                </p>
-              </div>
-            </div>
-
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 font-mono-tabular">
-              Tháng {monthNum}/{yearNum}
-            </span>
-          </div>
-
-          {/* Health Assessment Banner */}
-          <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                <span>{healthStars}</span>
-                <span>{healthTitle}</span>
-              </span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${healthBadge}`}>
-                {healthBadgeText}
-              </span>
-            </div>
-            <p className="text-xs text-slate-300 leading-relaxed">{healthDesc}</p>
-          </div>
-
-          {/* 3 Main KPI Metrics */}
-          <div className="grid grid-cols-3 gap-2.5">
-            {/* Card 1: Thu nhập */}
-            <div className="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-800/40 text-center">
-              <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide">
-                Thu nhập
-              </div>
-              <div className="text-sm sm:text-base font-extrabold font-mono-tabular text-emerald-200 mt-1 truncate">
-                {formatCurrency(totalIncome)}
-              </div>
-              <div className="text-[10px] text-emerald-400/70 font-medium mt-0.5 truncate">
-                {incomeRecords.length} giao dịch
-              </div>
-            </div>
-
-            {/* Card 2: Chi tiêu */}
-            <div
-              className={`p-3 rounded-2xl text-center border ${
-                livingRemaining >= 0
-                  ? 'bg-slate-800/40 border-slate-700/60'
-                  : 'bg-rose-950/40 border-rose-800/40'
-              }`}
+            <motion.div
+              key="monthly-report-book"
+              initial={{ opacity: 0, scale: 0.92, y: 24, rotateX: 6 }}
+              animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 24, rotateX: 6 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+              className="relative bg-slate-950 text-white rounded-3xl shadow-2xl border border-slate-700/80 overflow-hidden max-h-[92vh] flex flex-col"
             >
-              <div
-                className={`text-[10px] font-bold uppercase tracking-wide ${
-                  livingRemaining >= 0 ? 'text-slate-300' : 'text-rose-400'
-                }`}
-              >
-                Chi tiêu
-              </div>
-              <div
-                className={`text-sm sm:text-base font-extrabold font-mono-tabular mt-1 truncate ${
-                  livingRemaining >= 0 ? 'text-white' : 'text-rose-200'
-                }`}
-              >
-                {formatCurrency(totalExpense)}
-              </div>
-              <div className="text-[10px] text-slate-400 font-medium mt-0.5 truncate">
-                {savingsAmount > 0 ? (
-                  <span>
-                    Sinh hoạt: <strong className="text-slate-200 font-mono-tabular">{formatNumberForSheet(livingExpense)}</strong>
-                  </span>
-                ) : (
-                  <span>100% sinh hoạt</span>
-                )}
-              </div>
-            </div>
-
-            {/* Card 3: Còn lại / Tích lũy */}
-            <div
-              className={`p-3 rounded-2xl text-center border ${
-                cashRemaining >= 0
-                  ? 'bg-sky-950/40 border-sky-800/40'
-                  : livingRemaining >= 0 && savingsAmount > 0
-                  ? 'bg-amber-950/30 border-amber-800/40'
-                  : 'bg-rose-950/40 border-rose-800/40'
-              }`}
-            >
-              <div
-                className={`text-[10px] font-bold uppercase tracking-wide ${
-                  cashRemaining >= 0
-                    ? 'text-sky-400'
-                    : livingRemaining >= 0 && savingsAmount > 0
-                    ? 'text-amber-400'
-                    : 'text-rose-400'
-                }`}
-              >
-                {cashRemaining >= 0 ? 'Còn lại' : livingRemaining >= 0 && savingsAmount > 0 ? 'Dòng tiền ví' : 'Thâm hụt'}
-              </div>
-              <div
-                className={`text-sm sm:text-base font-extrabold font-mono-tabular mt-1 truncate ${
-                  cashRemaining >= 0
-                    ? 'text-sky-200'
-                    : livingRemaining >= 0 && savingsAmount > 0
-                    ? 'text-amber-200'
-                    : 'text-rose-300'
-                }`}
-              >
-                {formatCurrency(cashRemaining, cashRemaining > 0)}
-              </div>
-              <div
-                className={`text-[10px] font-medium mt-0.5 truncate ${
-                  cashRemaining >= 0
-                    ? 'text-sky-400/80'
-                    : livingRemaining >= 0 && savingsAmount > 0
-                    ? 'text-amber-300/80'
-                    : 'text-rose-300/80'
-                }`}
-              >
-                {savingsAmount > 0 ? (
-                  <span>
-                    Đã gửi TK: <strong className="font-mono-tabular">{formatNumberForSheet(savingsAmount)}</strong>
-                  </span>
-                ) : cashRemaining >= 0 ? (
-                  <span>Thặng dư ví</span>
-                ) : (
-                  <span>Bội chi sinh hoạt</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Top Categories Section (Separating Savings & Top Living Expenses) */}
-          <div className="space-y-2">
-            <div className="text-xs font-bold text-slate-300 flex items-center justify-between">
-              <span className="flex items-center gap-1.5">
-                <Award className="w-3.5 h-3.5 text-amber-400" />
-                <span>Top Hạng Mục Chi Tiêu Sinh Hoạt:</span>
-              </span>
-              {livingExpense > 0 && (
-                <span className="text-[10px] text-slate-400 font-mono-tabular">
-                  Tổng sinh hoạt: {formatCurrency(livingExpense)}
-                </span>
-              )}
-            </div>
-
-            {/* Dedicated Savings Banner if user saved money this month */}
-            {savingsAmount > 0 && (
-              <div className="p-2.5 rounded-xl bg-gradient-to-r from-emerald-950/60 to-teal-950/50 border border-emerald-600/40 flex items-center justify-between text-xs">
+              {/* Top Navigation Bar: Close & Mobile Tab Switcher */}
+              <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800/80 bg-slate-900/90 shrink-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">🏦</span>
-                  <div>
-                    <div className="font-bold text-emerald-300">Đã trích gửi Tiết kiệm / Tích lũy</div>
-                    <div className="text-[10px] text-emerald-400/80">
-                      Chiếm {savingsPctOfIncome.toFixed(1)}% thu nhập ({((savingsAmount / totalExpense) * 100).toFixed(0)}% tổng chi)
-                    </div>
-                  </div>
+                  <span className="text-xs font-mono-tabular font-bold px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/30">
+                    Sổ tài chính Tháng {monthNum}/{yearNum}
+                  </span>
+                  <span className="hidden sm:inline text-xs text-slate-400 font-serif italic">
+                    — Heo &amp; Mèo Edition
+                  </span>
                 </div>
-                <div className="text-right">
-                  <div className="font-bold font-mono-tabular text-emerald-300 text-xs sm:text-sm">
-                    {formatCurrency(savingsAmount)}
-                  </div>
-                  <div className="text-[10px] text-emerald-400/70 font-medium">Tài sản tích lũy</div>
-                </div>
-              </div>
-            )}
 
-            {/* Top 3 Living Categories */}
-            <div className="space-y-1.5 text-xs">
-              {topLivingCategories.map((c, idx) => (
-                <div
-                  key={c.category}
-                  className="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between"
+                {/* Mobile Tab Pill Switcher (hidden on md and up) */}
+                <div className="flex md:hidden items-center p-0.5 rounded-lg bg-slate-800 border border-slate-700 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setMobileTab('cover')}
+                    className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
+                      mobileTab === 'cover'
+                        ? 'bg-amber-500 text-slate-950 shadow-xs'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Bìa Sổ
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMobileTab('insights')}
+                    className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
+                      mobileTab === 'insights'
+                        ? 'bg-amber-500 text-slate-950 shadow-xs'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Đối Soát
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  title="Đóng sổ (Escape)"
                 >
-                  <span className="font-semibold text-slate-200">
-                    {idx + 1}. {c.category}
-                  </span>
-                  <span className="font-bold font-mono-tabular text-rose-300">
-                    {formatCurrency(c.amount)}{' '}
-                    <span className="text-[10px] text-slate-400 font-normal">
-                      ({c.pctOfLiving.toFixed(0)}% sinh hoạt)
-                    </span>
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-          {/* MoM Comparison Card (So sánh với tháng trước với ngưỡng 5%) */}
-          {prevMonthStats && prevMonthStats.hasData && (
-            <div className="p-3.5 rounded-2xl bg-indigo-950/40 border border-indigo-800/40 space-y-2.5 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-indigo-300 flex items-center gap-1.5">
-                  <TrendingUp className="w-3.5 h-3.5 text-indigo-400" />
-                  <span>So với tháng trước ({prevMonthLabel}):</span>
-                </span>
-                <span
-                  className={`text-[10px] font-bold font-mono-tabular px-2.5 py-0.5 rounded-full border ${
-                    isExpenseDecreased
-                      ? 'bg-emerald-950/60 text-emerald-300 border-emerald-700/60'
-                      : isExpenseIncreased
-                      ? 'bg-rose-950/60 text-rose-300 border-rose-700/60'
-                      : 'bg-amber-950/60 text-amber-300 border-amber-700/60'
+              {/* BOOK BODY: DUAL SPREAD (LEFT COVER + RIGHT INSIGHTS) */}
+              <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-12 relative divide-y md:divide-y-0 md:divide-x divide-slate-800">
+                {/* ════════ LEFT PAGE (5 cols): LUXE PASSBOOK COVER ════════ */}
+                <motion.div
+                  initial={{ rotateY: -15, opacity: 0 }}
+                  animate={{ rotateY: 0, opacity: 1 }}
+                  transition={{ duration: 0.35, ease: 'easeOut' }}
+                  style={{ transformOrigin: 'right center' }}
+                  className={`md:col-span-5 p-6 sm:p-7 flex flex-col justify-between space-y-6 relative bg-gradient-to-br from-[#0c162d] via-[#101c38] to-[#0a1122] ${
+                    mobileTab === 'insights' ? 'hidden md:flex' : 'flex'
                   }`}
                 >
-                  {isExpenseDecreased
-                    ? '📉 Tiết kiệm hơn'
-                    : isExpenseIncreased
-                    ? '📈 Chi nhiều hơn'
-                    : '⚖️ Chi tiêu ổn định'}
-                </span>
-              </div>
+                  {/* Subtle Gold Foil Corner Accents */}
+                  <div className="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-amber-400/40 pointer-events-none" />
+                  <div className="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-amber-400/40 pointer-events-none" />
+                  <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-amber-400/40 pointer-events-none" />
+                  <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-amber-400/40 pointer-events-none" />
 
-              <div className="grid grid-cols-2 gap-2 text-[11px] pt-0.5">
-                {/* Tổng chi biến động: Giảm chi > 5% = Xanh, Tăng chi > 5% = Đỏ, Dao động ±5% = Vàng */}
-                <div className="p-2 rounded-xl bg-white/5 border border-white/5">
-                  <div className="text-slate-400 text-[10px]">Tổng chi tiêu:</div>
-                  <div
-                    className={`font-bold font-mono-tabular text-xs mt-0.5 ${
-                      isExpenseDecreased
-                        ? 'text-emerald-300'
-                        : isExpenseIncreased
-                        ? 'text-rose-400'
-                        : 'text-amber-300'
-                    }`}
-                  >
-                    {prevMonthStats.expenseDelta <= 0 ? '' : '+'}
-                    {formatCurrency(prevMonthStats.expenseDelta)}{' '}
-                    <span className="text-[10px] font-normal text-slate-400">
-                      ({prevMonthStats.expenseDeltaPct > 0 ? '+' : ''}
-                      {prevMonthStats.expenseDeltaPct.toFixed(1)}%)
-                    </span>
-                  </div>
-                </div>
-
-                {/* Thu nhập biến động: Tăng thu > 5% = Xanh, Giảm thu < -5% = Đỏ, Dao động ±5% = Vàng */}
-                <div className="p-2 rounded-xl bg-white/5 border border-white/5">
-                  <div className="text-slate-400 text-[10px]">Tổng thu nhập:</div>
-                  <div
-                    className={`font-bold font-mono-tabular text-xs mt-0.5 ${
-                      isIncomeIncreased
-                        ? 'text-emerald-300'
-                        : isIncomeDecreased
-                        ? 'text-rose-400'
-                        : 'text-amber-300'
-                    }`}
-                  >
-                    {prevMonthStats.incomeDelta >= 0 ? '+' : ''}
-                    {formatCurrency(prevMonthStats.incomeDelta)}{' '}
-                    <span className="text-[10px] font-normal text-slate-400">
-                      ({prevMonthStats.incomeDeltaPct > 0 ? '+' : ''}
-                      {prevMonthStats.incomeDeltaPct.toFixed(1)}%)
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Danh mục tăng / giảm nhiều nhất */}
-              {(prevMonthStats.topIncrease || prevMonthStats.topDecrease) && (
-                <div className="space-y-1 text-[11px] text-slate-300 pt-1 border-t border-indigo-900/50">
-                  {prevMonthStats.topIncrease && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-400">• Tăng nhiều nhất:</span>
-                      <span className="font-semibold text-rose-300">
-                        {prevMonthStats.topIncrease.category} (+{formatCurrency(prevMonthStats.topIncrease.delta)})
-                      </span>
+                  {/* Top Emblem & Title */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex items-center -space-x-2.5 p-1.5 rounded-2xl bg-amber-400/10 border border-amber-400/30 shadow-inner">
+                        <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center shadow-xs">
+                          <PigIcon className="w-6 h-6" />
+                        </div>
+                        <div className="w-10 h-10 rounded-full bg-[#FAF4EE] flex items-center justify-center shadow-xs">
+                          <SiameseCatIcon className="w-6 h-6" />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase font-bold tracking-widest text-amber-400/90 font-mono">
+                          Financial Passbook
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                          Heo &amp; Mèo Finance
+                        </h3>
+                        <p className="text-xs text-amber-100/70">
+                          Sổ chi tiêu ba mẹ Chuối, Đậu, Vịt
+                        </p>
+                      </div>
                     </div>
-                  )}
-                  {prevMonthStats.topDecrease && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-400">• Cắt giảm tốt nhất:</span>
-                      <span className="font-semibold text-emerald-300">
-                        {prevMonthStats.topDecrease.category} ({formatCurrency(prevMonthStats.topDecrease.delta)})
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
 
-          {/* Highlights Info Box */}
-          <div className="p-3 rounded-2xl bg-white/5 border border-white/5 space-y-1.5 text-xs">
-            {biggestExpense && (
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Món chi sinh hoạt lớn nhất:</span>
-                </span>
-                <span className="font-bold text-amber-300 text-right truncate max-w-[240px]">
-                  {biggestExpense.purchaseItem}{' '}
-                  <span className="font-mono-tabular text-rose-300">
-                    ({formatCurrency(biggestExpense.amount)})
-                  </span>
-                </span>
+                    {/* Official Health Assessment Seal */}
+                    <div className="p-4 rounded-2xl bg-white/[0.04] border border-amber-400/20 shadow-xs space-y-1.5 relative overflow-hidden">
+                      <div className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full bg-amber-500/10 blur-xl pointer-events-none" />
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                          <span className="text-sm">{healthStars}</span>
+                          <span>{healthTitle}</span>
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${healthBadge}`}>
+                          {healthBadgeText}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-300 leading-relaxed pt-0.5">
+                        {healthDesc}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 3 Main Pillars of Financial Balance */}
+                  <div className="space-y-2.5">
+                    <div className="text-[11px] font-bold text-amber-200/80 uppercase tracking-wider font-mono">
+                      Cân đối thu chi tháng
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2 text-xs">
+                      {/* Income Row */}
+                      <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-500/30 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                          <span className="font-semibold text-emerald-200">Tổng thu nhập:</span>
+                        </div>
+                        <span className="font-extrabold font-mono-tabular text-sm text-emerald-300">
+                          {formatCurrency(totalIncome)}
+                        </span>
+                      </div>
+
+                      {/* Living Expense Row */}
+                      <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-700/60 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-sky-400" />
+                          <span className="font-semibold text-slate-300">Chi sinh hoạt:</span>
+                        </div>
+                        <span className="font-extrabold font-mono-tabular text-sm text-white">
+                          {formatCurrency(livingExpense)}
+                          <span className="text-[10px] font-normal text-slate-400 ml-1">
+                            ({livingPctOfIncome.toFixed(0)}%)
+                          </span>
+                        </span>
+                      </div>
+
+                      {/* Savings Row if exists */}
+                      {savingsAmount > 0 && (
+                        <div className="p-3 rounded-xl bg-teal-950/40 border border-teal-500/30 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-teal-400" />
+                            <span className="font-semibold text-teal-200">Trích gửi Tiết kiệm:</span>
+                          </div>
+                          <span className="font-extrabold font-mono-tabular text-sm text-teal-300">
+                            {formatCurrency(savingsAmount)}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Net Remaining Row */}
+                      <div
+                        className={`p-3 rounded-xl border flex items-center justify-between ${
+                          cashRemaining >= 0
+                            ? 'bg-sky-950/30 border-sky-500/30 text-sky-200'
+                            : 'bg-rose-950/30 border-rose-500/30 text-rose-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              cashRemaining >= 0 ? 'bg-sky-400' : 'bg-rose-500'
+                            }`}
+                          />
+                          <span className="font-semibold">
+                            {cashRemaining >= 0 ? 'Dòng tiền mặt còn lại:' : 'Dòng tiền ví thâm hụt:'}
+                          </span>
+                        </div>
+                        <span className="font-extrabold font-mono-tabular text-sm">
+                          {formatCurrency(cashRemaining, cashRemaining > 0)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stamp & Verification */}
+                  <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                    <span className="font-serif italic">Verified with Google Sheets</span>
+                    <span className="font-mono text-amber-400/80 font-bold">HM-PASSBOOK #{monthNum}{yearNum}</span>
+                  </div>
+                </motion.div>
+
+                {/* ════════ RIGHT PAGE (7 cols): FINANCIAL INSIGHTS & AUDIT ════════ */}
+                <motion.div
+                  initial={{ rotateY: 15, opacity: 0 }}
+                  animate={{ rotateY: 0, opacity: 1 }}
+                  transition={{ duration: 0.35, ease: 'easeOut' }}
+                  style={{ transformOrigin: 'left center' }}
+                  className={`md:col-span-7 p-6 sm:p-7 flex flex-col justify-between space-y-5 bg-slate-900/90 ${
+                    mobileTab === 'cover' ? 'hidden md:flex' : 'flex'
+                  }`}
+                >
+                  <div className="space-y-4">
+                    {/* Section 1: MoM Comparison */}
+                    {prevMonthStats && prevMonthStats.hasData && (
+                      <div className="p-3.5 rounded-2xl bg-indigo-950/30 border border-indigo-700/40 space-y-2.5 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-indigo-300 flex items-center gap-1.5">
+                            <TrendingUp className="w-3.5 h-3.5 text-indigo-400" />
+                            <span>So với tháng trước ({prevMonthLabel}):</span>
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold font-mono-tabular px-2.5 py-0.5 rounded-full border ${
+                              isExpenseDecreased
+                                ? 'bg-emerald-950/60 text-emerald-300 border-emerald-700/60'
+                                : isExpenseIncreased
+                                ? 'bg-rose-950/60 text-rose-300 border-rose-700/60'
+                                : 'bg-amber-950/60 text-amber-300 border-amber-700/60'
+                            }`}
+                          >
+                            {isExpenseDecreased
+                              ? '📉 Tiết kiệm hơn'
+                              : isExpenseIncreased
+                              ? '📈 Chi nhiều hơn'
+                              : '⚖️ Chi tiêu ổn định'}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-[11px]">
+                          <div className="p-2 rounded-xl bg-white/5 border border-white/5">
+                            <div className="text-slate-400 text-[10px]">Tổng chi:</div>
+                            <div
+                              className={`font-bold font-mono-tabular text-xs mt-0.5 ${
+                                isExpenseDecreased
+                                  ? 'text-emerald-300'
+                                  : isExpenseIncreased
+                                  ? 'text-rose-400'
+                                  : 'text-amber-300'
+                              }`}
+                            >
+                              {prevMonthStats.expenseDelta <= 0 ? '' : '+'}
+                              {formatCurrency(prevMonthStats.expenseDelta)}{' '}
+                              <span className="text-[10px] font-normal text-slate-400">
+                                ({prevMonthStats.expenseDeltaPct > 0 ? '+' : ''}
+                                {prevMonthStats.expenseDeltaPct.toFixed(1)}%)
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="p-2 rounded-xl bg-white/5 border border-white/5">
+                            <div className="text-slate-400 text-[10px]">Tổng thu:</div>
+                            <div
+                              className={`font-bold font-mono-tabular text-xs mt-0.5 ${
+                                isIncomeIncreased
+                                  ? 'text-emerald-300'
+                                  : isIncomeDecreased
+                                  ? 'text-rose-400'
+                                  : 'text-amber-300'
+                              }`}
+                            >
+                              {prevMonthStats.incomeDelta >= 0 ? '+' : ''}
+                              {formatCurrency(prevMonthStats.incomeDelta)}{' '}
+                              <span className="text-[10px] font-normal text-slate-400">
+                                ({prevMonthStats.incomeDeltaPct > 0 ? '+' : ''}
+                                {prevMonthStats.incomeDeltaPct.toFixed(1)}%)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {(prevMonthStats.topIncrease || prevMonthStats.topDecrease) && (
+                          <div className="space-y-1 text-[11px] text-slate-300 pt-1 border-t border-indigo-900/40">
+                            {prevMonthStats.topIncrease && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-400">• Tăng nhiều nhất:</span>
+                                <span className="font-semibold text-rose-300">
+                                  {prevMonthStats.topIncrease.category} (+{formatCurrency(prevMonthStats.topIncrease.delta)})
+                                </span>
+                              </div>
+                            )}
+                            {prevMonthStats.topDecrease && (
+                              <div className="flex items-center justify-between">
+                                <span className="text-slate-400">• Cắt giảm tốt nhất:</span>
+                                <span className="font-semibold text-emerald-300">
+                                  {prevMonthStats.topDecrease.category} ({formatCurrency(prevMonthStats.topDecrease.delta)})
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Section 2: Top Living Categories with visual progress bars */}
+                    <div className="space-y-2">
+                      <div className="text-xs font-bold text-slate-300 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <Award className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Top Hạng Mục Chi Tiêu Sinh Hoạt:</span>
+                        </span>
+                        {livingExpense > 0 && (
+                          <span className="text-[10px] text-slate-400 font-mono-tabular">
+                            Tổng sinh hoạt: {formatCurrency(livingExpense)}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5 text-xs">
+                        {topLivingCategories.map((c, idx) => (
+                          <div
+                            key={c.category}
+                            className="p-2.5 rounded-xl bg-white/5 border border-white/5 space-y-1.5"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-semibold text-slate-200">
+                                {idx + 1}. {c.category}
+                              </span>
+                              <span className="font-bold font-mono-tabular text-rose-300">
+                                {formatCurrency(c.amount)}{' '}
+                                <span className="text-[10px] text-slate-400 font-normal">
+                                  ({c.pctOfLiving.toFixed(0)}%)
+                                </span>
+                              </span>
+                            </div>
+                            {/* Thin progress bar */}
+                            <div className="w-full h-1 bg-slate-800 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-gradient-to-r from-amber-400 to-rose-400 rounded-full"
+                                style={{ width: `${Math.min(100, c.pctOfLiving)}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Section 3: Highlights (Biggest item & Card credit) */}
+                    <div className="p-3.5 rounded-2xl bg-white/5 border border-white/5 space-y-2 text-xs">
+                      {biggestExpense && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-400 flex items-center gap-1.5 shrink-0">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Món chi lớn nhất:</span>
+                          </span>
+                          <span className="font-bold text-amber-300 text-right truncate max-w-[260px]">
+                            {biggestExpense.purchaseItem}{' '}
+                            <span className="font-mono-tabular text-rose-300">
+                              ({formatCurrency(biggestExpense.amount)})
+                            </span>
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between text-slate-400 pt-1.5 border-t border-white/5">
+                        <span className="flex items-center gap-1.5">
+                          <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
+                          <span>Quẹt thẻ tín dụng:</span>
+                        </span>
+                        <strong className="text-indigo-300 font-mono-tabular">
+                          {formatCurrency(totalCredit)}
+                        </strong>
+                      </div>
+                      <div className="flex items-center justify-between text-slate-400">
+                        <span className="flex items-center gap-1.5">
+                          <Building2 className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Ví BE Corp:</span>
+                        </span>
+                        <strong className="text-amber-300 font-mono-tabular">
+                          {formatCurrency(totalBeCorp)}
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800">
+                    <button
+                      type="button"
+                      onClick={handleCopySummary}
+                      className="py-2.5 px-4 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="w-4 h-4 text-emerald-400" />
+                          <span className="text-emerald-400">Đã chép tóm tắt!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4 text-slate-300" />
+                          <span>Sao chép tóm tắt</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleDownloadImage}
+                      disabled={isGeneratingImg}
+                      className="py-2.5 px-4 rounded-xl font-bold text-xs bg-gradient-to-r from-amber-500 via-teal-600 to-indigo-600 hover:opacity-95 text-white transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                    >
+                      <Download className="w-4 h-4 text-amber-200" />
+                      <span>{isGeneratingImg ? 'Đang tạo...' : 'Lưu ảnh thiệp (PNG)'}</span>
+                    </button>
+                  </div>
+                </motion.div>
               </div>
-            )}
-            <div className="flex items-center justify-between text-slate-400 pt-1 border-t border-white/5">
-              <span>Quẹt thẻ tín dụng:</span>
-              <strong className="text-indigo-300 font-mono-tabular">
-                {formatCurrency(totalCredit)}
-              </strong>
-            </div>
+            </motion.div>
           </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <button
-            type="button"
-            onClick={handleCopySummary}
-            className="py-2.5 px-4 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700"
-          >
-            {copied ? (
-              <>
-                <Check className="w-4 h-4 text-emerald-400" />
-                <span className="text-emerald-400">Đã chép tóm tắt!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-4 h-4 text-slate-300" />
-                <span>Sao chép tóm tắt</span>
-              </>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleDownloadImage}
-            disabled={isGeneratingImg}
-            className="py-2.5 px-4 rounded-xl font-bold text-xs bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-500 hover:to-indigo-500 text-white transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-          >
-            <Download className="w-4 h-4 text-amber-300" />
-            <span>{isGeneratingImg ? 'Đang tạo...' : 'Lưu ảnh thiệp (PNG)'}</span>
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
-  )}
-</AnimatePresence>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };

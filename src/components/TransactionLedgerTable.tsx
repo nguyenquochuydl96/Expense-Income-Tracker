@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { motion } from 'motion/react';
 import {
   Search,
   Plus,
@@ -500,7 +501,21 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
               <th className="py-2.5 px-3 text-center w-20">Thao tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
+          <motion.tbody
+            key={`${selectedCategory}-${quickFilter}-${filterBigExpense}-${sortOrder}-${searchQuery}`}
+            initial="hidden"
+            animate="show"
+            variants={{
+              hidden: { opacity: 0 },
+              show: {
+                opacity: 1,
+                transition: {
+                  staggerChildren: 0.02,
+                },
+              },
+            }}
+            className="divide-y divide-slate-100 dark:divide-slate-800 text-xs"
+          >
             {displayedRows.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-12 text-center text-slate-500 dark:text-slate-400">
@@ -511,8 +526,12 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
               displayedRows.map((rec) => {
                 const catColor = CATEGORY_COLORS[rec.category] || '#64748B';
                 return (
-                  <tr
+                  <motion.tr
                     key={rec.id}
+                    variants={{
+                      hidden: { opacity: 0, y: 5 },
+                      show: { opacity: 1, y: 0, transition: { duration: 0.18, ease: [0.16, 1, 0.3, 1] } },
+                    }}
                     className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors"
                   >
                     <td className="py-2.5 px-4 font-mono-tabular text-slate-600 dark:text-slate-400 whitespace-nowrap">
@@ -603,11 +622,11 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                         )}
                       </div>
                     </td>
-                  </tr>
+                  </motion.tr>
                 );
               })
             )}
-          </tbody>
+          </motion.tbody>
         </table>
       </div>
 

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { motion } from 'motion/react';
 import { TransactionRecord, EXPENSE_CATEGORIES, BudgetTransferRecord } from '../types/finance';
 import { isBudgetTransferRecord } from '../utils/cycleUtils';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
@@ -655,14 +656,32 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                 <th className="py-2.5 px-3 text-center">Giao dịch</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono-tabular">
+            <motion.tbody
+              key={`${selectedMonth}-${activeCategories.join(',')}`}
+              initial="hidden"
+              animate="show"
+              variants={{
+                hidden: { opacity: 0 },
+                show: {
+                  opacity: 1,
+                  transition: {
+                    staggerChildren: 0.035,
+                  },
+                },
+              }}
+              className="divide-y divide-slate-100 dark:divide-slate-800 font-mono-tabular"
+            >
               {displayedItems.map((item) => {
                 const isSelected = activeCategories.includes(item.category);
                 const isOver = item.remaining < 0;
 
                 return (
-                  <tr
+                  <motion.tr
                     key={item.category}
+                    variants={{
+                      hidden: { opacity: 0, y: 6 },
+                      show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] } },
+                    }}
                     onClick={() => {
                       if (onToggleCategory) {
                         onToggleCategory(item.category);
@@ -813,10 +832,10 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                         <span className="text-slate-300 dark:text-slate-600">—</span>
                       )}
                     </td>
-                  </tr>
+                  </motion.tr>
                 );
               })}
-            </tbody>
+            </motion.tbody>
 
             {/* Footer Total Row */}
             <tfoot>

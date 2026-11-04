@@ -207,6 +207,21 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
   - Cả 2 Dropdown đa chọn (`MultiMonthPickerDropdown` & `MultiCategoryPickerDropdown`) mở ra với scale-in spring và thu lại mượt mà khi đóng.
 * **Banner & Toast Notification:** Toast thông báo và Banner danh mục lọc mở rộng/thu gọn tự nhiên với `<AnimatePresence>`.
 
+### 2.17 Nâng cấp Trải nghiệm Thị giác & Animation Đỉnh cao (3D Parallax Tilt, Thác nước Stagger & Sổ Tài Chính 3D Spread)
+* **Thẻ KPI 3D Parallax Tilt & Vệt Sáng Phản Quang ([`TiltCard.tsx`](file:///src/components/TiltCard.tsx)):**
+  - Cả 5 thẻ KPI (Tổng thu nhập, Tổng chi tiêu, Số dư Net, Ví BE Corp, Thẻ tín dụng Credit) và các thẻ KPI danh mục được bọc trong component 3D Tilt:
+    - Khi rê chuột, thẻ nghiêng phối cảnh vật lý 3D tự nhiên (`rotateX`, `rotateY`, `perspective: 1000px`) bám theo tọa độ con trỏ chuột.
+    - Vệt sáng phản quang ánh kim động (`radial-gradient` chuyển động mượt mà bằng `useMotionTemplate`) lướt trên bề mặt thẻ như phôi thẻ ngân hàng cao cấp.
+    - Thao tác nhấc bổng thẻ mượt mà (`scale: 1.02, y: -3`) và lún nhẹ chân thực khi click (`whileTap={{ scale: 0.98 }}`).
+* **Hiệu ứng Mở Lật Sổ Tài Chính 3D ([`MonthlyReportCardModal.tsx`](file:///src/components/MonthlyReportCardModal.tsx)):**
+  - Tái cấu trúc hộp thoại Báo cáo tháng từ modal phẳng thông thường thành **Cuốn Sổ Tài Chính Mở Lật 3D (Dual-Page Financial Passbook)** lấy cảm hứng từ clip mẫu xuất sắc:
+    - **Trang Bìa Trái (Cover Flap):** Nền da Navy cao cấp với góc viền mạ vàng, quốc huy linh vật Heo & Mèo trong vòng nguyệt quế vàng, con dấu thẩm định sức khỏe tài chính (Stars rating + Badge tích lũy), và 3 trụ cột cân đối ngân sách.
+    - **Trang Đối Soát Phải (Insights Page):** Phân tích so sánh MoM với tháng trước, Top 3 hạng mục chi tiêu sinh hoạt với thanh tiến độ ngân sách dạng thanh mảnh tinh tế, điểm nhấn món chi lớn nhất & sao kê thẻ, kèm 2 nút hành động chép tóm tắt và tải ảnh thiệp PNG sắc nét.
+    - **Chuyển động mở sách 3D:** Hiệu ứng lật mở 2 cánh sách trong không gian 3D (`perspective: 1600px`, cánh trái mở từ `rotateY: -15deg`, cánh phải từ `rotateY: 15deg`).
+    - **Tối ưu Mobile:** Trên smartphone (< 768px), giao diện tự động gom gọn với bộ chuyển tab thông minh `[ Bìa Sổ ]` & `[ Đối Soát ]` giúp trải nghiệm trọn vẹn, không tràn màn hình.
+* **Thác Nước So Le (Staggered Waterfall Animation):**
+  - Bảng Ngân sách Hạng mục ([`CategoryBudgetTable.tsx`](file:///src/components/CategoryBudgetTable.tsx)) và Sổ giao dịch ([`TransactionLedgerTable.tsx`](file:///src/components/TransactionLedgerTable.tsx)) áp dụng hiệu ứng `staggerChildren: 0.02 - 0.035s`. Mỗi khi đổi tháng lọc, tick danh mục hoặc chuyển bộ lọc, các dòng dữ liệu không xuất hiện đồng loạt mà lướt nhẹ so le như dòng tiền đang chảy.
+
 ---
 
 ## 3. Quản lý Chu kỳ & Logic ngày (Cycle Configuration)
@@ -246,8 +261,9 @@ src/
 ├── App.tsx                              # Main layout, 5 KPI cards, Header bo cong, Filter bar, Fluid animations
 ├── index.css                            # Palette màu mới, font tokens, scrollbar styling
 ├── components/
-│   ├── AnimatedCurrency.tsx             # MỚI: Rolling/Sliding numbers cho số tiền (SlidingNumber)
-│   ├── MultiCategoryPickerDropdown.tsx  # MỚI: Dropdown tick chọn nhiều danh mục tự do
+│   ├── TiltCard.tsx                     # MỚI: Thẻ hiệu ứng 3D Parallax Tilt & Vệt sáng ánh kim phản quang
+│   ├── AnimatedCurrency.tsx             # Rolling/Sliding numbers cho số tiền (SlidingNumber)
+│   ├── MultiCategoryPickerDropdown.tsx  # Dropdown tick chọn nhiều danh mục tự do
 │   ├── MultiMonthPickerDropdown.tsx     # Dropdown chọn nhiều tháng / 1 tháng
 │   ├── CategoryBudgetTable.tsx          # Bảng Ngân sách & Chi tiêu theo Hạng mục (Budget · Đã chi · Còn lại)
 │   ├── MultiMonthSummaryTable.tsx       # Ma trận đối chiếu ngân sách đa tháng (Thu nhập Sheet Income, Chi, Remaining)
