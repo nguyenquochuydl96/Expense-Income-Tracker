@@ -187,7 +187,7 @@ export const MultiCategoryPickerDropdown: React.FC<MultiCategoryPickerDropdownPr
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex items-center gap-2 px-3 py-2 bg-white hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700/80 border border-slate-200/90 dark:border-slate-700 rounded-lg shadow-2xs transition-colors cursor-pointer text-xs font-medium text-slate-700 dark:text-slate-200"
+        className="flex items-center gap-2 px-3 py-2 rounded-xl shadow-2xs transition-all cursor-pointer text-xs font-medium text-slate-800 dark:text-slate-100 theme-filter-trigger"
         title="Bấm để tick chọn một hoặc nhiều danh mục"
         aria-haspopup="true"
         aria-expanded={isOpen}

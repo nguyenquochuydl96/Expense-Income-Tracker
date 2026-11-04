@@ -450,9 +450,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
             <button
               type="button"
               onClick={() => setViewTab('month_detail')}
-              className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                 viewTab === 'month_detail'
-                  ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white shadow-xs font-bold border border-slate-200/80 dark:border-indigo-500'
+                  ? 'theme-preset-btn-active'
                   : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
               }`}
             >
@@ -461,9 +461,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
             <button
               type="button"
               onClick={() => setViewTab('multi_month_matrix')}
-              className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                 viewTab === 'multi_month_matrix'
-                  ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white shadow-xs font-bold border border-slate-200/80 dark:border-indigo-500'
+                  ? 'theme-preset-btn-active'
                   : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
               }`}
             >
@@ -803,7 +803,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                                 ? 'bg-rose-500'
                                 : item.pctUsed > 80
                                 ? 'bg-amber-500'
-                                : 'bg-emerald-500'
+                                : 'theme-progress-fill'
                             }`}
                             style={{ width: `${Math.min(100, Math.max(0, item.pctUsed))}%` }}
                           />
@@ -890,7 +890,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                             ? 'bg-rose-500'
                             : currentViewStats.overallPctUsed > 80
                             ? 'bg-amber-500'
-                            : 'bg-emerald-500'
+                            : 'theme-progress-fill'
                         }`}
                         style={{ width: `${Math.min(100, currentViewStats.overallPctUsed)}%` }}
                       />

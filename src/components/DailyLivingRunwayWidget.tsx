@@ -276,23 +276,23 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
   };
 
   return (
-    <div className="mb-5 bg-gradient-to-br from-indigo-900/5 via-teal-900/5 to-slate-100/50 rounded-2xl border border-indigo-100/80 p-4 sm:p-5 shadow-xs transition-all">
+    <div className="mb-5 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-4 sm:p-5 shadow-xs transition-all">
       {/* Header bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-indigo-100/60">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-2xs">
             <Zap className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-1.5">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight flex items-center gap-1.5">
                 <span>Dự Báo Chi Tiêu Hằng Ngày &amp; Hạn Mức An Toàn</span>
               </h3>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 border border-teal-200">
                 {dailyItems.length} danh mục thường nhật
               </span>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5">
               <Calendar className="w-3 h-3 text-slate-400" />
               <span>
                 {dateMetrics.isPast ? (
@@ -314,7 +314,7 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
           <button
             type="button"
             onClick={openSettings}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-indigo-700 bg-white hover:bg-indigo-50/60 rounded-lg border border-slate-200 shadow-2xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-700 shadow-2xs transition-colors"
             title="Tùy chọn danh mục tính vào chi tiêu hằng ngày"
           >
             <Settings className="w-3.5 h-3.5 text-slate-500" />
@@ -323,7 +323,7 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
           <button
             type="button"
             onClick={toggleCollapsed}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-slate-900 bg-white rounded-lg border border-slate-200 shadow-2xs transition-colors"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-700 shadow-2xs transition-colors"
           >
             {isCollapsed ? (
               <>
@@ -346,50 +346,50 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
           {/* Hero 3 Cards Matrix */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {/* Card 1: Safe Daily Allowance */}
-            <div className="p-3.5 rounded-xl bg-white border border-teal-200/80 shadow-2xs flex flex-col justify-between relative overflow-hidden">
-              <div className="flex items-center justify-between text-xs text-teal-800 font-semibold mb-1">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-teal-200/60 dark:border-teal-700/40 shadow-2xs flex flex-col justify-between relative overflow-hidden">
+              <div className="flex items-center justify-between text-xs text-teal-800 dark:text-teal-300 font-semibold mb-1">
                 <span className="flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 text-teal-600" />
+                  <Zap className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
                   <span>Hạn mức an toàn hôm nay:</span>
                 </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-200">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
                   {dateMetrics.remainingDays > 0 ? `${dateMetrics.remainingDays} ngày tới` : 'Hết kỳ'}
                 </span>
               </div>
-              <div className="text-xl sm:text-2xl font-black text-teal-700 font-mono-tabular tracking-tight my-0.5">
+              <div className="text-xl sm:text-2xl font-black text-teal-700 dark:text-teal-300 font-mono-tabular tracking-tight my-0.5">
                 {formatCurrency(summary.safeDailyAllowance)}
-                <span className="text-xs font-semibold text-teal-600"> /ngày</span>
+                <span className="text-xs font-semibold text-teal-600 dark:text-teal-400"> /ngày</span>
               </div>
-              <div className="text-[11px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-100">
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between pt-1 border-t border-slate-200 dark:border-slate-700">
                 <span>Ngân sách còn: {formatCurrency(summary.totalRemaining)}</span>
                 <span className="text-[10px] text-slate-400">cả nhà</span>
               </div>
             </div>
 
             {/* Card 2: Actual Burn Rate */}
-            <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs flex flex-col justify-between">
-              <div className="flex items-center justify-between text-xs text-slate-700 font-semibold mb-1">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/50 shadow-2xs flex flex-col justify-between">
+              <div className="flex items-center justify-between text-xs text-slate-700 dark:text-slate-200 font-semibold mb-1">
                 <span className="flex items-center gap-1.5">
                   <Flame className="w-3.5 h-3.5 text-amber-500" />
                   <span>Tốc độ tiêu thực tế:</span>
                 </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                   {dateMetrics.elapsedDays} ngày qua
                 </span>
               </div>
-              <div className="text-xl sm:text-2xl font-black text-slate-800 font-mono-tabular tracking-tight my-0.5">
+              <div className="text-xl sm:text-2xl font-black text-slate-800 dark:text-slate-100 font-mono-tabular tracking-tight my-0.5">
                 {formatCurrency(summary.burnRateDaily)}
-                <span className="text-xs font-semibold text-slate-500"> /ngày</span>
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400"> /ngày</span>
               </div>
-              <div className="text-[11px] pt-1 border-t border-slate-100 flex items-center justify-between">
+              <div className="text-[11px] pt-1 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
                 {summary.isPacingSafe ? (
-                  <span className="text-emerald-700 font-medium flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                  <span className="text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                     <span>Dưới hạn mức an toàn ({formatCurrency(Math.abs(summary.diff))})</span>
                   </span>
                 ) : (
-                  <span className="text-rose-700 font-semibold flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3 text-rose-600" />
+                  <span className="text-rose-700 dark:text-rose-400 font-semibold flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
                     <span>Vượt nhịp độ an toàn ({formatCurrency(Math.abs(summary.diff))})</span>
                   </span>
                 )}
@@ -397,35 +397,29 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
             </div>
 
             {/* Card 3: Combined Living Budget Progress */}
-            <div className="p-3.5 rounded-xl bg-white border border-slate-200/80 shadow-2xs flex flex-col justify-between">
-              <div className="flex items-center justify-between text-xs text-slate-700 font-semibold mb-1">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/50 shadow-2xs flex flex-col justify-between">
+              <div className="flex items-center justify-between text-xs text-slate-700 dark:text-slate-200 font-semibold mb-1">
                 <span className="flex items-center gap-1.5">
-                  <Wallet className="w-3.5 h-3.5 text-indigo-600" />
+                  <Wallet className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
                   <span>Tiến độ quỹ thường nhật:</span>
                 </span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
                   {summary.pctUsed.toFixed(1)}%
                 </span>
               </div>
               <div className="space-y-1.5 my-1">
-                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div className="w-full bg-slate-200/80 dark:bg-slate-700/70 h-2 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all ${
-                      summary.pctUsed > 100
-                        ? 'bg-rose-500'
-                        : summary.pctUsed > 85
-                        ? 'bg-amber-500'
-                        : 'bg-teal-500'
-                    }`}
+                    className="h-full rounded-full transition-all theme-progress-fill"
                     style={{ width: `${Math.min(100, summary.pctUsed)}%` }}
                   />
                 </div>
-                <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono-tabular">
+                <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono-tabular">
                   <span>Đã chi: {formatCurrency(summary.totalSpent)}</span>
                   <span>Tổng quỹ: {formatCurrency(summary.totalBudget)}</span>
                 </div>
               </div>
-              <div className="text-[10px] text-slate-400 text-right">
+              <div className="text-[10px] text-slate-400 dark:text-slate-500 text-right">
                 Gồm: {dailyItems.map((i) => i.category).join(', ')}
               </div>
             </div>
