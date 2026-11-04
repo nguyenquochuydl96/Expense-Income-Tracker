@@ -378,198 +378,424 @@ html.dark .relative.bg-white {
 }
 
 /* =========================================================================
-   HEO & MÈO MULTI-PALETTE THEME DESIGN TOKENS
+   BASE KPI CARDS & HEADER DEFAULT PALETTE (Fallback for Classic)
+   ========================================================================= */
+.kpi-card-income {
+  background-color: #0B4B8A;
+}
+.kpi-card-expense {
+  background-color: #0077B6;
+}
+.kpi-card-net {
+  background-color: #059669;
+}
+.kpi-card-net-negative {
+  background-color: #DC2626;
+}
+.kpi-card-becorp {
+  background-color: #D97706;
+}
+.kpi-card-credit {
+  background-color: #6D3894;
+}
+
+header.app-header-gradient,
+.app-header-gradient {
+  background: linear-gradient(135deg, #0F172A 0%, #132247 100%);
+}
+
+/* =========================================================================
+   HEO & MÈO MULTI-PALETTE THEME DESIGN TOKENS (DARK & LIGHT)
    ========================================================================= */
 
-/* 🌌 1. COPILOT OBSIDIAN & AURORA MESH */
-html[data-theme="obsidian"].dark body {
+/* ═════════════════════════════════════════════════════════════════════════
+   🌌 1. COPILOT OBSIDIAN & AURORA MESH (Apple Design Award Luxury)
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* --- Obsidian Dark (Signature Mode) --- */
+html[data-theme="obsidian"].dark body,
+html[data-theme="obsidian"].dark .min-h-screen,
+html[data-theme="obsidian"].dark div[class*="min-h-screen"] {
   background-color: #080B11 !important;
   background-image: 
-    radial-gradient(circle at 12% 12%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 88% 18%, rgba(6, 182, 212, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 50% 65%, rgba(244, 63, 94, 0.05) 0%, transparent 45%) !important;
+    radial-gradient(circle at 12% 10%, rgba(99, 102, 241, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 88% 16%, rgba(6, 182, 212, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 50% 60%, rgba(244, 63, 94, 0.08) 0%, transparent 50%) !important;
   background-attachment: fixed !important;
 }
 
-html[data-theme="obsidian"].dark .min-h-screen {
-  background-color: #080B11 !important;
-}
-
-html[data-theme="obsidian"].dark .bg-white {
+html[data-theme="obsidian"].dark .bg-white,
+html[data-theme="obsidian"].dark [class*="bg-white"],
+html[data-theme="obsidian"].dark .bg-slate-900,
+html[data-theme="obsidian"].dark [class*="dark:bg-slate-900"],
+html[data-theme="obsidian"].dark [class*="dark:bg-slate-800"] {
   background-color: #0F1522 !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(99, 102, 241, 0.22) !important;
+  color: #F8FAFC !important;
 }
 
 html[data-theme="obsidian"].dark .bg-slate-50,
-html[data-theme="obsidian"].dark .bg-slate-50\/50,
-html[data-theme="obsidian"].dark .bg-slate-50\/80,
-html[data-theme="obsidian"].dark .bg-slate-50\/40,
-html[data-theme="obsidian"].dark .bg-slate-50\/30,
-html[data-theme="obsidian"].dark .bg-slate-50\/60 {
-  background-color: #131B2B !important;
-}
-
+html[data-theme="obsidian"].dark [class*="bg-slate-50"],
 html[data-theme="obsidian"].dark .bg-slate-100,
-html[data-theme="obsidian"].dark .bg-slate-100\/90,
-html[data-theme="obsidian"].dark .bg-slate-100\/80 {
-  background-color: #182338 !important;
+html[data-theme="obsidian"].dark [class*="bg-slate-100"],
+html[data-theme="obsidian"].dark [class*="dark:bg-slate-800/40"],
+html[data-theme="obsidian"].dark [class*="dark:bg-slate-800/90"],
+html[data-theme="obsidian"].dark [class*="dark:bg-slate-700"] {
+  background-color: #141C2E !important;
 }
 
 html[data-theme="obsidian"].dark .border-slate-200,
-html[data-theme="obsidian"].dark .border-slate-200\/80,
-html[data-theme="obsidian"].dark .border-slate-200\/90,
-html[data-theme="obsidian"].dark .border-slate-200\/70,
-html[data-theme="obsidian"].dark .border-slate-100 {
-  border-color: rgba(255, 255, 255, 0.08) !important;
+html[data-theme="obsidian"].dark [class*="border-slate-200"],
+html[data-theme="obsidian"].dark .border-slate-100,
+html[data-theme="obsidian"].dark [class*="border-slate-100"],
+html[data-theme="obsidian"].dark [class*="border-slate-300"],
+html[data-theme="obsidian"].dark [class*="dark:border-slate-800"],
+html[data-theme="obsidian"].dark [class*="dark:border-slate-700"] {
+  border-color: rgba(255, 255, 255, 0.09) !important;
 }
 
-html[data-theme="obsidian"] header.bg-gradient-to-r,
+html[data-theme="obsidian"] header,
 html[data-theme="obsidian"] .app-header-gradient {
   background: linear-gradient(135deg, #090D15 0%, #121A2B 50%, #0A0F19 100%) !important;
-  border-color: rgba(99, 102, 241, 0.28) !important;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6) !important;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.35) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7) !important;
 }
 
-/* 5 KPI Cards in Obsidian: Aurora Glow Styling */
-html[data-theme="obsidian"].dark .kpi-card-income {
-  background: linear-gradient(145deg, #081B24, #0D2C3B) !important;
-  border: 1px solid rgba(6, 182, 212, 0.35) !important;
-  box-shadow: 0 8px 24px -6px rgba(6, 182, 212, 0.22), inset 0 1px 0 rgba(6, 182, 212, 0.25) !important;
+/* KPI Cards - Obsidian Aurora Glow */
+html[data-theme="obsidian"] .kpi-card-income {
+  background: linear-gradient(145deg, #081B24 0%, #0D2C3B 100%) !important;
+  border: 1px solid rgba(6, 182, 212, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(6, 182, 212, 0.3), inset 0 1px 0 rgba(6, 182, 212, 0.35) !important;
 }
-html[data-theme="obsidian"].dark .kpi-card-expense {
-  background: linear-gradient(145deg, #220C19, #361227) !important;
-  border: 1px solid rgba(244, 63, 94, 0.35) !important;
-  box-shadow: 0 8px 24px -6px rgba(244, 63, 94, 0.22), inset 0 1px 0 rgba(244, 63, 94, 0.25) !important;
+html[data-theme="obsidian"] .kpi-card-expense {
+  background: linear-gradient(145deg, #220C19 0%, #361227 100%) !important;
+  border: 1px solid rgba(244, 63, 94, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(244, 63, 94, 0.3), inset 0 1px 0 rgba(244, 63, 94, 0.35) !important;
 }
-html[data-theme="obsidian"].dark .kpi-card-net {
-  background: linear-gradient(145deg, #062018, #0C3629) !important;
-  border: 1px solid rgba(16, 185, 129, 0.35) !important;
-  box-shadow: 0 8px 24px -6px rgba(16, 185, 129, 0.22), inset 0 1px 0 rgba(16, 185, 129, 0.25) !important;
+html[data-theme="obsidian"] .kpi-card-net {
+  background: linear-gradient(145deg, #062018 0%, #0C3629 100%) !important;
+  border: 1px solid rgba(16, 185, 129, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(16, 185, 129, 0.35) !important;
 }
-html[data-theme="obsidian"].dark .kpi-card-net-negative {
-  background: linear-gradient(145deg, #2B0A0A, #451010) !important;
-  border: 1px solid rgba(239, 68, 68, 0.4) !important;
-  box-shadow: 0 8px 24px -6px rgba(239, 68, 68, 0.25) !important;
+html[data-theme="obsidian"] .kpi-card-net-negative {
+  background: linear-gradient(145deg, #2B0A0A 0%, #451010 100%) !important;
+  border: 1px solid rgba(239, 68, 68, 0.5) !important;
+  box-shadow: 0 8px 24px -6px rgba(239, 68, 68, 0.35) !important;
 }
-html[data-theme="obsidian"].dark .kpi-card-becorp {
-  background: linear-gradient(145deg, #241808, #3B260C) !important;
-  border: 1px solid rgba(245, 158, 11, 0.35) !important;
-  box-shadow: 0 8px 24px -6px rgba(245, 158, 11, 0.22), inset 0 1px 0 rgba(245, 158, 11, 0.25) !important;
+html[data-theme="obsidian"] .kpi-card-becorp {
+  background: linear-gradient(145deg, #241808 0%, #3B260C 100%) !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(245, 158, 11, 0.3), inset 0 1px 0 rgba(245, 158, 11, 0.35) !important;
 }
-html[data-theme="obsidian"].dark .kpi-card-credit {
-  background: linear-gradient(145deg, #180D2B, #281546) !important;
-  border: 1px solid rgba(139, 92, 246, 0.35) !important;
-  box-shadow: 0 8px 24px -6px rgba(139, 92, 246, 0.22), inset 0 1px 0 rgba(139, 92, 246, 0.25) !important;
+html[data-theme="obsidian"] .kpi-card-credit {
+  background: linear-gradient(145deg, #180D2B 0%, #281546 100%) !important;
+  border: 1px solid rgba(139, 92, 246, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(139, 92, 246, 0.3), inset 0 1px 0 rgba(139, 92, 246, 0.35) !important;
 }
 
-/* 🍀 2. MONARCH EMERALD & WEALTH GOLD */
-html[data-theme="emerald"].dark body {
+/* --- Obsidian Light (Frosted Ice Variant) --- */
+html[data-theme="obsidian"]:not(.dark) body,
+html[data-theme="obsidian"]:not(.dark) .min-h-screen {
+  background-color: #EDF2F7 !important;
+  background-image: radial-gradient(circle at 12% 10%, rgba(99, 102, 241, 0.05) 0%, transparent 40%) !important;
+}
+html[data-theme="obsidian"]:not(.dark) .bg-white {
+  background-color: #FFFFFF !important;
+  border-color: #CBD5E1 !important;
+  box-shadow: 0 4px 20px -2px rgba(99, 102, 241, 0.06) !important;
+}
+html[data-theme="obsidian"]:not(.dark) .bg-slate-50,
+html[data-theme="obsidian"]:not(.dark) [class*="bg-slate-50"] {
+  background-color: #F8FAFC !important;
+}
+html[data-theme="obsidian"]:not(.dark) .border-slate-200,
+html[data-theme="obsidian"]:not(.dark) [class*="border-slate-200"] {
+  border-color: #CBD5E1 !important;
+}
+
+
+/* ═════════════════════════════════════════════════════════════════════════
+   🍀 2. MONARCH EMERALD & WEALTH GOLD
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* --- Emerald Dark (Signature Mode) --- */
+html[data-theme="emerald"].dark body,
+html[data-theme="emerald"].dark .min-h-screen,
+html[data-theme="emerald"].dark div[class*="min-h-screen"] {
   background-color: #05120E !important;
   background-image: 
-    radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 85% 20%, rgba(245, 158, 11, 0.06) 0%, transparent 40%) !important;
+    radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 85% 20%, rgba(245, 158, 11, 0.09) 0%, transparent 45%) !important;
   background-attachment: fixed !important;
 }
-html[data-theme="emerald"].dark .min-h-screen {
-  background-color: #05120E !important;
+
+html[data-theme="emerald"].dark .bg-white,
+html[data-theme="emerald"].dark [class*="bg-white"],
+html[data-theme="emerald"].dark .bg-slate-900,
+html[data-theme="emerald"].dark [class*="dark:bg-slate-900"],
+html[data-theme="emerald"].dark [class*="dark:bg-slate-800"] {
+  background-color: #0A1C16 !important;
+  border-color: rgba(16, 185, 129, 0.25) !important;
+  color: #ECFDF5 !important;
 }
-html[data-theme="emerald"].dark .bg-white {
-  background-color: #0B1E17 !important;
-  border-color: rgba(16, 185, 129, 0.16) !important;
-}
+
 html[data-theme="emerald"].dark .bg-slate-50,
-html[data-theme="emerald"].dark .bg-slate-50\/50,
-html[data-theme="emerald"].dark .bg-slate-50\/80 {
+html[data-theme="emerald"].dark [class*="bg-slate-50"],
+html[data-theme="emerald"].dark .bg-slate-100,
+html[data-theme="emerald"].dark [class*="bg-slate-100"],
+html[data-theme="emerald"].dark [class*="dark:bg-slate-800/40"],
+html[data-theme="emerald"].dark [class*="dark:bg-slate-800/90"] {
   background-color: #0F261E !important;
 }
-html[data-theme="emerald"] header.bg-gradient-to-r,
+
+html[data-theme="emerald"].dark .border-slate-200,
+html[data-theme="emerald"].dark [class*="border-slate-200"],
+html[data-theme="emerald"].dark [class*="border-slate-100"],
+html[data-theme="emerald"].dark [class*="dark:border-slate-800"] {
+  border-color: rgba(16, 185, 129, 0.15) !important;
+}
+
+html[data-theme="emerald"] header,
 html[data-theme="emerald"] .app-header-gradient {
   background: linear-gradient(135deg, #04140F 0%, #083324 50%, #051A13 100%) !important;
-  border-color: rgba(16, 185, 129, 0.32) !important;
-}
-html[data-theme="emerald"].dark .kpi-card-income {
-  background: linear-gradient(145deg, #07291F, #0E4232) !important;
-  border: 1px solid rgba(16, 185, 129, 0.35) !important;
-}
-html[data-theme="emerald"].dark .kpi-card-expense {
-  background: linear-gradient(145deg, #220F16, #361524) !important;
-  border: 1px solid rgba(244, 63, 94, 0.35) !important;
-}
-html[data-theme="emerald"].dark .kpi-card-net {
-  background: linear-gradient(145deg, #083324, #0F4A35) !important;
-  border: 1px solid rgba(52, 211, 153, 0.38) !important;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.35) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7) !important;
 }
 
-/* ⚡ 3. OCEANIC NAVY & TANGERINE */
-html[data-theme="oceanic"].dark body {
+/* KPI Cards - Emerald Velvet & Gold */
+html[data-theme="emerald"] .kpi-card-income {
+  background: linear-gradient(145deg, #07291F 0%, #0E4232 100%) !important;
+  border: 1px solid rgba(16, 185, 129, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(16, 185, 129, 0.3) !important;
+}
+html[data-theme="emerald"] .kpi-card-expense {
+  background: linear-gradient(145deg, #281216 0%, #3D1822 100%) !important;
+  border: 1px solid rgba(244, 63, 94, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(244, 63, 94, 0.3) !important;
+}
+html[data-theme="emerald"] .kpi-card-net {
+  background: linear-gradient(145deg, #083324 0%, #0F4A35 100%) !important;
+  border: 1px solid rgba(52, 211, 153, 0.5) !important;
+  box-shadow: 0 8px 24px -6px rgba(52, 211, 153, 0.35) !important;
+}
+html[data-theme="emerald"] .kpi-card-becorp {
+  background: linear-gradient(145deg, #2B1E08 0%, #422E0D 100%) !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(245, 158, 11, 0.3) !important;
+}
+html[data-theme="emerald"] .kpi-card-credit {
+  background: linear-gradient(145deg, #191026 0%, #2B1B40 100%) !important;
+  border: 1px solid rgba(168, 85, 247, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(168, 85, 247, 0.3) !important;
+}
+
+/* --- Emerald Light Variant --- */
+html[data-theme="emerald"]:not(.dark) body,
+html[data-theme="emerald"]:not(.dark) .min-h-screen {
+  background-color: #F2F9F5 !important;
+}
+html[data-theme="emerald"]:not(.dark) .bg-white {
+  background-color: #FFFFFF !important;
+  border-color: #A7F3D0 !important;
+  box-shadow: 0 4px 16px -2px rgba(16, 185, 129, 0.08) !important;
+}
+html[data-theme="emerald"]:not(.dark) .bg-slate-50,
+html[data-theme="emerald"]:not(.dark) [class*="bg-slate-50"] {
+  background-color: #ECFDF5 !important;
+}
+html[data-theme="emerald"]:not(.dark) .border-slate-200,
+html[data-theme="emerald"]:not(.dark) [class*="border-slate-200"] {
+  border-color: #A7F3D0 !important;
+}
+
+
+/* ═════════════════════════════════════════════════════════════════════════
+   ⚡ 3. OCEANIC NAVY & ELECTRIC TANGERINE (Neobank)
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* --- Oceanic Dark (Signature Mode) --- */
+html[data-theme="oceanic"].dark body,
+html[data-theme="oceanic"].dark .min-h-screen,
+html[data-theme="oceanic"].dark div[class*="min-h-screen"] {
   background-color: #061324 !important;
   background-image: 
-    radial-gradient(circle at 15% 15%, rgba(37, 99, 235, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 85% 20%, rgba(255, 107, 0, 0.06) 0%, transparent 40%) !important;
+    radial-gradient(circle at 15% 15%, rgba(37, 99, 235, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 85% 20%, rgba(255, 107, 0, 0.09) 0%, transparent 45%) !important;
   background-attachment: fixed !important;
 }
-html[data-theme="oceanic"].dark .min-h-screen {
-  background-color: #061324 !important;
-}
-html[data-theme="oceanic"].dark .bg-white {
+
+html[data-theme="oceanic"].dark .bg-white,
+html[data-theme="oceanic"].dark [class*="bg-white"],
+html[data-theme="oceanic"].dark .bg-slate-900,
+html[data-theme="oceanic"].dark [class*="dark:bg-slate-900"],
+html[data-theme="oceanic"].dark [class*="dark:bg-slate-800"] {
   background-color: #0B1F38 !important;
-  border-color: rgba(37, 99, 235, 0.18) !important;
+  border-color: rgba(37, 99, 235, 0.25) !important;
+  color: #F0F6FF !important;
 }
+
 html[data-theme="oceanic"].dark .bg-slate-50,
-html[data-theme="oceanic"].dark .bg-slate-50\/50,
-html[data-theme="oceanic"].dark .bg-slate-50\/80 {
+html[data-theme="oceanic"].dark [class*="bg-slate-50"],
+html[data-theme="oceanic"].dark .bg-slate-100,
+html[data-theme="oceanic"].dark [class*="bg-slate-100"],
+html[data-theme="oceanic"].dark [class*="dark:bg-slate-800/40"],
+html[data-theme="oceanic"].dark [class*="dark:bg-slate-800/90"] {
   background-color: #102B4D !important;
 }
-html[data-theme="oceanic"] header.bg-gradient-to-r,
-html[data-theme="oceanic"] .app-header-gradient {
-  background: linear-gradient(135deg, #051324 0%, #0D2C54 50%, #08172C 100%) !important;
-  border-color: rgba(37, 99, 235, 0.32) !important;
-}
-html[data-theme="oceanic"].dark .kpi-card-income {
-  background: linear-gradient(145deg, #092C54, #0E3D75) !important;
-  border: 1px solid rgba(56, 189, 248, 0.35) !important;
-}
-html[data-theme="oceanic"].dark .kpi-card-expense {
-  background: linear-gradient(145deg, #301407, #4D210B) !important;
-  border: 1px solid rgba(255, 107, 0, 0.38) !important;
+
+html[data-theme="oceanic"].dark .border-slate-200,
+html[data-theme="oceanic"].dark [class*="border-slate-200"],
+html[data-theme="oceanic"].dark [class*="border-slate-100"],
+html[data-theme="oceanic"].dark [class*="dark:border-slate-800"] {
+  border-color: rgba(37, 99, 235, 0.18) !important;
 }
 
-/* ☕ 4. WARM CANVAS & ESPRESSO LEATHER */
-html[data-theme="espresso"].dark body {
+html[data-theme="oceanic"] header,
+html[data-theme="oceanic"] .app-header-gradient {
+  background: linear-gradient(135deg, #051324 0%, #0D2C54 50%, #08172C 100%) !important;
+  border-bottom: 1px solid rgba(37, 99, 235, 0.35) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* KPI Cards - Oceanic High Contrast */
+html[data-theme="oceanic"] .kpi-card-income {
+  background: linear-gradient(145deg, #092C54 0%, #0E3D75 100%) !important;
+  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(56, 189, 248, 0.3) !important;
+}
+html[data-theme="oceanic"] .kpi-card-expense {
+  background: linear-gradient(145deg, #301407 0%, #4D210B 100%) !important;
+  border: 1px solid rgba(255, 107, 0, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(255, 107, 0, 0.3) !important;
+}
+html[data-theme="oceanic"] .kpi-card-net {
+  background: linear-gradient(145deg, #062820 0%, #0B4235 100%) !important;
+  border: 1px solid rgba(20, 184, 166, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(20, 184, 166, 0.3) !important;
+}
+html[data-theme="oceanic"] .kpi-card-becorp {
+  background: linear-gradient(145deg, #2D1A08 0%, #472A0D 100%) !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(245, 158, 11, 0.3) !important;
+}
+html[data-theme="oceanic"] .kpi-card-credit {
+  background: linear-gradient(145deg, #181236 0%, #271D57 100%) !important;
+  border: 1px solid rgba(129, 140, 248, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(129, 140, 248, 0.3) !important;
+}
+
+/* --- Oceanic Light Variant --- */
+html[data-theme="oceanic"]:not(.dark) body,
+html[data-theme="oceanic"]:not(.dark) .min-h-screen {
+  background-color: #F0F6FF !important;
+}
+html[data-theme="oceanic"]:not(.dark) .bg-white {
+  background-color: #FFFFFF !important;
+  border-color: #BFDBFE !important;
+  box-shadow: 0 4px 16px -2px rgba(37, 99, 235, 0.08) !important;
+}
+html[data-theme="oceanic"]:not(.dark) .bg-slate-50,
+html[data-theme="oceanic"]:not(.dark) [class*="bg-slate-50"] {
+  background-color: #EFF6FF !important;
+}
+html[data-theme="oceanic"]:not(.dark) .border-slate-200,
+html[data-theme="oceanic"]:not(.dark) [class*="border-slate-200"] {
+  border-color: #BFDBFE !important;
+}
+
+
+/* ═════════════════════════════════════════════════════════════════════════
+   ☕ 4. WARM CANVAS & ESPRESSO LEATHER
+   ═════════════════════════════════════════════════════════════════════════ */
+
+/* --- Espresso Dark (Dark Roasted Leather) --- */
+html[data-theme="espresso"].dark body,
+html[data-theme="espresso"].dark .min-h-screen,
+html[data-theme="espresso"].dark div[class*="min-h-screen"] {
   background-color: #13100E !important;
   background-image: 
-    radial-gradient(circle at 15% 15%, rgba(217, 119, 6, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 85% 20%, rgba(234, 88, 12, 0.06) 0%, transparent 40%) !important;
+    radial-gradient(circle at 15% 15%, rgba(217, 119, 6, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 85% 20%, rgba(234, 88, 12, 0.09) 0%, transparent 45%) !important;
   background-attachment: fixed !important;
 }
-html[data-theme="espresso"].dark .min-h-screen {
-  background-color: #13100E !important;
-}
-html[data-theme="espresso"].dark .bg-white {
+
+html[data-theme="espresso"].dark .bg-white,
+html[data-theme="espresso"].dark [class*="bg-white"],
+html[data-theme="espresso"].dark .bg-slate-900,
+html[data-theme="espresso"].dark [class*="dark:bg-slate-900"],
+html[data-theme="espresso"].dark [class*="dark:bg-slate-800"] {
   background-color: #1D1815 !important;
-  border-color: rgba(217, 119, 6, 0.18) !important;
+  border-color: rgba(217, 119, 6, 0.25) !important;
+  color: #FEF3C7 !important;
 }
+
 html[data-theme="espresso"].dark .bg-slate-50,
-html[data-theme="espresso"].dark .bg-slate-50\/50,
-html[data-theme="espresso"].dark .bg-slate-50\/80 {
+html[data-theme="espresso"].dark [class*="bg-slate-50"],
+html[data-theme="espresso"].dark .bg-slate-100,
+html[data-theme="espresso"].dark [class*="bg-slate-100"],
+html[data-theme="espresso"].dark [class*="dark:bg-slate-800/40"],
+html[data-theme="espresso"].dark [class*="dark:bg-slate-800/90"] {
   background-color: #26201C !important;
 }
-html[data-theme="espresso"] header.bg-gradient-to-r,
+
+html[data-theme="espresso"].dark .border-slate-200,
+html[data-theme="espresso"].dark [class*="border-slate-200"],
+html[data-theme="espresso"].dark [class*="border-slate-100"],
+html[data-theme="espresso"].dark [class*="dark:border-slate-800"] {
+  border-color: rgba(217, 119, 6, 0.18) !important;
+}
+
+html[data-theme="espresso"] header,
 html[data-theme="espresso"] .app-header-gradient {
   background: linear-gradient(135deg, #181310 0%, #2E1F16 50%, #1A130E 100%) !important;
-  border-color: rgba(217, 119, 6, 0.32) !important;
+  border-bottom: 1px solid rgba(217, 119, 6, 0.35) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7) !important;
 }
+
+/* KPI Cards - Roasted Leather Tones */
+html[data-theme="espresso"] .kpi-card-income {
+  background: linear-gradient(145deg, #2D1B0A 0%, #452A10 100%) !important;
+  border: 1px solid rgba(217, 119, 6, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(217, 119, 6, 0.3) !important;
+}
+html[data-theme="espresso"] .kpi-card-expense {
+  background: linear-gradient(145deg, #301407 0%, #4D210B 100%) !important;
+  border: 1px solid rgba(234, 88, 12, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(234, 88, 12, 0.3) !important;
+}
+html[data-theme="espresso"] .kpi-card-net {
+  background: linear-gradient(145deg, #12241C 0%, #1B362A 100%) !important;
+  border: 1px solid rgba(16, 185, 129, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(16, 185, 129, 0.3) !important;
+}
+html[data-theme="espresso"] .kpi-card-becorp {
+  background: linear-gradient(145deg, #3B260C 0%, #543813 100%) !important;
+  border: 1px solid rgba(245, 158, 11, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(245, 158, 11, 0.3) !important;
+}
+html[data-theme="espresso"] .kpi-card-credit {
+  background: linear-gradient(145deg, #261622 0%, #3B2335 100%) !important;
+  border: 1px solid rgba(217, 119, 6, 0.45) !important;
+  box-shadow: 0 8px 24px -6px rgba(217, 119, 6, 0.3) !important;
+}
+
+/* --- Espresso Light (Italian Warm Canvas) --- */
 html[data-theme="espresso"]:not(.dark) body,
 html[data-theme="espresso"]:not(.dark) .min-h-screen {
-  background-color: #FBF8F2 !important;
+  background-color: #F7F3EB !important;
 }
-html[data-theme="espresso"]:not(.dark) .bg-slate-50 {
-  background-color: #F3ECE0 !important;
+html[data-theme="espresso"]:not(.dark) .bg-white {
+  background-color: #FFFDF9 !important;
+  border-color: #E8DEC8 !important;
+  box-shadow: 0 4px 16px -2px rgba(217, 119, 6, 0.08) !important;
 }
-html[data-theme="espresso"]:not(.dark) .border-slate-200 {
-  border-color: #E6DBCB !important;
+html[data-theme="espresso"]:not(.dark) .bg-slate-50,
+html[data-theme="espresso"]:not(.dark) [class*="bg-slate-50"] {
+  background-color: #F3EBDD !important;
 }
-html[data-theme="espresso"]:not(.dark) header.bg-gradient-to-r {
-  background: linear-gradient(135deg, #2D1F17 0%, #452E20 50%, #2D1F17 100%) !important;
+html[data-theme="espresso"]:not(.dark) .border-slate-200,
+html[data-theme="espresso"]:not(.dark) [class*="border-slate-200"] {
+  border-color: #E8DEC8 !important;
 }
+
 

@@ -114,6 +114,17 @@ export function getThemePalette(): ThemePalette {
 
 export function setThemePalette(palette: ThemePalette) {
   currentPalette = palette;
+  // When switching to dark-centric luxury themes, automatically activate dark mode
+  // so the user immediately experiences the full visual transformation
+  if (palette === 'obsidian' || palette === 'emerald' || palette === 'oceanic' || palette === 'espresso') {
+    currentMode = 'dark';
+    try {
+      localStorage.setItem(STORAGE_KEY_THEME, 'dark');
+    } catch {
+      // ignore
+    }
+    modeListeners.forEach((fn) => fn(currentMode));
+  }
   applyThemeToDom(currentPalette, currentMode);
   try {
     localStorage.setItem(STORAGE_KEY_PALETTE, palette);

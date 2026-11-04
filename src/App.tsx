@@ -1708,10 +1708,7 @@ export default function App() {
       {/* ═══════ TOP HEADER (Xero Coupler Curved Dark Navy Banner) ═══════ */}
       <div className="w-full pt-0">
         <header
-          className="w-full px-6 py-4 flex flex-wrap items-center justify-between gap-4 text-white shadow-md rounded-br-[36px] sm:rounded-br-[48px]"
-          style={{
-            backgroundColor: '#132247',
-          }}
+          className="w-full px-6 py-4 flex flex-wrap items-center justify-between gap-4 text-white shadow-md rounded-br-[36px] sm:rounded-br-[48px] app-header-gradient"
         >
           {/* Left Brand: Modern, Youthful Duo Avatar & Concise Title */}
           <div className="flex items-center gap-3">
@@ -2065,8 +2062,7 @@ export default function App() {
                     <>
                       {/* Category Card 1: Ngân sách danh mục (Budget) */}
                       <TiltCard
-                        className="p-4 sm:p-5"
-                        style={{ backgroundColor: '#0B4B8A' }}
+                        className="p-4 sm:p-5 kpi-card-income"
                       >
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
                           Ngân sách khả dụng · {categoryKpiStats.category}
@@ -2087,8 +2083,7 @@ export default function App() {
 
                       {/* Category Card 2: Đã chi danh mục */}
                       <TiltCard
-                        className="p-4 sm:p-5 cursor-pointer"
-                        style={{ backgroundColor: '#0077B6' }}
+                        className="p-4 sm:p-5 cursor-pointer kpi-card-expense"
                         onClick={() => setActiveTab('ledger')}
                       >
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
@@ -2104,8 +2099,9 @@ export default function App() {
 
                       {/* Category Card 3: Còn lại danh mục (Dương / Âm) */}
                       <TiltCard
-                        className="p-4 sm:p-5"
-                        style={{ backgroundColor: categoryKpiStats.remaining >= 0 ? '#059669' : '#DC2626' }}
+                        className={`p-4 sm:p-5 ${
+                          categoryKpiStats.remaining >= 0 ? 'kpi-card-net' : 'kpi-card-net-negative'
+                        }`}
                       >
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
                           {categoryKpiStats.remaining >= 0 ? 'Còn lại (Dư)' : 'Bội chi (Âm)'}
@@ -2120,8 +2116,7 @@ export default function App() {
 
                       {/* Category Card 4: BE Corp cho danh mục */}
                       <TiltCard
-                        className="p-4 sm:p-5"
-                        style={{ backgroundColor: '#D97706' }}
+                        className="p-4 sm:p-5 kpi-card-becorp"
                       >
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
                           BE Corp ({categoryKpiStats.category})
@@ -2137,8 +2132,7 @@ export default function App() {
                       {/* Category Card 5: Credit cho danh mục */}
                       <div className="col-span-2 sm:col-span-1">
                         <TiltCard
-                          className="p-4 sm:p-5"
-                          style={{ backgroundColor: '#6D3894' }}
+                          className="p-4 sm:p-5 kpi-card-credit"
                         >
                           <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
                             Credit ({categoryKpiStats.category})
@@ -2157,7 +2151,6 @@ export default function App() {
                       {/* Card 1: Tổng thu nhập (Deep Blue) */}
                       <TiltCard
                         className="p-4 sm:p-5 cursor-pointer kpi-card-income"
-                        style={{ backgroundColor: '#0B4B8A' }}
                         onClick={() => {
                           setAddModalPreset({
                             sheetType: 'Income',
@@ -2187,7 +2180,6 @@ export default function App() {
                       {/* Card 2: Tổng chi tiêu (Ocean Blue - Calendar Month) */}
                       <TiltCard
                         className="p-4 sm:p-5 cursor-pointer kpi-card-expense"
-                        style={{ backgroundColor: '#0077B6' }}
                         onClick={() => setActiveTab('ledger')}
                       >
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
@@ -2210,7 +2202,6 @@ export default function App() {
                         className={`p-4 sm:p-5 cursor-pointer ${
                           kpiStats.netBalance >= 0 ? 'kpi-card-net' : 'kpi-card-net-negative'
                         }`}
-                        style={{ backgroundColor: kpiStats.netBalance >= 0 ? '#059669' : '#DC2626' }}
                         onClick={() => setActiveTab('reconcile')}
                       >
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
@@ -2227,7 +2218,6 @@ export default function App() {
                       {/* Card 4: Ví BE Corp (Riêng biệt - Amber / Orange) */}
                       <TiltCard
                         className="p-4 sm:p-5 cursor-pointer kpi-card-becorp"
-                        style={{ backgroundColor: '#D97706' }}
                         onClick={() => setActiveTab('reconcile')}
                       >
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
@@ -2246,7 +2236,6 @@ export default function App() {
                       <div className="col-span-2 sm:col-span-1">
                         <TiltCard
                           className="p-4 sm:p-5 cursor-pointer kpi-card-credit"
-                          style={{ backgroundColor: '#6D3894' }}
                           onClick={() => setActiveTab('reconcile')}
                         >
                           <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
