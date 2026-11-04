@@ -11,6 +11,8 @@ interface AnalyticsChartsProps {
   onToggleMonth?: (monthKey: string) => void;
   selectedCategoryFilter: string;
   onSelectCategoryFilter: (category: string) => void;
+  selectedCategories?: string[];
+  onToggleCategoryFilter?: (category: string) => void;
   monthlyBaseIncome: number;
 }
 
@@ -35,11 +37,23 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
   onToggleMonth,
   selectedCategoryFilter,
   onSelectCategoryFilter,
+  selectedCategories,
+  onToggleCategoryFilter,
   monthlyBaseIncome,
 }) => {
   const [excludeSavingsInPie, setExcludeSavingsInPie] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [activeChartTab, setActiveChartTab] = useState<'categories' | 'monthly'>('categories');
+
+  const isMultiCategory = !!(selectedCategories && selectedCategories.length > 0);
+  const hasCategoryFilter = isMultiCategory || selectedCategoryFilter !== 'ALL';
+
+  const isCategorySelected = (cat: string) => {
+    if (isMultiCategory && selectedCategories) {
+      return selectedCategories.includes(cat);
+    }
+    return selectedCategoryFilter === cat;
+  };
 
   // 1. Category breakdown for Horizontal Bar Chart & Donut Chart
   const categoryStats = useMemo(() => {
@@ -264,15 +278,21 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
               ) : (
                 categoryStats.topItems.map((item) => {
                   const widthPercent = Math.min(100, Math.max(8, (item.amount / maxCategoryAmount) * 100));
-                  const isSelected = selectedCategoryFilter === item.category;
+                  const isSelected = isCategorySelected(item.category);
 
                   return (
                     <div
                       key={item.category}
-                      onClick={() =>
-                        onSelectCategoryFilter(selectedCategoryFilter === item.category ? 'ALL' : item.category)
-                      }
-                      className="group flex items-center gap-3 cursor-pointer py-0.5"
+                      onClick={() => {
+                        if (onToggleCategoryFilter) {
+                          onToggleCategoryFilter(item.category);
+                        } else {
+                          onSelectCategoryFilter(selectedCategoryFilter === item.category ? 'ALL' : item.category);
+                        }
+                      }}
+                      className={`group flex items-center gap-3 cursor-pointer py-0.5 transition-opacity ${
+                        hasCategoryFilter && !isSelected ? 'opacity-40' : ''
+                      }`}
                     >
                       {/* Category Label (Right aligned on Y-axis) */}
                       <div className="w-32 sm:w-36 text-right shrink-0">
@@ -375,15 +395,22 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
         </div>
 
         {/* Selected Category Filter Indicator */}
-        {selectedCategoryFilter !== 'ALL' && (
+        {hasCategoryFilter && (
           <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
             <span>
-              Đang lọc: <strong className="text-sky-800">{selectedCategoryFilter}</strong>
+              Đang lọc:{' '}
+              <strong className="text-sky-800">
+                {isMultiCategory && selectedCategories
+                  ? selectedCategories.length === 1
+                    ? selectedCategories[0]
+                    : `${selectedCategories.length} danh mục (${selectedCategories.join(', ')})`
+                  : selectedCategoryFilter}
+              </strong>
             </span>
             <button
               type="button"
               onClick={() => onSelectCategoryFilter('ALL')}
-              className="text-sky-600 hover:text-sky-800 font-semibold"
+              className="text-sky-600 hover:text-sky-800 font-semibold cursor-pointer"
             >
               Bỏ lọc danh mục
             </button>
@@ -422,7 +449,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
               <div className="sm:col-span-7 flex justify-center relative">
                 <svg viewBox="0 0 220 220" className="w-48 h-48 overflow-visible">
                   {categoryStats.slices.map((slice) => {
-                    const isSelected = selectedCategoryFilter === slice.category;
+                    const isSelected = isCategorySelected(slice.category);
                     const isHovered = hoveredCategory === slice.category;
                     const outerRadius = isSelected || isHovered ? 98 : 92;
                     const innerRadius = 52;
@@ -439,18 +466,22 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                           className="cursor-pointer transition-all duration-200"
                           style={{
                             opacity:
-                              (selectedCategoryFilter !== 'ALL' && !isSelected) ||
+                              (hasCategoryFilter && !isSelected) ||
                               (hoveredCategory && !isHovered)
                                 ? 0.35
                                 : 1,
                           }}
                           onMouseEnter={() => setHoveredCategory(slice.category)}
                           onMouseLeave={() => setHoveredCategory(null)}
-                          onClick={() =>
-                            onSelectCategoryFilter(
-                              selectedCategoryFilter === slice.category ? 'ALL' : slice.category
-                            )
-                          }
+                          onClick={() => {
+                            if (onToggleCategoryFilter) {
+                              onToggleCategoryFilter(slice.category);
+                            } else {
+                              onSelectCategoryFilter(
+                                selectedCategoryFilter === slice.category ? 'ALL' : slice.category
+                              );
+                            }
+                          }}
                         />
                         {/* Percentage Label on Slice (Matching reference image) */}
                         {showLabel && (

@@ -29,10 +29,12 @@ import { PwaInstallModal } from './components/PwaInstallModal';
 import { CalendarHeatmapView } from './components/CalendarHeatmapView';
 import { MonthlyReportCardModal } from './components/MonthlyReportCardModal';
 import { MultiMonthPickerDropdown, formatSelectedMonthsDisplay } from './components/MultiMonthPickerDropdown';
+import { MultiCategoryPickerDropdown } from './components/MultiCategoryPickerDropdown';
 import { User } from 'firebase/auth';
 import {
   BudgetTransferRecord,
   CheckTienSheetData,
+  EXPENSE_CATEGORIES,
   TransactionRecord,
 } from './types/finance';
 import {
@@ -174,7 +176,7 @@ export default function App() {
     return [`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`];
   });
   const userHasManuallySelectedMonthRef = useRef<boolean>(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
   // Cycle start/end day configuration for BE Corp and Credit
   const [beCorpStartDay, setBeCorpStartDay] = useState<number>(26);
@@ -485,14 +487,77 @@ export default function App() {
     return [...attachedRecords, ...localNewRecords];
   }, [sheetRecords, attachedRecords, localNewRecords]);
 
-  // Unique categories list
+  // Unique categories list (seeded with all standard expense categories)
   const allCategories = useMemo(() => {
-    const set = new Set<string>();
+    const set = new Set<string>(EXPENSE_CATEGORIES);
     allRecords.forEach((r) => {
       if (r.category && r.sheetType === 'Expenses') set.add(r.category);
     });
-    return Array.from(set).sort();
+    return Array.from(set);
   }, [allRecords]);
+
+  const isAllCategoriesSelected = useMemo(() => {
+    return (
+      selectedCategories.length === 0 ||
+      selectedCategories.includes('ALL') ||
+      (allCategories.length > 0 && selectedCategories.length >= allCategories.length)
+    );
+  }, [selectedCategories, allCategories]);
+
+  // Derived single category for backward compatibility
+  const selectedCategory = useMemo(() => {
+    if (isAllCategoriesSelected) return 'ALL';
+    if (selectedCategories.length === 1) return selectedCategories[0];
+    return selectedCategories[0] || 'ALL';
+  }, [isAllCategoriesSelected, selectedCategories]);
+
+  const handleSelectCategories = useCallback((cats: string[]) => {
+    if (
+      cats.length === 0 ||
+      cats.includes('ALL') ||
+      (allCategories.length > 0 && cats.length >= allCategories.length)
+    ) {
+      setSelectedCategories([]);
+    } else {
+      setSelectedCategories(cats);
+    }
+  }, [allCategories]);
+
+  const handleSelectCategory = useCallback((cat: string) => {
+    if (cat === 'ALL') {
+      setSelectedCategories([]);
+    } else {
+      setSelectedCategories([cat]);
+    }
+  }, []);
+
+  const setSelectedCategory = handleSelectCategory;
+
+  const handleToggleCategory = useCallback(
+    (cat: string) => {
+      if (isAllCategoriesSelected) {
+        const remaining = allCategories.filter((c) => c !== cat);
+        setSelectedCategories(remaining.length > 0 ? remaining : [allCategories[0]]);
+        return;
+      }
+      if (selectedCategories.includes(cat)) {
+        const next = selectedCategories.filter((c) => c !== cat);
+        if (next.length === 0) {
+          setSelectedCategories([]);
+        } else {
+          setSelectedCategories(next);
+        }
+      } else {
+        const next = [...selectedCategories, cat];
+        if (next.length >= allCategories.length) {
+          setSelectedCategories([]);
+        } else {
+          setSelectedCategories(next);
+        }
+      }
+    },
+    [isAllCategoriesSelected, selectedCategories, allCategories]
+  );
 
   // Available months in dataset (sorted descending: latest month first)
   const availableMonths = useMemo(() => {
@@ -554,6 +619,21 @@ export default function App() {
     const monthSet = new Set(selectedMonths);
     return allRecords.filter((r) => r.monthKey && monthSet.has(r.monthKey));
   }, [allRecords, isAllMonthsSelected, selectedMonths]);
+
+  // Category record counts & spent totals for periodRecords (for category dropdown)
+  const { categoryRecordCounts, categorySpentTotals } = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const spents: Record<string, number> = {};
+    for (const r of periodRecords) {
+      if (r.category) {
+        counts[r.category] = (counts[r.category] || 0) + 1;
+        if (r.sheetType === 'Expenses' && !isBudgetTransferRecord(r)) {
+          spents[r.category] = (spents[r.category] || 0) + r.amount;
+        }
+      }
+    }
+    return { categoryRecordCounts: counts, categorySpentTotals: spents };
+  }, [periodRecords]);
 
   const handleSelectMonth = useCallback((mKey: string) => {
     userHasManuallySelectedMonthRef.current = true;
@@ -728,9 +808,17 @@ export default function App() {
     creditEndDay,
   ]);
 
-  // Category-specific KPI metrics when selectedCategory !== 'ALL'
+  // Category-specific KPI metrics when category filter is active (single or multiple)
   const categoryKpiStats = useMemo(() => {
-    if (selectedCategory === 'ALL') return null;
+    if (isAllCategoriesSelected) return null;
+
+    const targetCategories =
+      selectedCategories.length > 0
+        ? selectedCategories
+        : selectedCategory !== 'ALL'
+        ? [selectedCategory]
+        : [];
+    if (targetCategories.length === 0) return null;
 
     const targetMonth = selectedMonth !== 'ALL' ? selectedMonth : defaultLatestMonth;
 
@@ -769,41 +857,78 @@ export default function App() {
       hasCustomPercentages
     );
 
-    const catStats = rolloverResult.chain[selectedCategory]?.[targetMonth];
+    let totalEffectiveBudget = 0;
+    let totalBaseBudget = 0;
+    let totalCarryover = 0;
+    let totalNetTransfer = 0;
+    let totalSpent = 0;
+    let totalBeCorp = 0;
+    let totalCredit = 0;
+    let totalCount = 0;
+    let totalPercentage = 0;
 
-    const catRecords = periodRecords.filter(
-      (r) => r.category === selectedCategory && r.sheetType === 'Expenses' && !isBudgetTransferRecord(r)
-    );
-    const spent = catStats ? catStats.spent : catRecords.reduce((s, r) => s + r.amount, 0);
-    const beCorp = catRecords.reduce((s, r) => s + r.beCorp, 0);
-    const credit = catRecords.reduce((s, r) => s + r.credit, 0);
-    const count = catStats ? catStats.txCount : catRecords.length;
+    for (const cat of targetCategories) {
+      const catStats = rolloverResult.chain[cat]?.[targetMonth];
+      const catRecords = periodRecords.filter(
+        (r) => r.category === cat && r.sheetType === 'Expenses' && !isBudgetTransferRecord(r)
+      );
+      const spent = catStats ? catStats.spent : catRecords.reduce((s, r) => s + r.amount, 0);
+      const beCorp = catRecords.reduce((s, r) => s + r.beCorp, 0);
+      const credit = catRecords.reduce((s, r) => s + r.credit, 0);
+      const count = catStats ? catStats.txCount : catRecords.length;
 
-    const baseBudget = catStats
-      ? catStats.baseBudget
-      : Math.round((kpiStats.effectiveIncome * (DEFAULT_CATEGORY_PERCENTAGES[selectedCategory] ?? 0)) / 100);
-    const carryover = catStats ? catStats.carryover : 0;
-    const netTransfer = catStats ? catStats.netTransfer : 0;
-    const effectiveBudget = catStats ? catStats.effectiveBudget : baseBudget;
-    const remaining = catStats ? catStats.remaining : effectiveBudget - spent;
-    const percentage = catStats
-      ? catStats.percentage
-      : (DEFAULT_CATEGORY_PERCENTAGES[selectedCategory] ?? 0);
+      const baseBudget = catStats
+        ? catStats.baseBudget
+        : Math.round((kpiStats.effectiveIncome * (DEFAULT_CATEGORY_PERCENTAGES[cat] ?? 0)) / 100);
+      const carryover = catStats ? catStats.carryover : 0;
+      const netTransfer = catStats ? catStats.netTransfer : 0;
+      const effectiveBudget = catStats ? catStats.effectiveBudget : baseBudget;
+      const percentage = catStats
+        ? catStats.percentage
+        : (DEFAULT_CATEGORY_PERCENTAGES[cat] ?? 0);
+
+      totalEffectiveBudget += effectiveBudget;
+      totalBaseBudget += baseBudget;
+      totalCarryover += carryover;
+      totalNetTransfer += netTransfer;
+      totalSpent += spent;
+      totalBeCorp += beCorp;
+      totalCredit += credit;
+      totalCount += count;
+      totalPercentage += percentage;
+    }
+
+    const remaining = totalEffectiveBudget - totalSpent;
+    const displayLabel =
+      targetCategories.length === 1
+        ? targetCategories[0]
+        : `${targetCategories.length} danh mục (${targetCategories.slice(0, 2).join(', ')}${targetCategories.length > 2 ? '...' : ''})`;
 
     return {
-      category: selectedCategory,
-      budget: effectiveBudget,
-      baseBudget,
-      carryover,
-      netTransfer,
-      spent,
+      category: displayLabel,
+      categories: targetCategories,
+      budget: totalEffectiveBudget,
+      baseBudget: totalBaseBudget,
+      carryover: totalCarryover,
+      netTransfer: totalNetTransfer,
+      spent: totalSpent,
       remaining,
-      beCorp,
-      credit,
-      count,
-      percentage,
+      beCorp: totalBeCorp,
+      credit: totalCredit,
+      count: totalCount,
+      percentage: totalPercentage,
     };
-  }, [selectedCategory, allRecords, budgetTransfers, periodRecords, selectedMonth, defaultLatestMonth, kpiStats.effectiveIncome]);
+  }, [
+    isAllCategoriesSelected,
+    selectedCategories,
+    selectedCategory,
+    allRecords,
+    budgetTransfers,
+    periodRecords,
+    selectedMonth,
+    defaultLatestMonth,
+    kpiStats.effectiveIncome,
+  ]);
 
   // Google Sign-In handler
   const handleGoogleLogin = async () => {
@@ -1812,37 +1937,28 @@ export default function App() {
               totalRecordCount={allRecords.length}
             />
 
-            {/* Filter 2: Category Dropdown (Only show on dashboard and ledger tabs) */}
+            {/* Filter 2: Multi-Category Picker Dropdown (Only show on dashboard and ledger tabs) */}
             {(activeTab === 'dashboard' || activeTab === 'ledger') && (
-              <div className="relative bg-white dark:bg-slate-800 rounded-lg border border-slate-200/90 dark:border-slate-700 shadow-2xs hover:border-slate-300 transition-colors">
-                <div className="flex items-center px-3 py-2 gap-2 text-xs font-medium text-slate-700 dark:text-slate-200">
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="bg-transparent border-none outline-none cursor-pointer pr-6 appearance-none text-slate-800 dark:text-slate-100 font-semibold"
-                  >
-                    <option value="ALL">Tất cả danh mục (Category)</option>
-                    {allCategories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 pointer-events-none absolute right-2.5" />
-                </div>
-              </div>
+              <MultiCategoryPickerDropdown
+                allCategories={allCategories}
+                selectedCategories={isAllCategoriesSelected ? allCategories : selectedCategories}
+                onChange={handleSelectCategories}
+                categoryRecordCounts={categoryRecordCounts}
+                categorySpentTotals={categorySpentTotals}
+                totalRecordCount={periodRecords.length}
+              />
             )}
 
             {/* Reset Filter Button if active */}
-            {(!isAllMonthsSelected || selectedMonths.length !== 1 || selectedMonths[0] !== defaultLatestMonth || selectedCategory !== 'ALL') && (
+            {(!isAllMonthsSelected || selectedMonths.length !== 1 || selectedMonths[0] !== defaultLatestMonth || !isAllCategoriesSelected) && (
               <button
                 type="button"
                 onClick={() => {
                   userHasManuallySelectedMonthRef.current = false;
                   setSelectedMonths([defaultLatestMonth]);
-                  setSelectedCategory('ALL');
+                  setSelectedCategories([]);
                 }}
-                className="text-xs text-sky-700 hover:text-sky-900 font-medium px-2 py-1 cursor-pointer"
+                className="text-xs text-sky-700 hover:text-sky-900 dark:text-sky-400 dark:hover:text-sky-300 font-medium px-2 py-1 cursor-pointer"
               >
                 Đặt lại bộ lọc
               </button>
@@ -1858,23 +1974,31 @@ export default function App() {
         </div>
 
         {/* ═══════ ACTIVE CATEGORY FILTER BANNER ═══════ */}
-        {selectedCategory !== 'ALL' && (activeTab === 'dashboard' || activeTab === 'ledger') && (
-          <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs text-sky-900 shadow-2xs">
+        {!isAllCategoriesSelected && (activeTab === 'dashboard' || activeTab === 'ledger') && (
+          <div className="bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs text-sky-900 dark:text-sky-200 shadow-2xs">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-sky-600 animate-pulse shrink-0"></span>
               <span>
-                Đang lọc riêng theo danh mục: <strong className="font-extrabold text-sky-950 text-sm">{selectedCategory}</strong>
+                Đang lọc riêng theo danh mục:{' '}
+                <strong className="font-extrabold text-sky-950 dark:text-sky-100 text-sm">
+                  {selectedCategories.length === 1
+                    ? selectedCategories[0]
+                    : `${selectedCategories.length} danh mục (${selectedCategories.join(', ')})`}
+                </strong>
                 {isAllMonthsSelected ? ' · Tất cả thời gian' : ` · ${selectedMonthsLabel}`}
                 {' · '}
                 <strong>{categoryKpiStats?.count || 0}</strong> giao dịch
                 {' · '}
-                Tổng chi: <strong className="font-mono-tabular font-bold text-sky-950 text-sm">{formatCurrency(categoryKpiStats?.spent || 0)}</strong>
+                Tổng chi:{' '}
+                <strong className="font-mono-tabular font-bold text-sky-950 dark:text-sky-100 text-sm">
+                  {formatCurrency(categoryKpiStats?.spent || 0)}
+                </strong>
               </span>
             </div>
             <button
               type="button"
-              onClick={() => setSelectedCategory('ALL')}
-              className="px-3 py-1 font-semibold text-xs text-sky-800 bg-white hover:bg-sky-100 border border-sky-300 rounded-lg shadow-2xs transition-colors cursor-pointer"
+              onClick={() => setSelectedCategories([])}
+              className="px-3 py-1 font-semibold text-xs text-sky-800 dark:text-sky-200 bg-white dark:bg-slate-800 hover:bg-sky-100 dark:hover:bg-slate-700 border border-sky-300 dark:border-sky-700 rounded-lg shadow-2xs transition-colors cursor-pointer"
             >
               ✕ Xem tất cả danh mục
             </button>
@@ -2113,7 +2237,10 @@ export default function App() {
                   selectedMonth={selectedMonth}
                   selectedMonths={selectedMonths}
                   selectedCategory={selectedCategory}
-                  onSelectCategory={setSelectedCategory}
+                  onSelectCategory={handleSelectCategory}
+                  selectedCategories={isAllCategoriesSelected ? [] : selectedCategories}
+                  onSelectCategories={handleSelectCategories}
+                  onToggleCategory={handleToggleCategory}
                   showChartsButton={true}
                   onShowCharts={() => setShowCharts((prev) => !prev)}
                   onOpenTransfer={() => {
@@ -2133,7 +2260,9 @@ export default function App() {
                     onSelectMonth={handleSelectMonth}
                     onToggleMonth={handleToggleMonth}
                     selectedCategoryFilter={selectedCategory}
-                    onSelectCategoryFilter={setSelectedCategory}
+                    onSelectCategoryFilter={handleSelectCategory}
+                    selectedCategories={isAllCategoriesSelected ? [] : selectedCategories}
+                    onToggleCategoryFilter={handleToggleCategory}
                     monthlyBaseIncome={monthlyBaseIncome}
                   />
                 )}
@@ -2157,7 +2286,9 @@ export default function App() {
               <TransactionLedgerTable
                 records={periodRecords}
                 selectedCategory={selectedCategory}
-                onSelectCategory={setSelectedCategory}
+                onSelectCategory={handleSelectCategory}
+                selectedCategories={isAllCategoriesSelected ? [] : selectedCategories}
+                onSelectCategories={handleSelectCategories}
                 onOpenAddModal={() => {
                   setAddModalPreset(null);
                   setIsAddModalOpen(true);

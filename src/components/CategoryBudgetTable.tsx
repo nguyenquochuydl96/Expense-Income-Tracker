@@ -48,6 +48,9 @@ interface CategoryBudgetTableProps {
   selectedMonths?: string[];
   selectedCategory: string;
   onSelectCategory: (cat: string) => void;
+  selectedCategories?: string[];
+  onSelectCategories?: (cats: string[]) => void;
+  onToggleCategory?: (cat: string) => void;
   onShowCharts?: () => void;
   showChartsButton?: boolean;
   onOpenTransfer?: () => void;
@@ -62,6 +65,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
   selectedMonths,
   selectedCategory,
   onSelectCategory,
+  selectedCategories,
+  onSelectCategories,
+  onToggleCategory,
   onShowCharts,
   showChartsButton = false,
   onOpenTransfer,
@@ -301,11 +307,27 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
     };
   }, [selectedMonth, selectedMonths, isMultiMonth, allChronologicalMonths, allCategories, percentages, multiMonthRolloverData, totalIncome]);
 
-  // Filtered items based on filterMode & selectedCategory
+  // Active categories for filtering
+  const activeCategories = useMemo(() => {
+    if (selectedCategories && selectedCategories.length > 0) {
+      if (selectedCategories.includes('ALL') || (allCategories.length > 0 && selectedCategories.length >= allCategories.length)) {
+        return [];
+      }
+      return selectedCategories;
+    }
+    if (selectedCategory && selectedCategory !== 'ALL') {
+      return [selectedCategory];
+    }
+    return [];
+  }, [selectedCategories, selectedCategory, allCategories]);
+
+  const hasCategoryFilter = activeCategories.length > 0;
+
+  // Filtered items based on filterMode & activeCategories
   const displayedItems = useMemo(() => {
     let items = currentViewStats.items;
-    if (selectedCategory !== 'ALL') {
-      items = items.filter((i) => i.category === selectedCategory);
+    if (activeCategories.length > 0) {
+      items = items.filter((i) => activeCategories.includes(i.category));
     }
     if (filterMode === 'over_budget') {
       return items.filter((i) => i.isOver && i.spent > 0);
@@ -314,28 +336,28 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
       return items.filter((i) => !i.isOver && i.spent > 0);
     }
     return items;
-  }, [currentViewStats.items, filterMode, selectedCategory]);
+  }, [currentViewStats.items, filterMode, activeCategories]);
 
-  // Itemized transactions when filtering by a specific category
+  // Itemized transactions when filtering by category
   const categoryTransactions = useMemo(() => {
-    if (selectedCategory === 'ALL') return [];
+    if (activeCategories.length === 0) return [];
     return recordsInPeriod
-      .filter((r) => r.category === selectedCategory && r.sheetType === 'Expenses')
+      .filter((r) => activeCategories.includes(r.category) && r.sheetType === 'Expenses')
       .sort((a, b) => b.isoDate.localeCompare(a.isoDate));
-  }, [recordsInPeriod, selectedCategory]);
+  }, [recordsInPeriod, activeCategories]);
 
   // Relevant budget transfers affecting this category in this month
   const categoryTransfers = useMemo(() => {
-    if (selectedCategory === 'ALL' || !budgetTransfers) return [];
+    if (activeCategories.length === 0 || !budgetTransfers) return [];
     return budgetTransfers
       .filter((bt) => {
-        const matchesCategory = bt.toCategory === selectedCategory || bt.fromCategory === selectedCategory;
+        const matchesCategory = activeCategories.includes(bt.toCategory) || activeCategories.includes(bt.fromCategory);
         if (!matchesCategory) return false;
         if (selectedMonth === 'ALL') return true;
         return bt.monthKey === selectedMonth;
       })
       .sort((a, b) => b.isoDate.localeCompare(a.isoDate));
-  }, [budgetTransfers, selectedCategory, selectedMonth]);
+  }, [budgetTransfers, activeCategories, selectedMonth]);
 
   // Handlers for editing percentages
   const handleStartEdit = () => {
@@ -567,21 +589,32 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
       )}
 
       {/* Selected Category Notice Banner */}
-      {selectedCategory !== 'ALL' && (
+      {hasCategoryFilter && (
         <div className="mb-4 px-3.5 py-2.5 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800/80 rounded-lg flex flex-wrap items-center justify-between gap-2 text-xs text-sky-900 dark:text-sky-200">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-sky-600 animate-pulse shrink-0"></span>
             <span>
-              Đang lọc riêng danh mục: <strong className="font-bold text-sky-950 dark:text-sky-100">{selectedCategory}</strong>
+              Đang lọc riêng danh mục:{' '}
+              <strong className="font-bold text-sky-950 dark:text-sky-100">
+                {activeCategories.length === 1
+                  ? activeCategories[0]
+                  : `${activeCategories.length} danh mục (${activeCategories.join(', ')})`}
+              </strong>
               {' · '}
               <strong>{categoryTransactions.length}</strong> giao dịch trong kỳ
               {' · '}
-              Tổng chi: <strong className="font-mono-tabular font-bold">{formatCurrency(categoryTransactions.reduce((s, r) => s + r.amount, 0))}</strong>
+              Tổng chi:{' '}
+              <strong className="font-mono-tabular font-bold">
+                {formatCurrency(categoryTransactions.reduce((s, r) => s + r.amount, 0))}
+              </strong>
             </span>
           </div>
           <button
             type="button"
-            onClick={() => onSelectCategory('ALL')}
+            onClick={() => {
+              onSelectCategory('ALL');
+              if (onSelectCategories) onSelectCategories([]);
+            }}
             className="px-2.5 py-1 text-xs font-semibold text-sky-700 dark:text-sky-300 bg-white dark:bg-slate-800 hover:bg-sky-100 dark:hover:bg-slate-700 border border-sky-300 dark:border-sky-700 rounded-md shadow-2xs transition-colors cursor-pointer"
           >
             ✕ Hiện tất cả 13 danh mục
@@ -624,13 +657,19 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-mono-tabular">
               {displayedItems.map((item) => {
-                const isSelected = selectedCategory === item.category;
+                const isSelected = activeCategories.includes(item.category);
                 const isOver = item.remaining < 0;
 
                 return (
                   <tr
                     key={item.category}
-                    onClick={() => onSelectCategory(isSelected ? 'ALL' : item.category)}
+                    onClick={() => {
+                      if (onToggleCategory) {
+                        onToggleCategory(item.category);
+                      } else {
+                        onSelectCategory(isSelected ? 'ALL' : item.category);
+                      }
+                    }}
                     className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/50 cursor-pointer transition-colors ${
                       isSelected ? 'bg-sky-50/60 dark:bg-sky-950/40' : ''
                     }`}
@@ -854,44 +893,44 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
           </table>
 
           {/* Drill-down transactions for selected category */}
-          {selectedCategory !== 'ALL' && (
-            <div className="mt-5 border-t border-slate-200 pt-4">
+          {hasCategoryFilter && (
+            <div className="mt-5 border-t border-slate-200 dark:border-slate-800 pt-4">
               {/* Category Transfers Card (Bổ sung / Điều chuyển quỹ trong kỳ) */}
               {categoryTransfers.length > 0 && (
-                <div className="mb-4 p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl">
-                  <div className="text-xs font-bold text-indigo-950 mb-2 flex items-center justify-between">
+                <div className="mb-4 p-3 bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 rounded-xl">
+                  <div className="text-xs font-bold text-indigo-950 dark:text-indigo-200 mb-2 flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
-                      <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-600" />
+                      <ArrowLeftRight className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
                       <span>Điều chuyển / Bổ sung quỹ trong kỳ ({categoryTransfers.length} khoản):</span>
                     </span>
-                    <span className="text-[11px] font-normal text-indigo-700 bg-white/80 px-2 py-0.5 rounded border border-indigo-200/50">
+                    <span className="text-[11px] font-normal text-indigo-700 dark:text-indigo-300 bg-white/80 dark:bg-slate-800 px-2 py-0.5 rounded border border-indigo-200/50 dark:border-indigo-700">
                       Đã ghi nhận điều chuyển
                     </span>
                   </div>
                   <div className="space-y-1.5 text-xs font-mono-tabular">
                     {categoryTransfers.map((bt) => {
-                      const isReceiving = bt.toCategory === selectedCategory;
+                      const isReceiving = activeCategories.includes(bt.toCategory);
                       return (
                         <div
                           key={bt.id}
-                          className="flex items-center justify-between py-1.5 px-3 bg-white rounded-lg border border-indigo-100 shadow-2xs"
+                          className="flex items-center justify-between py-1.5 px-3 bg-white dark:bg-slate-800 rounded-lg border border-indigo-100 dark:border-slate-700 shadow-2xs"
                         >
                           <div className="flex items-center gap-2">
                             <span
                               className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
                                 isReceiving
-                                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                                  : 'bg-amber-100 text-amber-800 border border-amber-200'
+                                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                                  : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
                               }`}
                             >
                               {isReceiving ? '+ Nhận' : '- Chuyển'}
                             </span>
-                            <span className="font-semibold text-slate-800">{bt.date}</span>
-                            <span className="text-slate-600 font-sans">
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">{bt.date}</span>
+                            <span className="text-slate-600 dark:text-slate-400 font-sans">
                               {bt.description || (isReceiving ? `Nhận từ ${bt.fromCategory}` : `Chuyển sang ${bt.toCategory}`)}
                             </span>
                           </div>
-                          <div className={`font-bold ${isReceiving ? 'text-emerald-700' : 'text-amber-700'}`}>
+                          <div className={`font-bold ${isReceiving ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
                             {isReceiving ? formatCurrency(bt.amount, true) : formatCurrency(-bt.amount)}
                           </div>
                         </div>
@@ -901,13 +940,15 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                 </div>
               )}
               <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                   <span>Chi tiết giao dịch phát sinh trong kỳ của:</span>
-                  <span className="text-sky-700 bg-sky-100/80 px-2 py-0.5 rounded font-extrabold">{selectedCategory}</span>
-                  <span className="text-slate-500 font-normal">({categoryTransactions.length} giao dịch)</span>
+                  <span className="text-sky-700 dark:text-sky-300 bg-sky-100/80 dark:bg-sky-950/60 px-2 py-0.5 rounded font-extrabold">
+                    {activeCategories.length === 1 ? activeCategories[0] : `${activeCategories.length} danh mục`}
+                  </span>
+                  <span className="text-slate-500 dark:text-slate-400 font-normal">({categoryTransactions.length} giao dịch)</span>
                 </h4>
-                <div className="text-xs font-semibold text-slate-700 font-mono-tabular">
-                  Tổng chi: <strong className="text-slate-900">{formatCurrency(categoryTransactions.reduce((s, r) => s + r.amount, 0))}</strong>
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 font-mono-tabular">
+                  Tổng chi: <strong className="text-slate-900 dark:text-slate-100">{formatCurrency(categoryTransactions.reduce((s, r) => s + r.amount, 0))}</strong>
                 </div>
               </div>
 

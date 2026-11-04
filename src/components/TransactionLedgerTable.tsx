@@ -23,11 +23,14 @@ import {
 } from '../types/finance';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { CategoryBadge } from '../utils/categoryIcons';
+import { MultiCategoryPickerDropdown } from './MultiCategoryPickerDropdown';
 
 interface TransactionLedgerTableProps {
   records: TransactionRecord[];
   selectedCategory: string;
   onSelectCategory: (cat: string) => void;
+  selectedCategories?: string[];
+  onSelectCategories?: (cats: string[]) => void;
   onOpenAddModal: () => void;
   onEditTransaction?: (record: TransactionRecord) => void;
   onDeleteTransaction?: (record: TransactionRecord) => void;
@@ -42,6 +45,8 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
   records,
   selectedCategory,
   onSelectCategory,
+  selectedCategories,
+  onSelectCategories,
   onOpenAddModal,
   onEditTransaction,
   onDeleteTransaction,
@@ -61,14 +66,39 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
     records.forEach((r) => {
       if (r.category) set.add(r.category);
     });
-    return Array.from(set);
+    return Array.from(set).sort();
+  }, [records]);
+
+  const isAllCategoriesSelected = useMemo(() => {
+    return (
+      !selectedCategories ||
+      selectedCategories.length === 0 ||
+      selectedCategories.includes('ALL') ||
+      (allCategories.length > 0 && selectedCategories.length >= allCategories.length)
+    );
+  }, [selectedCategories, allCategories]);
+
+  const { categoryRecordCounts, categorySpentTotals } = useMemo(() => {
+    const counts: Record<string, number> = {};
+    const spents: Record<string, number> = {};
+    records.forEach((r) => {
+      if (r.category) {
+        counts[r.category] = (counts[r.category] || 0) + 1;
+        if (r.sheetType === 'Expenses') {
+          spents[r.category] = (spents[r.category] || 0) + r.amount;
+        }
+      }
+    });
+    return { categoryRecordCounts: counts, categorySpentTotals: spents };
   }, [records]);
 
   const filteredRecords = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
 
     const list = records.filter((rec) => {
-      if (selectedCategory !== 'ALL' && rec.category !== selectedCategory) {
+      if (!isAllCategoriesSelected && selectedCategories && selectedCategories.length > 0) {
+        if (!selectedCategories.includes(rec.category)) return false;
+      } else if (selectedCategory !== 'ALL' && rec.category !== selectedCategory) {
         return false;
       }
       if (quickFilter === 'expenses' && rec.sheetType !== 'Expenses') return false;
@@ -107,7 +137,17 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
       const idxB = b.rowIndex || (b.source === 'local_new' ? 999999 : 0);
       return sortOrder === 'newest' ? idxB - idxA : idxA - idxB;
     });
-  }, [records, selectedCategory, quickFilter, searchQuery, sortOrder, filterBigExpense, filterWeekendOnly]);
+  }, [
+    records,
+    selectedCategory,
+    selectedCategories,
+    isAllCategoriesSelected,
+    quickFilter,
+    searchQuery,
+    sortOrder,
+    filterBigExpense,
+    filterWeekendOnly,
+  ]);
 
   const totals = useMemo(() => {
     let expenseSum = 0;
@@ -293,21 +333,48 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
               )}
             </div>
 
-            <select
-              value={selectedCategory}
-              onChange={(e) => {
-                onSelectCategory(e.target.value);
-                setVisibleLimit(80);
-              }}
-              className="px-2.5 py-1.5 text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-600 dark:focus:border-teal-500"
-            >
-              <option value="ALL">Tất cả danh mục</option>
-              {allCategories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+            {onSelectCategories ? (
+              <MultiCategoryPickerDropdown
+                allCategories={allCategories}
+                selectedCategories={
+                  selectedCategories && selectedCategories.length > 0
+                    ? selectedCategories
+                    : selectedCategory !== 'ALL'
+                    ? [selectedCategory]
+                    : allCategories
+                }
+                onChange={(cats) => {
+                  onSelectCategories(cats);
+                  if (cats.length === 1) {
+                    onSelectCategory(cats[0]);
+                  } else if (cats.length === allCategories.length || cats.length === 0) {
+                    onSelectCategory('ALL');
+                  } else {
+                    onSelectCategory(cats[0]);
+                  }
+                  setVisibleLimit(80);
+                }}
+                categoryRecordCounts={categoryRecordCounts}
+                categorySpentTotals={categorySpentTotals}
+                totalRecordCount={records.length}
+              />
+            ) : (
+              <select
+                value={selectedCategory}
+                onChange={(e) => {
+                  onSelectCategory(e.target.value);
+                  setVisibleLimit(80);
+                }}
+                className="px-2.5 py-1.5 text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-600 dark:focus:border-teal-500"
+              >
+                <option value="ALL">Tất cả danh mục</option>
+                {allCategories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            )}
 
             <button
               type="button"
@@ -332,11 +399,12 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
               </span>
             </button>
 
-            {(selectedCategory !== 'ALL' || quickFilter !== 'all' || searchQuery || filterBigExpense || filterWeekendOnly) && (
+            {((!isAllCategoriesSelected || selectedCategory !== 'ALL') || quickFilter !== 'all' || searchQuery || filterBigExpense || filterWeekendOnly) && (
               <button
                 type="button"
                 onClick={() => {
                   onSelectCategory('ALL');
+                  if (onSelectCategories) onSelectCategories(allCategories);
                   setQuickFilter('all');
                   setSearchQuery('');
                   setFilterBigExpense(false);

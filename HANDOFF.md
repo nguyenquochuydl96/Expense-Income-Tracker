@@ -173,9 +173,27 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
   - Tinh chỉnh cỡ font số tiền tại cả 5 thẻ KPI tổng (`kpiStats`) và 5 thẻ KPI hạng mục (`categoryKpiStats`) từ `text-2xl sm:text-3xl` thành `text-xl sm:text-2xl lg:text-3xl` font-mono-tabular, đảm bảo hiển thị trọn vẹn số tiền lên tới hàng trăm triệu/tỷ trên mọi dòng smartphone < 400px.
 
 ### 2.14 Chuẩn hóa Tiện ích `cn()` & Nâng cấp Hệ sinh thái Animation
-* Khởi tạo [`src/utils/cn.ts`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/utils/cn.ts) kết hợp `clsx` và `tailwind-merge` để xử lý class có điều kiện chuẩn xác.
+* Khởi tạo [`src/utils/cn.ts`](file:///src/utils/cn.ts) kết hợp `clsx` và `tailwind-merge` để xử lý class có điều kiện chuẩn xác.
 * Nâng cấp `motion` lên `^14.9.0` trong `package.json` giải quyết triệt để xung đột peer dependency với `@animate-ui/react@2.4.2`.
 * Tích hợp tài liệu hướng dẫn chuẩn mực UI/UX vào `GEMINI.md` và `UI_UX_AND_DEV_GUIDE.md`.
+
+### 2.15 Bộ lọc Đa danh mục Tự do (Multi-Category Checkbox Picker)
+* **Vị trí tích hợp:** Thay thế dropdown `<select>` đơn danh mục trên thanh **Floating Filter Bar** và thanh công cụ **Sổ cái (`TransactionLedgerTable`)** bằng component dropdown đa chọn chuyên dụng [`MultiCategoryPickerDropdown.tsx`](file:///src/components/MultiCategoryPickerDropdown.tsx).
+* **Trải nghiệm người dùng:**
+  - Cho phép **tick chọn nhiều danh mục bất kỳ** cùng một lúc (ví dụ: tick cùng lúc `Ăn uống` + `Thuê nhà` + `Shopping`).
+  - Hỗ trợ **ô tìm kiếm nhanh danh mục** (Instant search) theo từ khóa.
+  - Các nút chọn nhanh thông minh (Preset Chips):
+    - `Tất cả (13)`: Chọn trọn bộ danh mục.
+    - `Chỉ sinh hoạt`: Chọn tất cả các danh mục trừ `Tiết kiệm` / tích lũy, giúp theo dõi chi phí sinh hoạt tiêu dùng thuần túy.
+    - `Chọn 1 mục lẻ`: Tiện ích đặt lại nhanh để người dùng chọn riêng 1 danh mục mong muốn.
+  - Mỗi hàng danh mục có icon nhận diện `CategoryBadge`, số lượng giao dịch, tổng chi tiêu trong kỳ và nút `Chỉ xem` hiển thị khi hover để cách ly 1 danh mục duy nhất trong 1 chạm.
+  - Nút đóng popover, tự động đóng khi nhấp ra ngoài hoặc bấm phím `Escape`.
+* **Đồng bộ toàn bộ App & Tính toán tổng hợp:**
+  - **KPI Cards trên Dashboard:** Khi chọn nhiều danh mục, hệ thống tự động gộp Ngân sách khả dụng, Định mức tháng, Lũy kế, Đã chi, Còn lại/Bội chi, chi tiêu qua BE Corp và Credit của tất cả các danh mục được chọn.
+  - **Banner Trạng thái Lọc Danh mục:** Hiển thị danh sách các danh mục đang chọn, số lượng giao dịch và tổng chi tiêu của nhóm danh mục đó kèm nút "Xem tất cả danh mục" để hủy lọc nhanh.
+  - **Sổ giao dịch (`TransactionLedgerTable`):** Lọc theo danh sách danh mục được tick, đồng bộ hai chiều giữa thanh floating header và toolbar của bảng.
+  - **Bảng Ngân sách Hạng mục (`CategoryBudgetTable`):** Lọc và highlight các hàng danh mục được tick, hiển thị drill-down giao dịch cho toàn bộ nhóm danh mục được chọn.
+  - **Biểu đồ Chi tiêu (`AnalyticsCharts`):** Highlight các cột và lát cắt donut chart tương ứng với các danh mục đang chọn, cho phép nhấp vào cột hoặc lát cắt để bật/tắt lọc.
 
 ---
 
