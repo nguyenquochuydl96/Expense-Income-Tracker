@@ -195,6 +195,18 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
   - **Bảng Ngân sách Hạng mục (`CategoryBudgetTable`):** Lọc và highlight các hàng danh mục được tick, hiển thị drill-down giao dịch cho toàn bộ nhóm danh mục được chọn.
   - **Biểu đồ Chi tiêu (`AnalyticsCharts`):** Highlight các cột và lát cắt donut chart tương ứng với các danh mục đang chọn, cho phép nhấp vào cột hoặc lát cắt để bật/tắt lọc.
 
+### 2.16 Hệ sinh thái Animation Toàn diện (Motion & Sliding Numbers)
+* **Thanh điều hướng Sub-bar Active Tab:** Sử dụng `motion.div` với `layoutId="activeTabIndicator"` tạo hiệu ứng viên thuốc lướt trượt mượt mà (smooth sliding pill) giữa các tab `Tổng quan`, `Sổ giao dịch`, `Check tiền & Đối soát`, `Đồng bộ`.
+* **Chuyển cảnh View (Tab Transition):** Bọc 4 view chính trong `<AnimatePresence mode="wait">` và `<motion.div key={activeTab}>`, tạo hiệu ứng trượt nhẹ và mờ dần (smooth fade + slide) mỗi khi đổi tab, loại bỏ hiện tượng giật cục DOM cũ.
+* **Hiệu ứng số trượt nhảy (Sliding Numbers):** Tạo component [`AnimatedCurrency.tsx`](file:///src/components/AnimatedCurrency.tsx) tích hợp `@animate-ui/react/primitives/texts/sliding-number`:
+  - Mỗi khi thay đổi kỳ lọc tháng, tick chọn danh mục hoặc nạp dữ liệu mới, toàn bộ 5 thẻ KPI tự động lăn số mượt mà theo từng chữ số.
+  - Tự động tương thích với chế độ riêng tư (Privacy Mode): khi che số hiển thị `•••••• ₫` không bị lỗi.
+  - Phản hồi xúc giác vi mô: Thẻ KPI hỗ trợ `whileHover={{ y: -3 }}` và `whileTap={{ scale: 0.98 }}`.
+* **Hộp thoại Modal & Dropdown Popover:**
+  - Toàn bộ 5 Modal (`AddTransactionModal`, `EditTransactionModal`, `MonthlyReportCardModal`, `TelegramBotModal`, `PwaInstallModal`) và Hộp thoại xác nhận xóa được nâng cấp lên `<AnimatePresence>` kết hợp hiệu ứng backdrop fade và spring pop-in (`damping: 26, stiffness: 320`), tự động trượt ra nhẹ nhàng khi đóng.
+  - Cả 2 Dropdown đa chọn (`MultiMonthPickerDropdown` & `MultiCategoryPickerDropdown`) mở ra với scale-in spring và thu lại mượt mà khi đóng.
+* **Banner & Toast Notification:** Toast thông báo và Banner danh mục lọc mở rộng/thu gọn tự nhiên với `<AnimatePresence>`.
+
 ---
 
 ## 3. Quản lý Chu kỳ & Logic ngày (Cycle Configuration)
@@ -231,15 +243,21 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
 
 ```
 src/
-├── App.tsx                              # Main layout, 5 KPI cards riêng biệt, Header bo cong, Filter bar
+├── App.tsx                              # Main layout, 5 KPI cards, Header bo cong, Filter bar, Fluid animations
 ├── index.css                            # Palette màu mới, font tokens, scrollbar styling
 ├── components/
-│   ├── CategoryBudgetTable.tsx          # MỚI: Bảng Ngân sách & Chi tiêu theo Hạng mục (Budget · Đã chi · Còn lại)
+│   ├── AnimatedCurrency.tsx             # MỚI: Rolling/Sliding numbers cho số tiền (SlidingNumber)
+│   ├── MultiCategoryPickerDropdown.tsx  # MỚI: Dropdown tick chọn nhiều danh mục tự do
+│   ├── MultiMonthPickerDropdown.tsx     # Dropdown chọn nhiều tháng / 1 tháng
+│   ├── CategoryBudgetTable.tsx          # Bảng Ngân sách & Chi tiêu theo Hạng mục (Budget · Đã chi · Còn lại)
 │   ├── MultiMonthSummaryTable.tsx       # Ma trận đối chiếu ngân sách đa tháng (Thu nhập Sheet Income, Chi, Remaining)
-│   ├── DashboardDualTables.tsx          # 2 bảng dữ liệu song song đáy Dashboard chuẩn ảnh mẫu
 │   ├── AnalyticsCharts.tsx              # Horizontal Cyan Bar Chart + Coral Donut Chart (ẩn/hiện theo toggle)
 │   ├── TransactionLedgerTable.tsx       # Bảng sổ cái đầy đủ 6 cột chuẩn Google Sheet
-│   ├── AddTransactionModal.tsx          # Modal thêm giao dịch mới
+│   ├── AddTransactionModal.tsx          # Modal thêm giao dịch mới (Spring motion)
+│   ├── EditTransactionModal.tsx         # Modal sửa giao dịch (Spring motion)
+│   ├── MonthlyReportCardModal.tsx       # Modal infographic báo cáo tài chính tháng (Spring motion)
+│   ├── TelegramBotModal.tsx             # Modal hướng dẫn bot Telegram (Spring motion)
+│   ├── PwaInstallModal.tsx              # Modal hướng dẫn cài đặt PWA (Spring motion)
 │   ├── ReconcileCheckTienView.tsx       # Màn hình Check tiền & đối soát số dư ví/thẻ
 │   └── SheetSyncPanel.tsx               # Màn hình kết nối & đồng bộ Google Sheets 2 chiều
 ├── services/

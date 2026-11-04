@@ -16,6 +16,7 @@ import {
   Building2,
   Wallet
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface TelegramBotModalProps {
   isOpen: boolean;
@@ -40,8 +41,6 @@ export const TelegramBotModal: React.FC<TelegramBotModalProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
 
   const copyToClipboard = (text: string, index?: number) => {
     navigator.clipboard.writeText(text);
@@ -111,15 +110,27 @@ export const TelegramBotModal: React.FC<TelegramBotModalProps> = ({
   ];
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fadeIn cursor-pointer"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden cursor-default"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Modal Header */}
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="tg-bot-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs cursor-pointer"
+          onClick={onClose}
+        >
+          <motion.div
+            key="tg-bot-modal"
+            initial={{ opacity: 0, scale: 0.95, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 16 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 360 }}
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-800 max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
         <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-indigo-50 via-white to-blue-50 dark:from-indigo-950/60 dark:via-slate-900 dark:to-blue-950/40">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-200">
@@ -315,7 +326,9 @@ export const TelegramBotModal: React.FC<TelegramBotModalProps> = ({
             Đóng
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
   );
 };

@@ -30,6 +30,8 @@ import { CalendarHeatmapView } from './components/CalendarHeatmapView';
 import { MonthlyReportCardModal } from './components/MonthlyReportCardModal';
 import { MultiMonthPickerDropdown, formatSelectedMonthsDisplay } from './components/MultiMonthPickerDropdown';
 import { MultiCategoryPickerDropdown } from './components/MultiCategoryPickerDropdown';
+import { AnimatedCurrency } from './components/AnimatedCurrency';
+import { motion, AnimatePresence } from 'motion/react';
 import { User } from 'firebase/auth';
 import {
   BudgetTransferRecord,
@@ -1828,54 +1830,52 @@ export default function App() {
       {/* Navigation Sub-bar */}
       <div className="max-w-[1400px] w-full mx-auto px-4 sm:px-6 pt-3 flex flex-wrap items-center justify-between gap-2">
         <nav className="flex items-center gap-1 sm:gap-1.5 text-xs font-semibold overflow-x-auto max-w-full p-1 bg-slate-200/80 dark:bg-slate-800/90 rounded-xl border border-slate-300/60 dark:border-slate-700/80 shadow-2xs">
-          <button
-            type="button"
-            onClick={() => setActiveTab('dashboard')}
-            className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'dashboard'
-                ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white font-bold shadow-xs border border-slate-200/80 dark:border-indigo-500'
-                : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/60'
-            }`}
-          >
-            Dashboard
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('ledger')}
-            className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'ledger'
-                ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white font-bold shadow-xs border border-slate-200/80 dark:border-indigo-500'
-                : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/60'
-            }`}
-          >
-            Sổ giao dịch ({periodRecords.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('reconcile')}
-            className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'reconcile'
-                ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white font-bold shadow-xs border border-slate-200/80 dark:border-indigo-500'
-                : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/60'
-            }`}
-          >
-            Check tiền &amp; Đối soát
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('sync')}
-            className={`px-3.5 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'sync'
-                ? 'bg-white dark:bg-indigo-600 text-indigo-950 dark:text-white font-bold shadow-xs border border-slate-200/80 dark:border-indigo-500'
-                : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-700/60'
-            }`}
-          >
-            Đồng bộ dữ liệu ({sheetRecords && sheetRecords.length > 0 ? (accessToken ? 'Đã kết nối' : 'Đã lưu máy') : 'Chưa kết nối'})
-          </button>
+          {[
+            { id: 'dashboard', label: 'Dashboard' },
+            { id: 'ledger', label: `Sổ giao dịch (${periodRecords.length})` },
+            { id: 'reconcile', label: 'Check tiền & Đối soát' },
+            {
+              id: 'sync',
+              label: `Đồng bộ dữ liệu (${
+                sheetRecords && sheetRecords.length > 0
+                  ? accessToken
+                    ? 'Đã kết nối'
+                    : 'Đã lưu máy'
+                  : 'Chưa kết nối'
+              })`,
+            },
+          ].map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id as any)}
+                className="relative px-3.5 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTabIndicator"
+                    className="absolute inset-0 bg-white dark:bg-indigo-600 rounded-lg shadow-xs border border-slate-200/80 dark:border-indigo-500"
+                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  />
+                )}
+                <span
+                  className={`relative z-10 transition-colors ${
+                    isActive
+                      ? 'text-indigo-950 dark:text-white font-bold'
+                      : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
           <button
             type="button"
             onClick={() => setIsTelegramModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-indigo-700 dark:text-indigo-300 bg-indigo-50/90 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200/70 dark:border-indigo-700/60 transition-all shadow-2xs font-semibold cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-indigo-700 dark:text-indigo-300 bg-indigo-50/90 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200/70 dark:border-indigo-700/60 transition-all shadow-2xs font-semibold cursor-pointer shrink-0"
             title="Mở hướng dẫn & cú pháp Telegram Bot Quick-Add"
           >
             <Bot className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
@@ -1909,16 +1909,24 @@ export default function App() {
       </div>
 
       {/* Toast Notification */}
-      {toast && (
-        <div className="fixed bottom-5 right-5 z-50 max-w-md bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 flex items-center gap-2.5 text-xs">
-          {toast.type === 'success' ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-          ) : (
-            <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-          )}
-          <span>{toast.message}</span>
-        </div>
-      )}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: 24, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 24, scale: 0.92 }}
+            transition={{ type: 'spring', stiffness: 450, damping: 28 }}
+            className="fixed bottom-5 right-5 z-50 max-w-md bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 flex items-center gap-2.5 text-xs pointer-events-none"
+          >
+            {toast.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+            )}
+            <span>{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Content Container */}
       <main className="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-6 py-4 space-y-5">
@@ -1974,36 +1982,44 @@ export default function App() {
         </div>
 
         {/* ═══════ ACTIVE CATEGORY FILTER BANNER ═══════ */}
-        {!isAllCategoriesSelected && (activeTab === 'dashboard' || activeTab === 'ledger') && (
-          <div className="bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs text-sky-900 dark:text-sky-200 shadow-2xs">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-sky-600 animate-pulse shrink-0"></span>
-              <span>
-                Đang lọc riêng theo danh mục:{' '}
-                <strong className="font-extrabold text-sky-950 dark:text-sky-100 text-sm">
-                  {selectedCategories.length === 1
-                    ? selectedCategories[0]
-                    : `${selectedCategories.length} danh mục (${selectedCategories.join(', ')})`}
-                </strong>
-                {isAllMonthsSelected ? ' · Tất cả thời gian' : ` · ${selectedMonthsLabel}`}
-                {' · '}
-                <strong>{categoryKpiStats?.count || 0}</strong> giao dịch
-                {' · '}
-                Tổng chi:{' '}
-                <strong className="font-mono-tabular font-bold text-sky-950 dark:text-sky-100 text-sm">
-                  {formatCurrency(categoryKpiStats?.spent || 0)}
-                </strong>
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSelectedCategories([])}
-              className="px-3 py-1 font-semibold text-xs text-sky-800 dark:text-sky-200 bg-white dark:bg-slate-800 hover:bg-sky-100 dark:hover:bg-slate-700 border border-sky-300 dark:border-sky-700 rounded-lg shadow-2xs transition-colors cursor-pointer"
+        <AnimatePresence>
+          {!isAllCategoriesSelected && (activeTab === 'dashboard' || activeTab === 'ledger') && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, y: -4 }}
+              animate={{ opacity: 1, height: 'auto', y: 0 }}
+              exit={{ opacity: 0, height: 0, y: -4 }}
+              transition={{ duration: 0.2 }}
+              className="bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-3 text-xs text-sky-900 dark:text-sky-200 shadow-2xs overflow-hidden"
             >
-              ✕ Xem tất cả danh mục
-            </button>
-          </div>
-        )}
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-sky-600 animate-pulse shrink-0"></span>
+                <span>
+                  Đang lọc riêng theo danh mục:{' '}
+                  <strong className="font-extrabold text-sky-950 dark:text-sky-100 text-sm">
+                    {selectedCategories.length === 1
+                      ? selectedCategories[0]
+                      : `${selectedCategories.length} danh mục (${selectedCategories.join(', ')})`}
+                  </strong>
+                  {isAllMonthsSelected ? ' · Tất cả thời gian' : ` · ${selectedMonthsLabel}`}
+                  {' · '}
+                  <strong>{categoryKpiStats?.count || 0}</strong> giao dịch
+                  {' · '}
+                  Tổng chi:{' '}
+                  <strong className="font-mono-tabular font-bold text-sky-950 dark:text-sky-100 text-sm">
+                    {formatCurrency(categoryKpiStats?.spent || 0)}
+                  </strong>
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedCategories([])}
+                className="px-3 py-1 font-semibold text-xs text-sky-800 dark:text-sky-200 bg-white dark:bg-slate-800 hover:bg-sky-100 dark:hover:bg-slate-700 border border-sky-300 dark:border-sky-700 rounded-lg shadow-2xs transition-colors cursor-pointer"
+              >
+                ✕ Xem tất cả danh mục
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {isLoadingInitial ? (
           <div className="bg-white border border-slate-200 rounded-xl p-12 text-center text-sm text-slate-500">
@@ -2011,23 +2027,33 @@ export default function App() {
           </div>
         ) : (
           <>
-            {/* VIEW 1: DASHBOARD */}
-            {activeTab === 'dashboard' && (
-              <div className="space-y-5">
+            {/* VIEW CONTENT WITH FLUID VIEW TRANSITION */}
+            <AnimatePresence mode="wait">
+              {/* VIEW 1: DASHBOARD */}
+              {activeTab === 'dashboard' && (
+                <motion.div
+                  key="dashboard"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                  className="space-y-5"
+                >
                 {/* ═══════ 5 KPI CARDS (General vs Category-specific) ═══════ */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
                   {categoryKpiStats ? (
                     <>
                       {/* Category Card 1: Ngân sách danh mục (Budget) */}
-                      <div
-                        className="rounded-xl p-4 sm:p-5 shadow-xs transition-transform hover:-translate-y-0.5"
+                      <motion.div
+                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
+                        className="rounded-xl p-4 sm:p-5 shadow-xs"
                         style={{ backgroundColor: '#0B4B8A' }}
                       >
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
                           Ngân sách khả dụng · {categoryKpiStats.category}
                         </div>
                         <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          {formatCurrency(categoryKpiStats.budget)}
+                          <AnimatedCurrency value={categoryKpiStats.budget} />
                         </div>
                         <div className="text-[11px] text-white/80 font-medium truncate flex items-center gap-1.5 flex-wrap">
                           <span>Định mức: {formatCurrency(categoryKpiStats.baseBudget)}</span>
@@ -2038,11 +2064,13 @@ export default function App() {
                             <span>· Chuyển quỹ: {formatCurrency(categoryKpiStats.netTransfer, true)}</span>
                           )}
                         </div>
-                      </div>
+                      </motion.div>
 
                       {/* Category Card 2: Đã chi danh mục */}
-                      <div
-                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
+                      <motion.div
+                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
+                        whileTap={{ scale: 0.98 }}
+                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer"
                         style={{ backgroundColor: '#0077B6' }}
                         onClick={() => setActiveTab('ledger')}
                       >
@@ -2050,66 +2078,71 @@ export default function App() {
                           Đã chi · {categoryKpiStats.category}
                         </div>
                         <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          {formatCurrency(categoryKpiStats.spent)}
+                          <AnimatedCurrency value={categoryKpiStats.spent} />
                         </div>
                         <div className="text-xs text-white/70 font-medium">
                           {categoryKpiStats.count} giao dịch trong kỳ
                         </div>
-                      </div>
+                      </motion.div>
 
                       {/* Category Card 3: Còn lại danh mục (Dương / Âm) */}
-                      <div
-                        className="rounded-xl p-4 sm:p-5 shadow-xs transition-transform hover:-translate-y-0.5"
+                      <motion.div
+                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
+                        className="rounded-xl p-4 sm:p-5 shadow-xs"
                         style={{ backgroundColor: categoryKpiStats.remaining >= 0 ? '#059669' : '#DC2626' }}
                       >
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
                           {categoryKpiStats.remaining >= 0 ? 'Còn lại (Dư)' : 'Bội chi (Âm)'}
                         </div>
                         <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          {formatCurrency(categoryKpiStats.remaining)}
+                          <AnimatedCurrency value={categoryKpiStats.remaining} />
                         </div>
                         <div className="text-xs text-white/80 font-medium truncate">
                           {categoryKpiStats.remaining >= 0 ? 'Trong hạn mức khả dụng' : 'Vượt quá định mức tháng!'}
                         </div>
-                      </div>
+                      </motion.div>
 
                       {/* Category Card 4: BE Corp cho danh mục */}
-                      <div
-                        className="rounded-xl p-4 sm:p-5 shadow-xs transition-transform hover:-translate-y-0.5"
+                      <motion.div
+                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
+                        className="rounded-xl p-4 sm:p-5 shadow-xs"
                         style={{ backgroundColor: '#D97706' }}
                       >
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
                           BE Corp ({categoryKpiStats.category})
                         </div>
                         <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          {formatCurrency(categoryKpiStats.beCorp)}
+                          <AnimatedCurrency value={categoryKpiStats.beCorp} />
                         </div>
                         <div className="text-xs text-white/80 font-medium">
                           Thanh toán qua ví công ty
                         </div>
-                      </div>
+                      </motion.div>
 
                       {/* Category Card 5: Credit cho danh mục */}
-                      <div
-                        className="rounded-xl p-4 sm:p-5 shadow-xs transition-transform hover:-translate-y-0.5 col-span-2 sm:col-span-1"
+                      <motion.div
+                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
+                        className="rounded-xl p-4 sm:p-5 shadow-xs col-span-2 sm:col-span-1"
                         style={{ backgroundColor: '#6D3894' }}
                       >
                         <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
                           Credit ({categoryKpiStats.category})
                         </div>
                         <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          {formatCurrency(categoryKpiStats.credit)}
+                          <AnimatedCurrency value={categoryKpiStats.credit} />
                         </div>
                         <div className="text-xs text-white/80 font-medium">
                           Thanh toán qua thẻ tín dụng
                         </div>
-                      </div>
+                      </motion.div>
                     </>
                   ) : (
                     <>
                       {/* Card 1: Tổng thu nhập (Deep Blue) */}
-                      <div
-                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
+                      <motion.div
+                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
+                        whileTap={{ scale: 0.98 }}
+                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer"
                         style={{ backgroundColor: '#0B4B8A' }}
                         onClick={() => {
                           setAddModalPreset({
@@ -2124,7 +2157,7 @@ export default function App() {
                           Tổng thu nhập
                         </div>
                         <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          {formatCurrency(kpiStats.effectiveIncome)}
+                          <AnimatedCurrency value={kpiStats.effectiveIncome} />
                         </div>
                         <div className="text-xs text-white/70 font-medium">
                           {isAllMonthsSelected
@@ -2135,11 +2168,13 @@ export default function App() {
                                 ? `${formatMonthLabel(selectedMonth)} · ${kpiStats.incomeCount} khoản thu`
                                 : `${formatMonthLabel(selectedMonth)} · Chưa có giao dịch`}
                         </div>
-                      </div>
+                      </motion.div>
 
                       {/* Card 2: Tổng chi tiêu (Ocean Blue - Calendar Month) */}
-                      <div
-                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
+                      <motion.div
+                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
+                        whileTap={{ scale: 0.98 }}
+                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer"
                         style={{ backgroundColor: '#0077B6' }}
                         onClick={() => setActiveTab('ledger')}
                       >
@@ -2147,7 +2182,7 @@ export default function App() {
                           Tổng chi tiêu
                         </div>
                         <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          {formatCurrency(kpiStats.totalExpense)}
+                          <AnimatedCurrency value={kpiStats.totalExpense} />
                         </div>
                         <div className="text-xs text-white/70 font-medium">
                           {isAllMonthsSelected
@@ -2156,11 +2191,13 @@ export default function App() {
                               ? `${kpiStats.expenseCount} giao dịch (${selectedMonths.length} tháng đã chọn)`
                               : `${kpiStats.expenseCount} giao dịch (01/${selectedMonth.split('-')[1]} – Hết tháng)`}
                         </div>
-                      </div>
+                      </motion.div>
 
                       {/* Card 3: Số dư khả dụng Net Balance (Mint Green or Red) */}
-                      <div
-                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
+                      <motion.div
+                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
+                        whileTap={{ scale: 0.98 }}
+                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer"
                         style={{ backgroundColor: kpiStats.netBalance >= 0 ? '#059669' : '#DC2626' }}
                         onClick={() => setActiveTab('reconcile')}
                       >
@@ -2168,16 +2205,18 @@ export default function App() {
                           Số dư khả dụng (Net)
                         </div>
                         <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          {formatCurrency(kpiStats.netBalance)}
+                          <AnimatedCurrency value={kpiStats.netBalance} />
                         </div>
                         <div className="text-xs text-white/70 font-medium">
                           Thu − Chi còn lại
                         </div>
-                      </div>
+                      </motion.div>
 
                       {/* Card 4: Ví BE Corp (Riêng biệt - Amber / Orange) */}
-                      <div
-                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5"
+                      <motion.div
+                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
+                        whileTap={{ scale: 0.98 }}
+                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer"
                         style={{ backgroundColor: '#D97706' }}
                         onClick={() => setActiveTab('reconcile')}
                       >
@@ -2185,17 +2224,19 @@ export default function App() {
                           Ví BE Corp
                         </div>
                         <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          {formatCurrency(kpiStats.beCorpCycleTotal)}
+                          <AnimatedCurrency value={kpiStats.beCorpCycleTotal} />
                         </div>
                         <div className="text-xs text-white/80 font-medium flex items-center gap-1 font-mono-tabular">
                           <CalendarRange className="w-3 h-3 text-white/70" />
                           <span>{kpiStats.beRange.displayLabel}</span>
                         </div>
-                      </div>
+                      </motion.div>
 
                       {/* Card 5: Thẻ tín dụng Credit (Riêng biệt - Purple / Violet) */}
-                      <div
-                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer transition-transform hover:-translate-y-0.5 col-span-2 sm:col-span-1"
+                      <motion.div
+                        whileHover={{ y: -3, transition: { duration: 0.15 } }}
+                        whileTap={{ scale: 0.98 }}
+                        className="rounded-xl p-4 sm:p-5 shadow-xs cursor-pointer col-span-2 sm:col-span-1"
                         style={{ backgroundColor: '#6D3894' }}
                         onClick={() => setActiveTab('reconcile')}
                       >
@@ -2203,13 +2244,13 @@ export default function App() {
                           Thẻ tín dụng (Credit)
                         </div>
                         <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          {formatCurrency(kpiStats.creditCycleTotal)}
+                          <AnimatedCurrency value={kpiStats.creditCycleTotal} />
                         </div>
                         <div className="text-xs text-white/80 font-medium flex items-center gap-1 font-mono-tabular">
                           <CalendarRange className="w-3 h-3 text-white/70" />
                           <span>Sao kê: {kpiStats.creditRange.displayLabel}</span>
                         </div>
-                      </div>
+                      </motion.div>
                     </>
                   )}
                 </div>
@@ -2278,68 +2319,93 @@ export default function App() {
                   }}
                   onSelectTransaction={(tx) => setEditingTransaction(tx)}
                 />
-              </div>
+              </motion.div>
             )}
 
             {/* VIEW 2: FULL TRANSACTION LEDGER */}
             {activeTab === 'ledger' && (
-              <TransactionLedgerTable
-                records={periodRecords}
-                selectedCategory={selectedCategory}
-                onSelectCategory={handleSelectCategory}
-                selectedCategories={isAllCategoriesSelected ? [] : selectedCategories}
-                onSelectCategories={handleSelectCategories}
-                onOpenAddModal={() => {
-                  setAddModalPreset(null);
-                  setIsAddModalOpen(true);
-                }}
-                onEditTransaction={setEditingTransaction}
-                onDeleteTransaction={setDeletingTransaction}
-                onPushPendingToSheet={handlePushPendingToSheet}
-                isSyncing={isSyncing}
-                periodLabel={selectedMonthsLabel}
-              />
+              <motion.div
+                key="ledger"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <TransactionLedgerTable
+                  records={periodRecords}
+                  selectedCategory={selectedCategory}
+                  onSelectCategory={handleSelectCategory}
+                  selectedCategories={isAllCategoriesSelected ? [] : selectedCategories}
+                  onSelectCategories={handleSelectCategories}
+                  onOpenAddModal={() => {
+                    setAddModalPreset(null);
+                    setIsAddModalOpen(true);
+                  }}
+                  onEditTransaction={setEditingTransaction}
+                  onDeleteTransaction={setDeletingTransaction}
+                  onPushPendingToSheet={handlePushPendingToSheet}
+                  isSyncing={isSyncing}
+                  periodLabel={selectedMonthsLabel}
+                />
+              </motion.div>
             )}
 
             {/* VIEW 3: CHECK TIỀN & CHU KỲ BE CORP / CREDIT */}
             {activeTab === 'reconcile' && (
-              <ReconcileCheckTienView
-                allRecords={allRecords}
-                selectedMonth={selectedMonth}
-                onOpenAddWithPreset={(preset) => {
-                  setAddModalPreset(preset);
-                  setIsAddModalOpen(true);
-                }}
-                checkTienData={checkTienData}
-              />
+              <motion.div
+                key="reconcile"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <ReconcileCheckTienView
+                  allRecords={allRecords}
+                  selectedMonth={selectedMonth}
+                  onOpenAddWithPreset={(preset) => {
+                    setAddModalPreset(preset);
+                    setIsAddModalOpen(true);
+                  }}
+                  checkTienData={checkTienData}
+                />
+              </motion.div>
             )}
 
             {/* VIEW 4: GOOGLE SHEET SYNC PANEL */}
             {activeTab === 'sync' && (
-              <SheetSyncPanel
-                user={user}
-                accessToken={accessToken}
-                isLoggingIn={isLoggingIn}
-                onGoogleLogin={handleGoogleLogin}
-                onGoogleLogout={handleGoogleLogout}
-                spreadsheetInput={spreadsheetInput}
-                onChangeSpreadsheetInput={setSpreadsheetInput}
-                sheetMeta={sheetMeta}
-                isSyncing={isSyncing}
-                syncError={syncError}
-                lastSyncedAt={lastSyncedAt}
-                onConnectAndSyncSheet={handleConnectAndSyncSheet}
-                pendingLocalRecords={localNewRecords.filter((r) => !r.syncedToSheet)}
-                onPushPendingToSheet={handlePushPendingToSheet}
-                onExportCsv={handleExportCsv}
-                totalExpensesCount={totalExpensesCount}
-                totalIncomeCount={totalIncomeCount}
-                onSelectIncomeTab={handleSelectIncomeTab}
-                onSelectExpensesTab={handleSelectExpensesTab}
-              />
+              <motion.div
+                key="sync"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <SheetSyncPanel
+                  user={user}
+                  accessToken={accessToken}
+                  isLoggingIn={isLoggingIn}
+                  onGoogleLogin={handleGoogleLogin}
+                  onGoogleLogout={handleGoogleLogout}
+                  spreadsheetInput={spreadsheetInput}
+                  onChangeSpreadsheetInput={setSpreadsheetInput}
+                  sheetMeta={sheetMeta}
+                  isSyncing={isSyncing}
+                  syncError={syncError}
+                  lastSyncedAt={lastSyncedAt}
+                  onConnectAndSyncSheet={handleConnectAndSyncSheet}
+                  pendingLocalRecords={localNewRecords.filter((r) => !r.syncedToSheet)}
+                  onPushPendingToSheet={handlePushPendingToSheet}
+                  onExportCsv={handleExportCsv}
+                  totalExpensesCount={totalExpensesCount}
+                  totalIncomeCount={totalIncomeCount}
+                  onSelectIncomeTab={handleSelectIncomeTab}
+                  onSelectExpensesTab={handleSelectExpensesTab}
+                />
+              </motion.div>
             )}
-          </>
-        )}
+          </AnimatePresence>
+        </>
+      )}
       </main>
 
       {/* ADD TRANSACTION MODAL */}
@@ -2380,81 +2446,93 @@ export default function App() {
       />
 
       {/* DELETE CONFIRMATION MODAL */}
-      {deletingTransaction && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 cursor-pointer"
-          onClick={() => !isDeleting && setDeletingTransaction(null)}
-        >
-          <div
-            className="bg-white border border-slate-200 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4 cursor-default"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {deletingTransaction && (
+          <motion.div
+            key="delete-modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 cursor-pointer"
+            onClick={() => !isDeleting && setDeletingTransaction(null)}
           >
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
-                <Trash2 className="w-5 h-5" />
+            <motion.div
+              key="delete-modal-card"
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 16 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 320 }}
+              className="bg-white border border-slate-200 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4 cursor-default"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Xác nhận xóa giao dịch</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Bạn có chắc chắn muốn xóa vĩnh viễn giao dịch này?
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-900">Xác nhận xóa giao dịch</h3>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Bạn có chắc chắn muốn xóa vĩnh viễn giao dịch này?
-                </p>
-              </div>
-            </div>
 
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Mục chi tiêu:</span>
-                <span className="font-semibold text-slate-900">{deletingTransaction.purchaseItem}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Ngày:</span>
-                <span className="font-mono-tabular text-slate-700">{deletingTransaction.purchaseDate}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Danh mục:</span>
-                <span className="text-slate-700">{deletingTransaction.category}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Số tiền:</span>
-                <span className="font-mono-tabular font-bold text-rose-700">
-                  {formatCurrency(deletingTransaction.amount, false, true)}
-                </span>
-              </div>
-              {deletingTransaction.rowIndex && (
-                <div className="flex justify-between border-t border-slate-200/80 pt-1.5 mt-1.5">
-                  <span className="text-slate-500">Mã giao dịch:</span>
-                  <span className="font-mono-tabular text-teal-700 font-medium">
-                    {deletingTransaction.sheetType === 'Income' ? 'Thu nhập' : 'Chi tiêu'} #{deletingTransaction.rowIndex}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Mục chi tiêu:</span>
+                  <span className="font-semibold text-slate-900">{deletingTransaction.purchaseItem}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Ngày:</span>
+                  <span className="font-mono-tabular text-slate-700">{deletingTransaction.purchaseDate}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Danh mục:</span>
+                  <span className="text-slate-700">{deletingTransaction.category}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Số tiền:</span>
+                  <span className="font-mono-tabular font-bold text-rose-700">
+                    {formatCurrency(deletingTransaction.amount, false, true)}
                   </span>
                 </div>
-              )}
-            </div>
+                {deletingTransaction.rowIndex && (
+                  <div className="flex justify-between border-t border-slate-200/80 pt-1.5 mt-1.5">
+                    <span className="text-slate-500">Mã giao dịch:</span>
+                    <span className="font-mono-tabular text-teal-700 font-medium">
+                      {deletingTransaction.sheetType === 'Income' ? 'Thu nhập' : 'Chi tiêu'} #{deletingTransaction.rowIndex}
+                    </span>
+                  </div>
+                )}
+              </div>
 
-            <p className="text-xs text-rose-600 bg-rose-50/80 border border-rose-200 rounded-lg p-2.5">
-              ⚠️ Thao tác này sẽ xóa vĩnh viễn giao dịch khỏi hệ thống và cập nhật lại toàn bộ ngân sách. Không thể hoàn tác.
-            </p>
+              <p className="text-xs text-rose-600 bg-rose-50/80 border border-rose-200 rounded-lg p-2.5">
+                ⚠️ Thao tác này sẽ xóa vĩnh viễn giao dịch khỏi hệ thống và cập nhật lại toàn bộ ngân sách. Không thể hoàn tác.
+              </p>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
-              <button
-                type="button"
-                disabled={isDeleting}
-                onClick={() => setDeletingTransaction(null)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
-              >
-                Hủy bỏ
-              </button>
-              <button
-                type="button"
-                disabled={isDeleting}
-                onClick={handleConfirmDelete}
-                className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
-              >
-                {isDeleting ? 'Đang xóa...' : 'Xóa vĩnh viễn'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => setDeletingTransaction(null)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleConfirmDelete}
+                  className="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+                >
+                  {isDeleting ? 'Đang xóa...' : 'Xóa vĩnh viễn'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* PWA Install Guide Modal */}
       <PwaInstallModal

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { X, Smartphone, Download, Share, PlusSquare, CheckCircle2, Sparkles } from 'lucide-react';
 import { PigIcon, SiameseCatIcon } from '../utils/categoryIcons';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface PwaInstallModalProps {
   isOpen: boolean;
@@ -24,8 +25,6 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   // Detect iOS
   const isIos =
     typeof navigator !== 'undefined' &&
@@ -47,15 +46,27 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative animate-in fade-in zoom-in-95 duration-200 cursor-default"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Close Button */}
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="pwa-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer"
+          onClick={onClose}
+        >
+          <motion.div
+            key="pwa-modal"
+            initial={{ opacity: 0, scale: 0.95, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 16 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 360 }}
+            className="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
         <button
           type="button"
           onClick={onClose}
@@ -141,7 +152,9 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
             Đóng
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
   );
 };

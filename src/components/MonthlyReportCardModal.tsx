@@ -16,6 +16,7 @@ import {
 import { TransactionRecord } from '../types/finance';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { PigIcon, SiameseCatIcon } from '../utils/categoryIcons';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface MonthlyReportCardModalProps {
   isOpen: boolean;
@@ -42,8 +43,6 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
 
   const targetMonth = selectedMonth !== 'ALL' && selectedMonth.includes('-')
     ? selectedMonth
@@ -639,15 +638,27 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
-      onClick={onClose}
-    >
-      <div
-        className="bg-slate-900 text-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-700/80 relative space-y-5 max-h-[90vh] overflow-y-auto cursor-default"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Close Button */}
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="monthly-report-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-[9999] bg-slate-950/75 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer"
+          onClick={onClose}
+        >
+          <motion.div
+            key="monthly-report-modal"
+            initial={{ opacity: 0, scale: 0.94, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.94, y: 16 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            className="bg-slate-900 text-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-700/80 relative space-y-5 max-h-[90vh] overflow-y-auto cursor-default"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
         <button
           type="button"
           onClick={onClose}
@@ -1004,7 +1015,9 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
             <span>{isGeneratingImg ? 'Đang tạo...' : 'Lưu ảnh thiệp (PNG)'}</span>
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
   );
 };

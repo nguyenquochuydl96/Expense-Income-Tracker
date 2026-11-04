@@ -13,6 +13,7 @@ import {
 import { CategoryBadge } from '../utils/categoryIcons';
 import { CATEGORY_COLORS } from '../types/finance';
 import { formatCurrency } from '../utils/csvParser';
+import { motion, AnimatePresence } from 'motion/react';
 
 export interface MultiCategoryPickerDropdownProps {
   allCategories: string[];          // e.g. ['Ăn uống', 'Thuê nhà', 'Tiết kiệm', ...]
@@ -208,9 +209,16 @@ export const MultiCategoryPickerDropdown: React.FC<MultiCategoryPickerDropdownPr
       </button>
 
       {/* Popover Dropdown Menu */}
-      {isOpen && (
-        <div className="absolute left-0 top-full mt-1.5 z-50 w-72 sm:w-84 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-          {/* Header */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -6 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -6 }}
+            transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute left-0 top-full mt-1.5 z-50 w-72 sm:w-84 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden"
+          >
+            {/* Header */}
           <div className="p-3 bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-200/80 dark:border-slate-700 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
@@ -368,8 +376,9 @@ export const MultiCategoryPickerDropdown: React.FC<MultiCategoryPickerDropdownPr
               Áp dụng
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
-    </div>
-  );
+    </AnimatePresence>
+  </div>
+);
 };

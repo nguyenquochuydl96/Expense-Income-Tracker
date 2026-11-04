@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { X, Check, ArrowRight, Sparkles, ArrowLeftRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { MoneyCalculatorInput } from './MoneyCalculatorInput';
 import {
   EXPENSE_CATEGORIES,
@@ -200,8 +201,6 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     return (isNegative ? '-' : '') + num.toLocaleString('en-US');
   };
 
-  if (!isOpen) return null;
-
   const parsedAmount = parseSheetNumber(amountStr);
   const parsedBeCorp = parseSheetNumber(beCorpStr);
   const parsedCredit = parseSheetNumber(creditStr);
@@ -305,15 +304,27 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto cursor-pointer"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden my-8 transition-all cursor-default text-slate-900 dark:text-slate-100"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="add-tx-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 overflow-y-auto cursor-pointer"
+          onClick={onClose}
+        >
+          <motion.div
+            key="add-tx-modal"
+            initial={{ opacity: 0, scale: 0.95, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 16 }}
+            transition={{ type: 'spring', damping: 26, stiffness: 360 }}
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden my-8 transition-all cursor-default text-slate-900 dark:text-slate-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">
@@ -820,7 +831,9 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             </button>
           </div>
         </form>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
   );
 };
