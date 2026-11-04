@@ -237,6 +237,20 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
   - `CategoryBudgetTable`: Phản ứng tức thì từ `recordsInPeriod` qua `useMemo`.
   - `ReconcileCheckTienView`: Bổ sung `onEditTransaction` cho phép click trực tiếp vào từng dòng giao dịch của chu kỳ BE Corp & Thẻ tín dụng Credit để mở hộp thoại sửa và cập nhật lại số dư chu kỳ ngay lập tức.
 
+### 2.19 Hệ Thống Đa Giao Diện & Bộ Chọn Theme Ghi Nhớ Tự Động (Theme Selector System)
+* **Bộ chọn Theme Dropdown ([`ThemeSelectorDropdown.tsx`](file:///src/components/ThemeSelectorDropdown.tsx)):**
+  - Đặt ngay trên thanh Header cạnh nút Chế độ sáng/tối và nút Ẩn số tiền riêng tư `👁️`.
+  - Hỗ trợ xem nhanh palette với icon nhận diện, tên phong cách, mô tả ngắn và hai chấm màu đặc trưng (accent dots).
+* **Ghi nhớ Theme gần nhất (Auto-Persistence):**
+  - Lưu vào `localStorage` với key `heomeo_theme_palette_v1`. Khi người dùng mở lại app hoặc reload trang, app tự động áp dụng theme gần nhất ngay từ trước khi hydrate (không bị nhấp nháy giao diện). Mặc định lần đầu là **Copilot Obsidian & Aurora**.
+* **5 Bộ Theme Tinh Chỉnh Sẵn:**
+  1. `✨ Copilot Obsidian & Aurora`: Nền than chì sâu `#080B11`, thẻ kính mờ `rgba(15,21,34,0.85)`, viền ánh cực quang cyan/rose/mint/amber/violet, vệt sáng kim loại 3D.
+  2. `🍀 Monarch Emerald & Gold`: Xanh ngọc lục bảo `#05120E`, thẻ `#0B1E17`, viền mint `#10B981` & vàng thặng dư `#F59E0B`.
+  3. `⚡ Oceanic Navy & Tangerine`: Ngân hàng số Neobank dứt khoát `#061324`, viền xanh hoàng gia `#2563EB` & cam san hô `#FF6B00`.
+  4. `☕ Warm Canvas & Espresso`: Sổ da thủ công & Cà phê ấm cúng `#13100E` (Dark) / Giấy ngà Linen `#FBF8F2` (Light).
+  5. `🔷 Classic Slate & Blue`: Bảng màu truyền thống nguyên bản.
+* **Tương thích toàn diện:** Tương thích 100% với cả Dark Mode và Light Mode, hệ thống thẻ 3D TiltCard, Lịch Heatmap, Bảng Ngân sách và Sổ Báo Cáo 3D Passbook.
+
 ---
 
 ## 3. Quản lý Chu kỳ & Logic ngày (Cycle Configuration)

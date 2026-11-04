@@ -32,6 +32,7 @@ import { MultiMonthPickerDropdown, formatSelectedMonthsDisplay } from './compone
 import { MultiCategoryPickerDropdown } from './components/MultiCategoryPickerDropdown';
 import { AnimatedCurrency } from './components/AnimatedCurrency';
 import { TiltCard } from './components/TiltCard';
+import { ThemeSelectorDropdown } from './components/ThemeSelectorDropdown';
 import { motion, AnimatePresence } from 'motion/react';
 import { User } from 'firebase/auth';
 import {
@@ -1747,6 +1748,9 @@ export default function App() {
 
           {/* Right Action Buttons */}
           <div className="flex items-center gap-2 sm:gap-2.5">
+            {/* Theme Palette Dropdown */}
+            <ThemeSelectorDropdown />
+
             {/* Dark Mode Toggle Button */}
             <button
               type="button"
@@ -2152,7 +2156,7 @@ export default function App() {
                     <>
                       {/* Card 1: Tổng thu nhập (Deep Blue) */}
                       <TiltCard
-                        className="p-4 sm:p-5 cursor-pointer"
+                        className="p-4 sm:p-5 cursor-pointer kpi-card-income"
                         style={{ backgroundColor: '#0B4B8A' }}
                         onClick={() => {
                           setAddModalPreset({
@@ -2182,7 +2186,7 @@ export default function App() {
 
                       {/* Card 2: Tổng chi tiêu (Ocean Blue - Calendar Month) */}
                       <TiltCard
-                        className="p-4 sm:p-5 cursor-pointer"
+                        className="p-4 sm:p-5 cursor-pointer kpi-card-expense"
                         style={{ backgroundColor: '#0077B6' }}
                         onClick={() => setActiveTab('ledger')}
                       >
@@ -2203,7 +2207,9 @@ export default function App() {
 
                       {/* Card 3: Số dư khả dụng Net Balance (Mint Green or Red) */}
                       <TiltCard
-                        className="p-4 sm:p-5 cursor-pointer"
+                        className={`p-4 sm:p-5 cursor-pointer ${
+                          kpiStats.netBalance >= 0 ? 'kpi-card-net' : 'kpi-card-net-negative'
+                        }`}
                         style={{ backgroundColor: kpiStats.netBalance >= 0 ? '#059669' : '#DC2626' }}
                         onClick={() => setActiveTab('reconcile')}
                       >
@@ -2220,7 +2226,7 @@ export default function App() {
 
                       {/* Card 4: Ví BE Corp (Riêng biệt - Amber / Orange) */}
                       <TiltCard
-                        className="p-4 sm:p-5 cursor-pointer"
+                        className="p-4 sm:p-5 cursor-pointer kpi-card-becorp"
                         style={{ backgroundColor: '#D97706' }}
                         onClick={() => setActiveTab('reconcile')}
                       >
@@ -2239,7 +2245,7 @@ export default function App() {
                       {/* Card 5: Thẻ tín dụng Credit (Riêng biệt - Purple / Violet) */}
                       <div className="col-span-2 sm:col-span-1">
                         <TiltCard
-                          className="p-4 sm:p-5 cursor-pointer"
+                          className="p-4 sm:p-5 cursor-pointer kpi-card-credit"
                           style={{ backgroundColor: '#6D3894' }}
                           onClick={() => setActiveTab('reconcile')}
                         >

@@ -376,3 +376,200 @@ html.dark .relative.bg-white {
   background-color: #303030;
   opacity: 8%;
 }
+
+/* =========================================================================
+   HEO & MÈO MULTI-PALETTE THEME DESIGN TOKENS
+   ========================================================================= */
+
+/* 🌌 1. COPILOT OBSIDIAN & AURORA MESH */
+html[data-theme="obsidian"].dark body {
+  background-color: #080B11 !important;
+  background-image: 
+    radial-gradient(circle at 12% 12%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 88% 18%, rgba(6, 182, 212, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 50% 65%, rgba(244, 63, 94, 0.05) 0%, transparent 45%) !important;
+  background-attachment: fixed !important;
+}
+
+html[data-theme="obsidian"].dark .min-h-screen {
+  background-color: #080B11 !important;
+}
+
+html[data-theme="obsidian"].dark .bg-white {
+  background-color: #0F1522 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-theme="obsidian"].dark .bg-slate-50,
+html[data-theme="obsidian"].dark .bg-slate-50\/50,
+html[data-theme="obsidian"].dark .bg-slate-50\/80,
+html[data-theme="obsidian"].dark .bg-slate-50\/40,
+html[data-theme="obsidian"].dark .bg-slate-50\/30,
+html[data-theme="obsidian"].dark .bg-slate-50\/60 {
+  background-color: #131B2B !important;
+}
+
+html[data-theme="obsidian"].dark .bg-slate-100,
+html[data-theme="obsidian"].dark .bg-slate-100\/90,
+html[data-theme="obsidian"].dark .bg-slate-100\/80 {
+  background-color: #182338 !important;
+}
+
+html[data-theme="obsidian"].dark .border-slate-200,
+html[data-theme="obsidian"].dark .border-slate-200\/80,
+html[data-theme="obsidian"].dark .border-slate-200\/90,
+html[data-theme="obsidian"].dark .border-slate-200\/70,
+html[data-theme="obsidian"].dark .border-slate-100 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html[data-theme="obsidian"] header.bg-gradient-to-r,
+html[data-theme="obsidian"] .app-header-gradient {
+  background: linear-gradient(135deg, #090D15 0%, #121A2B 50%, #0A0F19 100%) !important;
+  border-color: rgba(99, 102, 241, 0.28) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6) !important;
+}
+
+/* 5 KPI Cards in Obsidian: Aurora Glow Styling */
+html[data-theme="obsidian"].dark .kpi-card-income {
+  background: linear-gradient(145deg, #081B24, #0D2C3B) !important;
+  border: 1px solid rgba(6, 182, 212, 0.35) !important;
+  box-shadow: 0 8px 24px -6px rgba(6, 182, 212, 0.22), inset 0 1px 0 rgba(6, 182, 212, 0.25) !important;
+}
+html[data-theme="obsidian"].dark .kpi-card-expense {
+  background: linear-gradient(145deg, #220C19, #361227) !important;
+  border: 1px solid rgba(244, 63, 94, 0.35) !important;
+  box-shadow: 0 8px 24px -6px rgba(244, 63, 94, 0.22), inset 0 1px 0 rgba(244, 63, 94, 0.25) !important;
+}
+html[data-theme="obsidian"].dark .kpi-card-net {
+  background: linear-gradient(145deg, #062018, #0C3629) !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+  box-shadow: 0 8px 24px -6px rgba(16, 185, 129, 0.22), inset 0 1px 0 rgba(16, 185, 129, 0.25) !important;
+}
+html[data-theme="obsidian"].dark .kpi-card-net-negative {
+  background: linear-gradient(145deg, #2B0A0A, #451010) !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+  box-shadow: 0 8px 24px -6px rgba(239, 68, 68, 0.25) !important;
+}
+html[data-theme="obsidian"].dark .kpi-card-becorp {
+  background: linear-gradient(145deg, #241808, #3B260C) !important;
+  border: 1px solid rgba(245, 158, 11, 0.35) !important;
+  box-shadow: 0 8px 24px -6px rgba(245, 158, 11, 0.22), inset 0 1px 0 rgba(245, 158, 11, 0.25) !important;
+}
+html[data-theme="obsidian"].dark .kpi-card-credit {
+  background: linear-gradient(145deg, #180D2B, #281546) !important;
+  border: 1px solid rgba(139, 92, 246, 0.35) !important;
+  box-shadow: 0 8px 24px -6px rgba(139, 92, 246, 0.22), inset 0 1px 0 rgba(139, 92, 246, 0.25) !important;
+}
+
+/* 🍀 2. MONARCH EMERALD & WEALTH GOLD */
+html[data-theme="emerald"].dark body {
+  background-color: #05120E !important;
+  background-image: 
+    radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 85% 20%, rgba(245, 158, 11, 0.06) 0%, transparent 40%) !important;
+  background-attachment: fixed !important;
+}
+html[data-theme="emerald"].dark .min-h-screen {
+  background-color: #05120E !important;
+}
+html[data-theme="emerald"].dark .bg-white {
+  background-color: #0B1E17 !important;
+  border-color: rgba(16, 185, 129, 0.16) !important;
+}
+html[data-theme="emerald"].dark .bg-slate-50,
+html[data-theme="emerald"].dark .bg-slate-50\/50,
+html[data-theme="emerald"].dark .bg-slate-50\/80 {
+  background-color: #0F261E !important;
+}
+html[data-theme="emerald"] header.bg-gradient-to-r,
+html[data-theme="emerald"] .app-header-gradient {
+  background: linear-gradient(135deg, #04140F 0%, #083324 50%, #051A13 100%) !important;
+  border-color: rgba(16, 185, 129, 0.32) !important;
+}
+html[data-theme="emerald"].dark .kpi-card-income {
+  background: linear-gradient(145deg, #07291F, #0E4232) !important;
+  border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+html[data-theme="emerald"].dark .kpi-card-expense {
+  background: linear-gradient(145deg, #220F16, #361524) !important;
+  border: 1px solid rgba(244, 63, 94, 0.35) !important;
+}
+html[data-theme="emerald"].dark .kpi-card-net {
+  background: linear-gradient(145deg, #083324, #0F4A35) !important;
+  border: 1px solid rgba(52, 211, 153, 0.38) !important;
+}
+
+/* ⚡ 3. OCEANIC NAVY & TANGERINE */
+html[data-theme="oceanic"].dark body {
+  background-color: #061324 !important;
+  background-image: 
+    radial-gradient(circle at 15% 15%, rgba(37, 99, 235, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 85% 20%, rgba(255, 107, 0, 0.06) 0%, transparent 40%) !important;
+  background-attachment: fixed !important;
+}
+html[data-theme="oceanic"].dark .min-h-screen {
+  background-color: #061324 !important;
+}
+html[data-theme="oceanic"].dark .bg-white {
+  background-color: #0B1F38 !important;
+  border-color: rgba(37, 99, 235, 0.18) !important;
+}
+html[data-theme="oceanic"].dark .bg-slate-50,
+html[data-theme="oceanic"].dark .bg-slate-50\/50,
+html[data-theme="oceanic"].dark .bg-slate-50\/80 {
+  background-color: #102B4D !important;
+}
+html[data-theme="oceanic"] header.bg-gradient-to-r,
+html[data-theme="oceanic"] .app-header-gradient {
+  background: linear-gradient(135deg, #051324 0%, #0D2C54 50%, #08172C 100%) !important;
+  border-color: rgba(37, 99, 235, 0.32) !important;
+}
+html[data-theme="oceanic"].dark .kpi-card-income {
+  background: linear-gradient(145deg, #092C54, #0E3D75) !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+}
+html[data-theme="oceanic"].dark .kpi-card-expense {
+  background: linear-gradient(145deg, #301407, #4D210B) !important;
+  border: 1px solid rgba(255, 107, 0, 0.38) !important;
+}
+
+/* ☕ 4. WARM CANVAS & ESPRESSO LEATHER */
+html[data-theme="espresso"].dark body {
+  background-color: #13100E !important;
+  background-image: 
+    radial-gradient(circle at 15% 15%, rgba(217, 119, 6, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 85% 20%, rgba(234, 88, 12, 0.06) 0%, transparent 40%) !important;
+  background-attachment: fixed !important;
+}
+html[data-theme="espresso"].dark .min-h-screen {
+  background-color: #13100E !important;
+}
+html[data-theme="espresso"].dark .bg-white {
+  background-color: #1D1815 !important;
+  border-color: rgba(217, 119, 6, 0.18) !important;
+}
+html[data-theme="espresso"].dark .bg-slate-50,
+html[data-theme="espresso"].dark .bg-slate-50\/50,
+html[data-theme="espresso"].dark .bg-slate-50\/80 {
+  background-color: #26201C !important;
+}
+html[data-theme="espresso"] header.bg-gradient-to-r,
+html[data-theme="espresso"] .app-header-gradient {
+  background: linear-gradient(135deg, #181310 0%, #2E1F16 50%, #1A130E 100%) !important;
+  border-color: rgba(217, 119, 6, 0.32) !important;
+}
+html[data-theme="espresso"]:not(.dark) body,
+html[data-theme="espresso"]:not(.dark) .min-h-screen {
+  background-color: #FBF8F2 !important;
+}
+html[data-theme="espresso"]:not(.dark) .bg-slate-50 {
+  background-color: #F3ECE0 !important;
+}
+html[data-theme="espresso"]:not(.dark) .border-slate-200 {
+  border-color: #E6DBCB !important;
+}
+html[data-theme="espresso"]:not(.dark) header.bg-gradient-to-r {
+  background: linear-gradient(135deg, #2D1F17 0%, #452E20 50%, #2D1F17 100%) !important;
+}
+
