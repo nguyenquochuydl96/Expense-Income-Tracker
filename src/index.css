@@ -3,9 +3,9 @@
 
 @layer base {
   :root {
-    --font-display: 'Urbanist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-sans: 'Urbanist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font: 'Urbanist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font: 'Plus Jakarta Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
     /* Kinlo Design Tokens (Light Mode) */
     --fs-2xs: 11px;
@@ -113,6 +113,17 @@
 
   /* ═══════ COFRA MONOCHROME LUXE DESIGN TOKENS (LIGHT MODE) ═══════ */
   html[data-theme-preset="cofra"] {
+    --font-display: 'Urbanist', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-sans: 'Urbanist', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font: 'Urbanist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    --side-w: 256px;
+    --side-bg: #e8e8e6;
+    --side-ink: #111111;
+    --side-muted: #666666;
+    --side-line: rgba(0, 0, 0, 0.08);
+    --side-hover: rgba(0, 0, 0, 0.05);
+
     --bg: #f2f2f1;
     --wash-a: transparent;
     --wash-wave: transparent;
@@ -158,6 +169,17 @@
   /* ═══════ COFRA MONOCHROME LUXE DESIGN TOKENS (DARK MODE) ═══════ */
   html.dark[data-theme-preset="cofra"],
   html[data-theme-preset="cofra"].dark {
+    --font-display: 'Urbanist', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-sans: 'Urbanist', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font: 'Urbanist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+    --side-w: 256px;
+    --side-bg: #141414;
+    --side-ink: #f2f2f2;
+    --side-muted: #8c8c8c;
+    --side-line: rgba(255, 255, 255, 0.07);
+    --side-hover: rgba(255, 255, 255, 0.05);
+
     --bg: #0e0e0e;
     --wash-a: transparent;
     --wash-wave: transparent;
@@ -203,6 +225,85 @@
   /* Cofra Calm Monolithic Aura */
   html[data-theme-preset="cofra"] body::before {
     background: var(--bg) !important;
+  }
+
+  /* Cofra Architectural Typography (Urbanist) */
+  html[data-theme-preset="cofra"] body {
+    font-family: 'Urbanist', system-ui, -apple-system, sans-serif !important;
+    letter-spacing: -0.015em;
+  }
+  html[data-theme-preset="cofra"] h1,
+  html[data-theme-preset="cofra"] h2,
+  html[data-theme-preset="cofra"] h3,
+  html[data-theme-preset="cofra"] h4,
+  html[data-theme-preset="cofra"] .font-display {
+    font-family: 'Urbanist', system-ui, -apple-system, sans-serif !important;
+    letter-spacing: -0.025em;
+  }
+
+  /* Cofra Sharper Card Corners & Fine Hairline Borders */
+  html[data-theme-preset="cofra"] .kinlo-card,
+  html[data-theme-preset="cofra"] [data-card-root] {
+    border-radius: 18px !important;
+    border: 1px solid var(--line) !important;
+    box-shadow: var(--shadow) !important;
+  }
+
+  /* Cofra Bank & Cards: Luxury Gradient with Repeating Radial Arcs */
+  html[data-theme-preset="cofra"] .kinlo-card-night {
+    border-radius: 18px !important;
+    background: linear-gradient(140deg, #2e2e2e 0%, #181818 55%, #080808 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 18px 34px -18px rgba(0, 0, 0, 0.7) !important;
+    position: relative;
+    overflow: hidden;
+  }
+  html[data-theme-preset="cofra"] .kinlo-card-night::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -25%;
+    width: 90%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: repeating-radial-gradient(circle, transparent 0 18px, rgba(255, 255, 255, 0.06) 18px 19px);
+    pointer-events: none;
+  }
+
+  /* Cofra Primary Action Button (+ Thêm giao dịch) */
+  html[data-theme-preset="cofra"] .kinlo-btn-primary {
+    background: var(--accent) !important;
+    color: var(--accent-ink) !important;
+    border-radius: 11px !important;
+    font-weight: 700 !important;
+    box-shadow: 0 6px 16px -6px var(--accent) !important;
+  }
+
+  /* Cofra Secondary Buttons & Chips */
+  html[data-theme-preset="cofra"] .kinlo-btn-secondary {
+    border-radius: 11px !important;
+    background: var(--card) !important;
+    box-shadow: inset 0 0 0 1px var(--line-2) !important;
+  }
+
+  /* Cofra Table Headers */
+  html[data-theme-preset="cofra"] thead th {
+    background: var(--card-2) !important;
+    color: var(--muted) !important;
+    font-size: 11.5px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    font-weight: 700 !important;
+    border-bottom: 1px solid var(--line) !important;
+  }
+
+  /* Cofra Table Selected Column */
+  html[data-theme-preset="cofra"] .border-sky-500,
+  html[data-theme-preset="cofra"] .border-t-2.border-sky-500 {
+    border-color: var(--accent) !important;
+  }
+  html[data-theme-preset="cofra"] .bg-sky-500 {
+    background-color: var(--accent) !important;
   }
 
   body {

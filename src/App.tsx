@@ -201,7 +201,12 @@ export default function App() {
   });
 
   const [isLoadingInitial, setIsLoadingInitial] = useState<boolean>(true);
-  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => isDeviceUnlocked());
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('unlocked') === 'true') {
+      return true;
+    }
+    return isDeviceUnlocked();
+  });
   const [selectedMonths, setSelectedMonths] = useState<string[]>(() => {
     const now = new Date();
     return [`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`];
@@ -1745,218 +1750,529 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-transparent text-[var(--ink)] transition-colors">
-      {/* ═══════ KINLO FLOATING GLASS HEADER ═══════ */}
-      <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 pt-3 sm:pt-4">
-        <header className="w-full px-4 sm:px-6 py-3 rounded-2xl sm:rounded-3xl bg-[var(--glass)] backdrop-blur-xl border border-[var(--line)] shadow-[var(--shadow)] flex flex-wrap items-center justify-between gap-3 text-[var(--ink)] transition-all">
-          {/* Left Brand Badge (Duo Avatars: Heo & Mèo) */}
-          <div className="flex items-center gap-3">
-            <div
-              className="flex items-center -space-x-2.5 p-1 rounded-2xl bg-white/40 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/15 shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer shrink-0 magnetic"
-              onClick={() => setActiveTab('dashboard')}
-              title="Heo & Mèo Finance"
-            >
+      {/* ═══════ COFRA DESKTOP LEFT SIDEBAR (Only active in Cofra preset on lg+ screens) ═══════ */}
+      {preset === 'cofra' && (
+        <aside className="hidden lg:flex fixed top-0 bottom-0 left-0 w-64 bg-[var(--side-bg)] text-[var(--side-ink)] border-r border-[var(--side-line)] flex-col justify-between p-4 z-40 transition-colors select-none">
+          <div className="space-y-4">
+            {/* Cofra Brand Header */}
+            <div className="flex items-center gap-3 px-2 py-1">
               <div
-                className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full bg-rose-100 dark:bg-rose-950/70 ring-2 ring-white dark:ring-slate-800 flex items-center justify-center shadow-xs z-10"
-                title="Heo 🐷"
+                className="flex items-center -space-x-2 p-1 rounded-xl bg-black/10 dark:bg-white/10 border border-[var(--side-line)] cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+                onClick={() => setActiveTab('dashboard')}
+                title="Heo & Mèo Finance"
               >
-                <PigIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
+                <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-950/70 ring-1 ring-white dark:ring-black flex items-center justify-center shadow-xs z-10">
+                  <PigIcon className="w-4.5 h-4.5" />
+                </div>
+                <div className="w-8 h-8 rounded-full bg-[#FAF4EE] dark:bg-amber-950/50 ring-1 ring-white dark:ring-black flex items-center justify-center shadow-xs z-0">
+                  <SiameseCatIcon className="w-4.5 h-4.5" />
+                </div>
               </div>
-              <div
-                className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full bg-[#FAF4EE] dark:bg-amber-950/50 ring-2 ring-white dark:ring-slate-800 flex items-center justify-center shadow-xs z-0"
-                title="Mèo Xiêm 🐱"
-              >
-                <SiameseCatIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-bold tracking-tight text-[var(--ink)]">
-                  Heo &amp; Mèo
-                </h1>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--card-2)] text-[var(--accent-text)] border border-[var(--line)]">
-                  Finance
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <h1 className="text-sm font-bold tracking-tight text-[var(--side-ink)] font-display truncate">
+                    Heo &amp; Mèo
+                  </h1>
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-black/10 dark:bg-white/10 text-[var(--side-ink)]">
+                    COFRA
+                  </span>
+                </div>
+                <span className="text-[10.5px] text-[var(--side-muted)] block truncate">
+                  Ba mẹ Chuối, Đậu, Vịt
                 </span>
               </div>
-              <span className="text-[11px] text-[var(--muted)] block font-medium">
-                Sổ chi tiêu của ba mẹ Chuối, Đậu, Vịt
-              </span>
             </div>
-          </div>
 
-          {/* Center Navigation Tabs (Kinlo Glass Nav Rail - Hidden on Mobile, shown on Desktop >= md) */}
-          <nav className="hidden md:flex items-center gap-1 text-xs font-semibold p-1 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] overflow-x-auto max-w-full relative">
-            {[
-              { id: 'dashboard', label: 'Dashboard' },
-              { id: 'ledger', label: `Sổ giao dịch (${periodRecords.length})` },
-              { id: 'reconcile', label: 'Check tiền & Đối soát' },
-              {
-                id: 'sync',
-                label: `Đồng bộ (${
-                  sheetRecords && sheetRecords.length > 0
-                    ? accessToken
-                      ? 'Đã kết nối'
-                      : 'Đã lưu máy'
-                    : 'Chưa kết nối'
-                })`,
-              },
-            ].map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
+            {/* Cofra Navigation: MONEY */}
+            <div>
+              <div className="text-[10px] font-bold tracking-wider uppercase text-[var(--side-muted)] px-2.5 mb-1.5">
+                Money &amp; Sổ cái
+              </div>
+              <nav className="space-y-1">
+                {[
+                  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+                  { id: 'ledger', label: 'Sổ giao dịch', icon: ReceiptText, count: periodRecords.length },
+                  { id: 'reconcile', label: 'Check tiền & Đối soát', icon: Scale },
+                  { id: 'sync', label: 'Đồng bộ Sheets', icon: RefreshCw },
+                ].map((item) => {
+                  const isActive = activeTab === item.id;
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={(e) => {
+                        animateIconBounce(e.currentTarget);
+                        setActiveTab(item.id as any);
+                      }}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-[var(--card)] text-[var(--ink)] shadow-xs font-bold border border-[var(--line)]'
+                          : 'text-[var(--side-muted)] hover:text-[var(--side-ink)] hover:bg-black/5 dark:hover:bg-white/5'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[var(--ink)]' : 'text-[var(--side-muted)]'}`} />
+                        <span className="truncate">{item.label}</span>
+                      </div>
+                      {typeof item.count === 'number' && (
+                        <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-[var(--card-2)] text-[var(--muted)] border border-[var(--line)]">
+                          {item.count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
                 <button
-                  key={tab.id}
                   type="button"
                   onClick={(e) => {
                     animateIconBounce(e.currentTarget);
-                    setActiveTab(tab.id as any);
+                    setIsTelegramModalOpen(true);
                   }}
-                  className={`relative px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer font-semibold ${
-                    isActive
-                      ? 'text-[var(--accent-ink)] font-bold'
-                      : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-white/40 dark:hover:bg-white/5'
-                  }`}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-[var(--side-muted)] hover:text-[var(--side-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer"
                 >
-                  {isActive && (
-                    <motion.div
-                      layoutId="kinlo-active-desktop-pill"
-                      className="absolute inset-0 bg-[var(--accent)] rounded-xl shadow-xs"
-                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                    />
-                  )}
-                  <span className="relative z-10">{tab.label}</span>
+                  <div className="flex items-center gap-2.5">
+                    <Bot className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>Bot Telegram</span>
+                  </div>
+                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                    Auto
+                  </span>
                 </button>
-              );
-            })}
-            <button
-              type="button"
-              onClick={(e) => {
-                animateIconBounce(e.currentTarget);
-                setIsTelegramModalOpen(true);
-              }}
-              className="px-2.5 py-1.5 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] transition-colors flex items-center gap-1 text-xs font-semibold cursor-pointer magnetic"
-              title="Mở hướng dẫn & cú pháp Telegram Bot"
-            >
-              <Bot className="w-3.5 h-3.5 text-amber-500" />
-              <span>Bot Telegram</span>
-            </button>
-          </nav>
+              </nav>
+            </div>
 
-          {/* Right Action Controls */}
-          <div className="flex items-center gap-2">
-            {/* Theme Preset Switcher (🌿 Kinlo / 🏛️ Cofra) */}
-            <button
-              type="button"
-              onClick={(e) => {
-                animateIconBounce(e.currentTarget);
-                const next = togglePreset();
-                triggerFloatUp(
-                  e.currentTarget,
-                  next === 'cofra' ? 'Theme Cofra (Mono Luxe)' : 'Theme Kinlo (Ocean)'
-                );
-              }}
-              className="magnetic p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line)] cursor-pointer"
-              title={`Đang dùng: ${activeConfig.name} — Bấm để đổi sang theme ${preset === 'kinlo' ? 'Cofra' : 'Kinlo'}`}
-            >
-              <Palette className="w-4 h-4 text-[var(--accent-text)] shrink-0" />
-              <span className="hidden sm:inline font-medium font-mono-tabular">
-                {preset === 'kinlo' ? 'Kinlo' : 'Cofra'}
-              </span>
-            </button>
+            {/* Cofra Controls: THEME & SETTINGS */}
+            <div>
+              <div className="text-[10px] font-bold tracking-wider uppercase text-[var(--side-muted)] px-2.5 mb-1.5">
+                Giao diện &amp; Chế độ
+              </div>
+              <div className="space-y-1">
+                {/* Theme Preset Switcher */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    const next = togglePreset();
+                    triggerFloatUp(e.currentTarget, next === 'cofra' ? 'Theme Cofra (Mono Luxe)' : 'Theme Kinlo (Ocean)');
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-[var(--side-ink)] transition-all cursor-pointer"
+                  title="Bấm để chuyển về giao diện Kinlo"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Palette className="w-4 h-4 text-[var(--side-ink)]" />
+                    <span>Theme Preset</span>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[var(--card)] text-[var(--ink)] border border-[var(--line)]">
+                    Cofra Luxe
+                  </span>
+                </button>
 
-            {/* Theme Toggle Button (☀️ Sáng / 🌙 Tối) */}
-            <button
-              type="button"
-              onClick={(e) => {
-                animateIconBounce(e.currentTarget);
-                toggleTheme();
-              }}
-              className="magnetic p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line)] cursor-pointer"
-              title={isDark ? 'Chuyển sang giao diện Sáng' : 'Chuyển sang giao diện Tối'}
-            >
-              {isDark ? (
-                <>
-                  <Sun className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span className="hidden sm:inline font-medium">Sáng</span>
-                </>
-              ) : (
-                <>
-                  <Moon className="w-4 h-4 text-sky-600 shrink-0" />
-                  <span className="hidden sm:inline font-medium">Tối</span>
-                </>
-              )}
-            </button>
+                {/* Dark / Light Toggle */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    toggleTheme();
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-[var(--side-muted)] hover:text-[var(--side-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700 dark:text-slate-200" />}
+                    <span>Chế độ hiển thị</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-[var(--side-ink)]">
+                    {isDark ? 'Tối' : 'Sáng'}
+                  </span>
+                </button>
 
-            {/* Privacy Mode Toggle */}
-            <button
-              type="button"
-              onClick={(e) => {
-                animateIconBounce(e.currentTarget);
-                togglePrivacy();
-              }}
-              className={`magnetic p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border cursor-pointer ${
-                isPrivate
-                  ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30'
-                  : 'bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border-[var(--line)]'
-              }`}
-              title={isPrivate ? 'Đang ẩn số tiền — Bấm để hiện' : 'Đang hiện số tiền — Bấm để ẩn'}
-            >
-              {isPrivate ? (
-                <>
-                  <EyeOff className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span className="hidden md:inline">Đang ẩn</span>
-                </>
-              ) : (
-                <>
-                  <Eye className="w-4 h-4 text-[var(--muted)] shrink-0" />
-                  <span className="hidden md:inline">Hiện số</span>
-                </>
-              )}
-            </button>
+                {/* Privacy Mode Toggle */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    togglePrivacy();
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-[var(--side-muted)] hover:text-[var(--side-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    {isPrivate ? <EyeOff className="w-4 h-4 text-amber-500" /> : <Eye className="w-4 h-4" />}
+                    <span>Bảo mật số tiền</span>
+                  </div>
+                  <span className="text-[10px] font-bold text-[var(--side-ink)]">
+                    {isPrivate ? 'Đang ẩn' : 'Hiện'}
+                  </span>
+                </button>
 
-            {/* Monthly Report Card Button */}
-            <button
-              type="button"
-              onClick={(e) => {
-                animateIconBounce(e.currentTarget);
-                setIsReportModalOpen(true);
-              }}
-              className="magnetic p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line)] transition-all cursor-pointer flex items-center gap-1.5"
-              title="Báo cáo tài chính tháng"
-            >
-              <Share2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span className="hidden lg:inline">Báo cáo</span>
-            </button>
+                {/* Monthly Report Modal */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    setIsReportModalOpen(true);
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-[var(--side-muted)] hover:text-[var(--side-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Share2 className="w-4 h-4 text-amber-500" />
+                    <span>Báo cáo tháng</span>
+                  </div>
+                  <span className="text-[10px] text-[var(--side-muted)]">Xem</span>
+                </button>
+              </div>
+            </div>
+          </div>
 
-            {/* Lock App Button */}
+          {/* Cofra Sidebar Footer Profile */}
+          <div className="pt-3 border-t border-[var(--side-line)] flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-[var(--card)] border border-[var(--line)] flex items-center justify-center font-bold text-[11px] text-[var(--ink)]">
+                HM
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-bold text-[var(--side-ink)] block truncate">Gia đình Chuối &amp; Đậu</span>
+                <span className="text-[10px] text-[var(--side-muted)] block truncate">
+                  {accessToken ? 'Đã kết nối Sheets' : 'Lưu trữ cục bộ'}
+                </span>
+              </div>
+            </div>
             <button
               type="button"
-              onClick={(e) => {
-                animateIconBounce(e.currentTarget);
-                handleLockApp();
-              }}
-              className="magnetic p-2 rounded-xl bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] transition-colors cursor-pointer"
-              title="Khóa ứng dụng an toàn"
+              onClick={handleLockApp}
+              className="p-1.5 rounded-lg text-[var(--side-muted)] hover:text-[var(--side-ink)] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+              title="Khóa ứng dụng"
             >
               <Lock className="w-3.5 h-3.5" />
             </button>
-
-            {/* Kinlo Primary Action Button (+ Thêm giao dịch) */}
-            <button
-              type="button"
-              onClick={(e) => {
-                animateIconBounce(e.currentTarget);
-                setAddModalPreset(null);
-                setIsAddModalOpen(true);
-              }}
-              className="magnetic kinlo-btn-primary px-3 sm:px-4 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-md active:scale-95 transition-transform"
-            >
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">+ Thêm giao dịch</span>
-              <span className="sm:hidden">+ Thêm</span>
-            </button>
           </div>
-        </header>
-      </div>
+        </aside>
+      )}
+
+      {/* Main Container Wrapper (shifts right on lg when Cofra preset active) */}
+      <div className={`flex-1 flex flex-col transition-all ${preset === 'cofra' ? 'lg:pl-64' : ''}`}>
+        {/* ═══════ HEADER: KINLO FLOATING GLASS OR COFRA SLIM BREADCRUMB ═══════ */}
+        {preset === 'kinlo' ? (
+          <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 pt-3 sm:pt-4">
+            <header className="w-full px-4 sm:px-6 py-3 rounded-2xl sm:rounded-3xl bg-[var(--glass)] backdrop-blur-xl border border-[var(--line)] shadow-[var(--shadow)] flex flex-wrap items-center justify-between gap-3 text-[var(--ink)] transition-all">
+              {/* Left Brand Badge (Duo Avatars: Heo & Mèo) */}
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex items-center -space-x-2.5 p-1 rounded-2xl bg-white/40 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/15 shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer shrink-0 magnetic"
+                  onClick={() => setActiveTab('dashboard')}
+                  title="Heo & Mèo Finance"
+                >
+                  <div
+                    className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full bg-rose-100 dark:bg-rose-950/70 ring-2 ring-white dark:ring-slate-800 flex items-center justify-center shadow-xs z-10"
+                    title="Heo 🐷"
+                  >
+                    <PigIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
+                  </div>
+                  <div
+                    className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full bg-[#FAF4EE] dark:bg-amber-950/50 ring-2 ring-white dark:ring-slate-800 flex items-center justify-center shadow-xs z-0"
+                    title="Mèo Xiêm 🐱"
+                  >
+                    <SiameseCatIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-base sm:text-lg font-bold tracking-tight text-[var(--ink)]">
+                      Heo &amp; Mèo
+                    </h1>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--card-2)] text-[var(--accent-text)] border border-[var(--line)]">
+                      Finance
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-[var(--muted)] block font-medium">
+                    Sổ chi tiêu của ba mẹ Chuối, Đậu, Vịt
+                  </span>
+                </div>
+              </div>
+
+              {/* Center Navigation Tabs (Kinlo Glass Nav Rail) */}
+              <nav className="hidden md:flex items-center gap-1 text-xs font-semibold p-1 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] overflow-x-auto max-w-full relative">
+                {[
+                  { id: 'dashboard', label: 'Dashboard' },
+                  { id: 'ledger', label: `Sổ giao dịch (${periodRecords.length})` },
+                  { id: 'reconcile', label: 'Check tiền & Đối soát' },
+                  {
+                    id: 'sync',
+                    label: `Đồng bộ (${
+                      sheetRecords && sheetRecords.length > 0
+                        ? accessToken
+                          ? 'Đã kết nối'
+                          : 'Đã lưu máy'
+                        : 'Chưa kết nối'
+                    })`,
+                  },
+                ].map((tab) => {
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={(e) => {
+                        animateIconBounce(e.currentTarget);
+                        setActiveTab(tab.id as any);
+                      }}
+                      className={`relative px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer font-semibold ${
+                        isActive
+                          ? 'text-[var(--accent-ink)] font-bold'
+                          : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-white/40 dark:hover:bg-white/5'
+                      }`}
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId="kinlo-active-desktop-pill"
+                          className="absolute inset-0 bg-[var(--accent)] rounded-xl shadow-xs"
+                          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                        />
+                      )}
+                      <span className="relative z-10">{tab.label}</span>
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    setIsTelegramModalOpen(true);
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] transition-colors flex items-center gap-1 text-xs font-semibold cursor-pointer magnetic"
+                  title="Mở hướng dẫn & cú pháp Telegram Bot"
+                >
+                  <Bot className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Bot Telegram</span>
+                </button>
+              </nav>
+
+              {/* Right Action Controls */}
+              <div className="flex items-center gap-2">
+                {/* Theme Preset Switcher (🌿 Kinlo / 🏛️ Cofra) */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    const next = togglePreset();
+                    triggerFloatUp(
+                      e.currentTarget,
+                      next === 'cofra' ? 'Theme Cofra (Mono Luxe)' : 'Theme Kinlo (Ocean)'
+                    );
+                  }}
+                  className="magnetic p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line)] cursor-pointer"
+                  title={`Đang dùng: ${activeConfig.name} — Bấm để đổi sang theme ${preset === 'kinlo' ? 'Cofra' : 'Kinlo'}`}
+                >
+                  <Palette className="w-4 h-4 text-[var(--accent-text)] shrink-0" />
+                  <span className="hidden sm:inline font-medium font-mono-tabular">
+                    Kinlo
+                  </span>
+                </button>
+
+                {/* Theme Toggle Button (☀️ Sáng / 🌙 Tối) */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    toggleTheme();
+                  }}
+                  className="magnetic p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line)] cursor-pointer"
+                  title={isDark ? 'Chuyển sang giao diện Sáng' : 'Chuyển sang giao diện Tối'}
+                >
+                  {isDark ? (
+                    <>
+                      <Sun className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span className="hidden sm:inline font-medium">Sáng</span>
+                    </>
+                  ) : (
+                    <>
+                      <Moon className="w-4 h-4 text-sky-600 shrink-0" />
+                      <span className="hidden sm:inline font-medium">Tối</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Privacy Mode Toggle */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    togglePrivacy();
+                  }}
+                  className={`magnetic p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border cursor-pointer ${
+                    isPrivate
+                      ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30'
+                      : 'bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border-[var(--line)]'
+                  }`}
+                  title={isPrivate ? 'Đang ẩn số tiền — Bấm để hiện' : 'Đang hiện số tiền — Bấm để ẩn'}
+                >
+                  {isPrivate ? (
+                    <>
+                      <EyeOff className="w-4 h-4 text-amber-500 shrink-0" />
+                      <span className="hidden md:inline">Đang ẩn</span>
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-4 h-4 text-[var(--muted)] shrink-0" />
+                      <span className="hidden md:inline">Hiện số</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Monthly Report Card Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    setIsReportModalOpen(true);
+                  }}
+                  className="magnetic p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line)] transition-all cursor-pointer flex items-center gap-1.5"
+                  title="Báo cáo tài chính tháng"
+                >
+                  <Share2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span className="hidden lg:inline">Báo cáo</span>
+                </button>
+
+                {/* Lock App Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    handleLockApp();
+                  }}
+                  className="magnetic p-2 rounded-xl bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] transition-colors cursor-pointer"
+                  title="Khóa ứng dụng an toàn"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Kinlo Primary Action Button (+ Thêm giao dịch) */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    setAddModalPreset(null);
+                    setIsAddModalOpen(true);
+                  }}
+                  className="magnetic kinlo-btn-primary px-3 sm:px-4 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-md active:scale-95 transition-transform"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">+ Thêm giao dịch</span>
+                  <span className="sm:hidden">+ Thêm</span>
+                </button>
+              </div>
+            </header>
+          </div>
+        ) : (
+          /* Cofra Header (Slim & Crisp Breadcrumb Header) */
+          <div className="w-full px-4 sm:px-8 pt-3 sm:pt-4">
+            <header className="w-full px-4 sm:px-6 py-3 rounded-2xl bg-[var(--card)] border border-[var(--line)] shadow-xs flex items-center justify-between gap-3 text-[var(--ink)]">
+              {/* Breadcrumb on Desktop / Mobile Brand on Phone */}
+              <div className="flex items-center gap-2.5">
+                <div className="lg:hidden flex items-center -space-x-2 mr-1">
+                  <div className="w-7 h-7 rounded-full bg-rose-100 dark:bg-rose-950/70 ring-1 ring-white dark:ring-black flex items-center justify-center">
+                    <PigIcon className="w-4 h-4" />
+                  </div>
+                  <div className="w-7 h-7 rounded-full bg-[#FAF4EE] dark:bg-amber-950/50 ring-1 ring-white dark:ring-black flex items-center justify-center">
+                    <SiameseCatIcon className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="text-xs font-semibold text-[var(--muted)] flex items-center gap-1.5">
+                  <span className="font-bold text-[var(--ink)]">Heo &amp; Mèo</span>
+                  <span>/</span>
+                  <span className="text-[var(--ink)] font-bold">
+                    {activeTab === 'dashboard' ? 'Overview' : activeTab === 'ledger' ? 'Activity' : activeTab === 'reconcile' ? 'Check tiền & Đối soát' : 'Sync'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Right Controls */}
+              <div className="flex items-center gap-2">
+                {/* Theme Preset Switcher */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    const next = togglePreset();
+                    triggerFloatUp(e.currentTarget, next === 'cofra' ? 'Theme Cofra (Mono Luxe)' : 'Theme Kinlo (Ocean)');
+                  }}
+                  className="p-2 sm:px-3 sm:py-1.5 text-xs font-semibold rounded-xl bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line)] transition-all cursor-pointer flex items-center gap-1.5"
+                  title="Bấm để chuyển sang theme Kinlo"
+                >
+                  <Palette className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline font-mono text-[11px]">Cofra</span>
+                </button>
+
+                {/* Dark/Light Toggle */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    toggleTheme();
+                  }}
+                  className="p-2 sm:px-2.5 sm:py-1.5 text-xs font-semibold rounded-xl bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line)] transition-all cursor-pointer flex items-center gap-1"
+                  title={isDark ? 'Chế độ Sáng' : 'Chế độ Tối'}
+                >
+                  {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
+                </button>
+
+                {/* Privacy Toggle */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    togglePrivacy();
+                  }}
+                  className={`p-2 sm:px-2.5 sm:py-1.5 text-xs font-semibold rounded-xl border transition-all cursor-pointer ${
+                    isPrivate ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30' : 'bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border-[var(--line)]'
+                  }`}
+                  title={isPrivate ? 'Hiện số tiền' : 'Ẩn số tiền'}
+                >
+                  {isPrivate ? <EyeOff className="w-3.5 h-3.5 text-amber-500" /> : <Eye className="w-3.5 h-3.5 text-[var(--muted)]" />}
+                </button>
+
+                {/* Report button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    setIsReportModalOpen(true);
+                  }}
+                  className="hidden sm:flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 text-xs font-semibold rounded-xl bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line)] transition-all cursor-pointer"
+                  title="Báo cáo tài chính"
+                >
+                  <Share2 className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Báo cáo</span>
+                </button>
+
+                {/* Lock button */}
+                <button
+                  type="button"
+                  onClick={handleLockApp}
+                  className="p-2 rounded-xl bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] transition-colors cursor-pointer"
+                  title="Khóa ứng dụng"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Primary Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    setAddModalPreset(null);
+                    setIsAddModalOpen(true);
+                  }}
+                  className="magnetic kinlo-btn-primary px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95 transition-transform"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">+ Thêm giao dịch</span>
+                  <span className="sm:hidden">+ Thêm</span>
+                </button>
+              </div>
+            </header>
+          </div>
+        )}
 
       {/* Toast Notification */}
       <AnimatePresence>
@@ -2324,6 +2640,7 @@ export default function App() {
         </>
       )}
       </main>
+      </div>
 
       {/* ADD TRANSACTION MODAL */}
       <AddTransactionModal

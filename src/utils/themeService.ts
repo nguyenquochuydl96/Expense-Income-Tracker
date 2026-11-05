@@ -31,16 +31,26 @@ export const THEME_PRESETS: Record<ThemePreset, ThemeConfig> = {
 export const STORAGE_KEY_THEME = 'heomeo_theme_mode_v1';
 export const STORAGE_KEY_THEME_PRESET = 'heomeo_theme_preset_v1';
 
-// Initial state resolution from localStorage
+// Initial state resolution from URL params or localStorage
 let currentMode: ThemeMode = 'light';
 try {
-  const savedMode = localStorage.getItem(STORAGE_KEY_THEME);
-  if (savedMode === 'dark' || savedMode === 'light') {
-    currentMode = savedMode;
-  } else if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
-    currentMode = 'dark';
+  let paramMode: string | null = null;
+  if (typeof window !== 'undefined' && window.location.search) {
+    const params = new URLSearchParams(window.location.search);
+    paramMode = params.get('theme_mode') || params.get('theme');
+  }
+
+  if (paramMode === 'dark' || paramMode === 'light') {
+    currentMode = paramMode;
   } else {
-    currentMode = 'light';
+    const savedMode = localStorage.getItem(STORAGE_KEY_THEME);
+    if (savedMode === 'dark' || savedMode === 'light') {
+      currentMode = savedMode;
+    } else if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
+      currentMode = 'dark';
+    } else {
+      currentMode = 'light';
+    }
   }
 } catch {
   currentMode = 'light';
@@ -48,11 +58,21 @@ try {
 
 let currentPreset: ThemePreset = 'kinlo';
 try {
-  const savedPreset = localStorage.getItem(STORAGE_KEY_THEME_PRESET);
-  if (savedPreset === 'cofra' || savedPreset === 'kinlo') {
-    currentPreset = savedPreset;
+  let paramPreset: string | null = null;
+  if (typeof window !== 'undefined' && window.location.search) {
+    const params = new URLSearchParams(window.location.search);
+    paramPreset = params.get('theme_preset') || params.get('preset');
+  }
+
+  if (paramPreset === 'cofra' || paramPreset === 'kinlo') {
+    currentPreset = paramPreset;
   } else {
-    currentPreset = 'kinlo';
+    const savedPreset = localStorage.getItem(STORAGE_KEY_THEME_PRESET);
+    if (savedPreset === 'cofra' || savedPreset === 'kinlo') {
+      currentPreset = savedPreset;
+    } else {
+      currentPreset = 'kinlo';
+    }
   }
 } catch {
   currentPreset = 'kinlo';
