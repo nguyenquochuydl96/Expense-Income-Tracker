@@ -1747,16 +1747,24 @@ export default function App() {
       {/* ═══════ KINLO FLOATING GLASS HEADER ═══════ */}
       <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 pt-3 sm:pt-4">
         <header className="w-full px-4 sm:px-6 py-3 rounded-2xl sm:rounded-3xl bg-[var(--glass)] backdrop-blur-xl border border-[var(--line)] shadow-[var(--shadow)] flex flex-wrap items-center justify-between gap-3 text-[var(--ink)] transition-all">
-          {/* Left Brand Badge (Kinlo Style Icon + Duo Avatars) */}
+          {/* Left Brand Badge (Duo Avatars: Heo & Mèo) */}
           <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-2xl bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center shadow-xs shrink-0 cursor-pointer hover:scale-105 transition-transform"
+              className="flex items-center -space-x-2.5 p-1 rounded-2xl bg-white/40 dark:bg-white/10 backdrop-blur-md border border-white/40 dark:border-white/15 shadow-xs hover:scale-105 active:scale-95 transition-transform cursor-pointer shrink-0 magnetic"
               onClick={() => setActiveTab('dashboard')}
               title="Heo & Mèo Finance"
             >
-              <div className="flex items-center -space-x-1.5">
-                <PigIcon className="w-4 h-4" />
-                <SiameseCatIcon className="w-4 h-4" />
+              <div
+                className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full bg-rose-100 dark:bg-rose-950/70 ring-2 ring-white dark:ring-slate-800 flex items-center justify-center shadow-xs z-10"
+                title="Heo 🐷"
+              >
+                <PigIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
+              </div>
+              <div
+                className="w-8.5 h-8.5 sm:w-9 sm:h-9 rounded-full bg-[#FAF4EE] dark:bg-amber-950/50 ring-2 ring-white dark:ring-slate-800 flex items-center justify-center shadow-xs z-0"
+                title="Mèo Xiêm 🐱"
+              >
+                <SiameseCatIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
               </div>
             </div>
 
