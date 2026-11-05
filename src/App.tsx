@@ -19,6 +19,7 @@ import {
   Smartphone,
   Moon,
   Sun,
+  Palette,
   Share2,
   TrendingUp,
   TrendingDown,
@@ -240,8 +241,8 @@ export default function App() {
     };
   }, []);
 
-  // Theme mode (Light / Dark)
-  const { isDark, toggleTheme } = useThemeMode();
+  // Theme mode (Light / Dark) & Theme Preset (Kinlo / Cofra)
+  const { isDark, toggleTheme, preset, togglePreset, activeConfig } = useThemeMode();
 
   // Monthly Report Card Modal state
   const [isReportModalOpen, setIsReportModalOpen] = useState<boolean>(false);
@@ -277,7 +278,7 @@ export default function App() {
         animateCardsEntrance(cards);
       }
     }
-  }, [activeTab, selectedMonths, selectedCategories]);
+  }, [activeTab]);
 
   // Global Keyboard shortcuts: Alt + P (Privacy), Alt + N (Thêm nhanh giao dịch), Escape (Đóng modal)
   useEffect(() => {
@@ -1842,6 +1843,26 @@ export default function App() {
 
           {/* Right Action Controls */}
           <div className="flex items-center gap-2">
+            {/* Theme Preset Switcher (🌿 Kinlo / 🏛️ Cofra) */}
+            <button
+              type="button"
+              onClick={(e) => {
+                animateIconBounce(e.currentTarget);
+                const next = togglePreset();
+                triggerFloatUp(
+                  e.currentTarget,
+                  next === 'cofra' ? 'Theme Cofra (Mono Luxe)' : 'Theme Kinlo (Ocean)'
+                );
+              }}
+              className="magnetic p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line)] cursor-pointer"
+              title={`Đang dùng: ${activeConfig.name} — Bấm để đổi sang theme ${preset === 'kinlo' ? 'Cofra' : 'Kinlo'}`}
+            >
+              <Palette className="w-4 h-4 text-[var(--accent-text)] shrink-0" />
+              <span className="hidden sm:inline font-medium font-mono-tabular">
+                {preset === 'kinlo' ? 'Kinlo' : 'Cofra'}
+              </span>
+            </button>
+
             {/* Theme Toggle Button (☀️ Sáng / 🌙 Tối) */}
             <button
               type="button"

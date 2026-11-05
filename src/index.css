@@ -111,6 +111,100 @@
     --tile-peach: rgba(110, 60, 40, 0.4);
   }
 
+  /* ═══════ COFRA MONOCHROME LUXE DESIGN TOKENS (LIGHT MODE) ═══════ */
+  html[data-theme-preset="cofra"] {
+    --bg: #f2f2f1;
+    --wash-a: transparent;
+    --wash-wave: transparent;
+    --wash-b: transparent;
+    --wash-c: transparent;
+    --wash-band: transparent;
+
+    --glass: rgba(255, 255, 255, 0.90);
+    --glass-hi: rgba(255, 255, 255, 0.98);
+    --glass-rim: rgba(255, 255, 255, 0.94);
+    --glass-edge: rgba(0, 0, 0, 0.08);
+
+    --card: #ffffff;
+    --card-2: #f5f5f4;
+    --card-3: rgba(0, 0, 0, 0.06);
+    --solid-2: #e9e9e8;
+    --ink: #111111;
+    --ink-2: #2f2f2f;
+    --muted: #5c5c5c;
+    --line: rgba(0, 0, 0, 0.086);
+    --line-2: rgba(0, 0, 0, 0.16);
+
+    --shadow: 0 1px 1px rgba(0, 0, 0, 0.04), 0 10px 26px -18px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.08), 0 34px 70px -26px rgba(0, 0, 0, 0.4);
+
+    --accent: #111111;
+    --accent-hi: #000000;
+    --accent-ink: #ffffff;
+    --accent-soft: rgba(0, 0, 0, 0.08);
+    --accent-text: #111111;
+
+    --night: #181818;
+    --night-2: rgba(255, 255, 255, 0.08);
+    --night-ink: #f2f2f2;
+    --night-muted: #a3a3a3;
+
+    --tile-aqua: #e6e6e5;
+    --tile-slate: #ededec;
+    --tile-sage: #dededd;
+    --tile-peach: #f0f0ef;
+  }
+
+  /* ═══════ COFRA MONOCHROME LUXE DESIGN TOKENS (DARK MODE) ═══════ */
+  html.dark[data-theme-preset="cofra"],
+  html[data-theme-preset="cofra"].dark {
+    --bg: #0e0e0e;
+    --wash-a: transparent;
+    --wash-wave: transparent;
+    --wash-b: transparent;
+    --wash-c: transparent;
+    --wash-band: transparent;
+
+    --glass: rgba(24, 24, 24, 0.90);
+    --glass-hi: rgba(255, 255, 255, 0.06);
+    --glass-rim: rgba(255, 255, 255, 0.10);
+    --glass-edge: rgba(255, 255, 255, 0.07);
+
+    --card: #181818;
+    --card-2: #202020;
+    --card-3: rgba(255, 255, 255, 0.07);
+    --solid-2: #2a2a2a;
+    --ink: #f2f2f2;
+    --ink-2: #d4d4d4;
+    --muted: #a3a3a3;
+    --line: rgba(255, 255, 255, 0.078);
+    --line-2: rgba(255, 255, 255, 0.15);
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 14px 30px -20px rgba(0, 0, 0, 0.75);
+    --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.45), 0 40px 80px -28px rgba(0, 0, 0, 0.9);
+
+    --accent: #f2f2f2;
+    --accent-hi: #ffffff;
+    --accent-ink: #111111;
+    --accent-soft: rgba(255, 255, 255, 0.12);
+    --accent-text: #f2f2f2;
+
+    --night: #111111;
+    --night-2: rgba(255, 255, 255, 0.07);
+    --night-ink: #f2f2f2;
+    --night-muted: #8c8c8c;
+
+    --tile-aqua: #262626;
+    --tile-slate: #1f1f1f;
+    --tile-sage: #2c2c2c;
+    --tile-peach: #232323;
+  }
+
+  /* Cofra Calm Monolithic Aura */
+  html[data-theme-preset="cofra"] body::before {
+    background: var(--bg) !important;
+  }
+
   body {
     font-family: var(--font-sans);
     background-color: var(--bg);
@@ -313,6 +407,56 @@ html.dark .border-slate-300 {
 html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
 html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
   border-color: #1E293B !important;
+}
+
+/* Cofra Dark Mode Specific Surface Overrides */
+html.dark[data-theme-preset="cofra"] .bg-slate-50,
+html.dark[data-theme-preset="cofra"] .bg-slate-50\/50,
+html.dark[data-theme-preset="cofra"] .bg-slate-50\/80,
+html.dark[data-theme-preset="cofra"] .bg-slate-50\/40,
+html.dark[data-theme-preset="cofra"] .bg-slate-50\/30,
+html.dark[data-theme-preset="cofra"] .bg-slate-50\/60 {
+  background-color: #202020 !important;
+}
+
+html.dark[data-theme-preset="cofra"] .bg-slate-100,
+html.dark[data-theme-preset="cofra"] .bg-slate-100\/90,
+html.dark[data-theme-preset="cofra"] .bg-slate-100\/80,
+html.dark[data-theme-preset="cofra"] .bg-slate-100\/70 {
+  background-color: #262626 !important;
+  color: #f2f2f2 !important;
+}
+
+html.dark[data-theme-preset="cofra"] .border-slate-200,
+html.dark[data-theme-preset="cofra"] .border-slate-200\/80,
+html.dark[data-theme-preset="cofra"] .border-slate-200\/90,
+html.dark[data-theme-preset="cofra"] .border-slate-200\/70,
+html.dark[data-theme-preset="cofra"] .border-slate-100 {
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark[data-theme-preset="cofra"] .border-slate-300 {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+/* Cofra Light Mode Specific Surface Overrides */
+html[data-theme-preset="cofra"]:not(.dark) .bg-slate-50,
+html[data-theme-preset="cofra"]:not(.dark) .bg-slate-50\/50,
+html[data-theme-preset="cofra"]:not(.dark) .bg-slate-50\/80,
+html[data-theme-preset="cofra"]:not(.dark) .bg-slate-50\/40,
+html[data-theme-preset="cofra"]:not(.dark) .bg-slate-50\/30,
+html[data-theme-preset="cofra"]:not(.dark) .bg-slate-50\/60 {
+  background-color: #f5f5f4 !important;
+}
+
+html[data-theme-preset="cofra"]:not(.dark) .bg-slate-100 {
+  background-color: #e9e9e8 !important;
+  color: #111111 !important;
+}
+
+html[data-theme-preset="cofra"]:not(.dark) .border-slate-200,
+html[data-theme-preset="cofra"]:not(.dark) .border-slate-100 {
+  border-color: rgba(0, 0, 0, 0.086) !important;
 }
 
 /* Text hierarchy in dark mode */
