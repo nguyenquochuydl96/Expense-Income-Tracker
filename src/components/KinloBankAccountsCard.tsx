@@ -31,10 +31,9 @@ export const KinloBankAccountsCard: React.FC<KinloBankAccountsCardProps> = ({
   const creditPct = totalCardSpend > 0 ? (creditAmount / totalCardSpend) * 100 : 50;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+    <div
+      data-lift
+      data-card-entrance
       className={`kinlo-card-night p-5 sm:p-6 flex flex-col justify-between relative overflow-hidden group ${className}`}
     >
       {/* Subtle Ambient Radial Glow */}
@@ -116,6 +115,7 @@ export const KinloBankAccountsCard: React.FC<KinloBankAccountsCardProps> = ({
       <div className="relative z-10 space-y-2.5 mb-4">
         {/* Row 1: Ví BE Corp */}
         <div
+          data-lift
           onClick={onReconcileClick}
           className="p-3 sm:p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-amber-400/40 transition-all cursor-pointer flex items-center justify-between gap-3 group/row"
         >
@@ -146,6 +146,7 @@ export const KinloBankAccountsCard: React.FC<KinloBankAccountsCardProps> = ({
 
         {/* Row 2: Thẻ tín dụng Credit */}
         <div
+          data-lift
           onClick={onReconcileClick}
           className="p-3 sm:p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-sky-400/40 transition-all cursor-pointer flex items-center justify-between gap-3 group/row"
         >
@@ -189,6 +190,6 @@ export const KinloBankAccountsCard: React.FC<KinloBankAccountsCardProps> = ({
           </div>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 };

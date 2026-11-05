@@ -197,6 +197,52 @@
   transform: translateY(-1px);
 }
 
+/* Kinlo Magnetic & Interactive Elements */
+.magnetic {
+  will-change: transform;
+  display: inline-flex;
+}
+
+[data-lift] {
+  will-change: transform;
+}
+
+/* Kinlo Floating Delta Tag */
+.kinlo-float-up {
+  z-index: 9999;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.12));
+}
+
+/* Kinlo Nav & Tabbar Sliding Clip Pill */
+.nav__pill {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--accent);
+  opacity: 0;
+  border-radius: 14px;
+  filter: drop-shadow(0 6px 14px rgba(14, 108, 132, 0.28));
+}
+
+.tabbar__pill {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--accent);
+  opacity: 0;
+  border-radius: 16px;
+  filter: drop-shadow(0 6px 14px rgba(14, 108, 132, 0.35));
+}
+
+/* Kinlo Breathe Animation */
+@keyframes breathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(14, 108, 132, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(14, 108, 132, 0); }
+}
+.animate-breathe {
+  animation: breathe 2.6s ease-in-out infinite;
+}
+
 /* Custom scrollbar for dashboard feel */
 ::-webkit-scrollbar {
   width: 6px;

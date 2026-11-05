@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
+import { animateIconBounce } from '../utils/kinloAnimations';
 import {
   Search,
   Plus,
@@ -498,7 +499,8 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
             return (
               <div
                 key={rec.id}
-                className="p-3.5 space-y-2 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+                data-lift
+                className="p-3.5 space-y-2 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all rounded-xl"
               >
                 {/* Header: Date, Category badge, Sheet type */}
                 <div className="flex items-center justify-between gap-2">

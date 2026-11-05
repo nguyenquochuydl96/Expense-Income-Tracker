@@ -43,6 +43,12 @@ import { RealisticBankCard } from './components/RealisticBankCard';
 import { CashflowSegmentedBar } from './components/CashflowSegmentedBar';
 import { KinloCashflowCard } from './components/KinloCashflowCard';
 import { KinloBankAccountsCard } from './components/KinloBankAccountsCard';
+import {
+  animateCardsEntrance,
+  animateIconBounce,
+  useKinloInteractions,
+  triggerFloatUp,
+} from './utils/kinloAnimations';
 import { motion, AnimatePresence } from 'motion/react';
 import { User } from 'firebase/auth';
 import {
@@ -259,6 +265,19 @@ export default function App() {
     type: 'success' | 'warning';
     message: string;
   } | null>(null);
+
+  // Kinlo Animation refs & interactive micro-interactions (magnetic buttons & card lift)
+  const dashboardRef = useRef<HTMLDivElement>(null);
+  useKinloInteractions();
+
+  useEffect(() => {
+    if (activeTab === 'dashboard' && dashboardRef.current) {
+      const cards = dashboardRef.current.querySelectorAll('.kinlo-card, .kinlo-card-night, [data-card-entrance]');
+      if (cards.length > 0) {
+        animateCardsEntrance(cards);
+      }
+    }
+  }, [activeTab, selectedMonths, selectedCategories]);
 
   // Global Keyboard shortcuts: Alt + P (Privacy), Alt + N (Thêm nhanh giao dịch), Escape (Đóng modal)
   useEffect(() => {
@@ -1757,7 +1776,7 @@ export default function App() {
           </div>
 
           {/* Center Navigation Tabs (Kinlo Glass Nav Rail - Hidden on Mobile, shown on Desktop >= md) */}
-          <nav className="hidden md:flex items-center gap-1 text-xs font-semibold p-1 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] overflow-x-auto max-w-full">
+          <nav className="hidden md:flex items-center gap-1 text-xs font-semibold p-1 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] overflow-x-auto max-w-full relative">
             {[
               { id: 'dashboard', label: 'Dashboard' },
               { id: 'ledger', label: `Sổ giao dịch (${periodRecords.length})` },
@@ -1778,21 +1797,34 @@ export default function App() {
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setActiveTab(tab.id as any)}
-                  className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer font-semibold ${
+                  onClick={(e) => {
+                    animateIconBounce(e.currentTarget);
+                    setActiveTab(tab.id as any);
+                  }}
+                  className={`relative px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer font-semibold ${
                     isActive
-                      ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs font-bold'
+                      ? 'text-[var(--accent-ink)] font-bold'
                       : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-white/40 dark:hover:bg-white/5'
                   }`}
                 >
-                  {tab.label}
+                  {isActive && (
+                    <motion.div
+                      layoutId="kinlo-active-desktop-pill"
+                      className="absolute inset-0 bg-[var(--accent)] rounded-xl shadow-xs"
+                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative z-10">{tab.label}</span>
                 </button>
               );
             })}
             <button
               type="button"
-              onClick={() => setIsTelegramModalOpen(true)}
-              className="px-2.5 py-1.5 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] transition-colors flex items-center gap-1 text-xs font-semibold cursor-pointer"
+              onClick={(e) => {
+                animateIconBounce(e.currentTarget);
+                setIsTelegramModalOpen(true);
+              }}
+              className="px-2.5 py-1.5 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] transition-colors flex items-center gap-1 text-xs font-semibold cursor-pointer magnetic"
               title="Mở hướng dẫn & cú pháp Telegram Bot"
             >
               <Bot className="w-3.5 h-3.5 text-amber-500" />
@@ -1805,8 +1837,11 @@ export default function App() {
             {/* Theme Toggle Button (☀️ Sáng / 🌙 Tối) */}
             <button
               type="button"
-              onClick={toggleTheme}
-              className="p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line)] cursor-pointer"
+              onClick={(e) => {
+                animateIconBounce(e.currentTarget);
+                toggleTheme();
+              }}
+              className="magnetic p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line)] cursor-pointer"
               title={isDark ? 'Chuyển sang giao diện Sáng' : 'Chuyển sang giao diện Tối'}
             >
               {isDark ? (
@@ -1825,8 +1860,11 @@ export default function App() {
             {/* Privacy Mode Toggle */}
             <button
               type="button"
-              onClick={togglePrivacy}
-              className={`p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border cursor-pointer ${
+              onClick={(e) => {
+                animateIconBounce(e.currentTarget);
+                togglePrivacy();
+              }}
+              className={`magnetic p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border cursor-pointer ${
                 isPrivate
                   ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30'
                   : 'bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border-[var(--line)]'
@@ -1849,8 +1887,11 @@ export default function App() {
             {/* Monthly Report Card Button */}
             <button
               type="button"
-              onClick={() => setIsReportModalOpen(true)}
-              className="p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line)] transition-all cursor-pointer flex items-center gap-1.5"
+              onClick={(e) => {
+                animateIconBounce(e.currentTarget);
+                setIsReportModalOpen(true);
+              }}
+              className="magnetic p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line)] transition-all cursor-pointer flex items-center gap-1.5"
               title="Báo cáo tài chính tháng"
             >
               <Share2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
@@ -1860,8 +1901,11 @@ export default function App() {
             {/* Lock App Button */}
             <button
               type="button"
-              onClick={handleLockApp}
-              className="p-2 rounded-xl bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] transition-colors cursor-pointer"
+              onClick={(e) => {
+                animateIconBounce(e.currentTarget);
+                handleLockApp();
+              }}
+              className="magnetic p-2 rounded-xl bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] transition-colors cursor-pointer"
               title="Khóa ứng dụng an toàn"
             >
               <Lock className="w-3.5 h-3.5" />
@@ -1870,11 +1914,12 @@ export default function App() {
             {/* Kinlo Primary Action Button (+ Thêm giao dịch) */}
             <button
               type="button"
-              onClick={() => {
+              onClick={(e) => {
+                animateIconBounce(e.currentTarget);
                 setAddModalPreset(null);
                 setIsAddModalOpen(true);
               }}
-              className="kinlo-btn-primary px-3 sm:px-4 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              className="magnetic kinlo-btn-primary px-3 sm:px-4 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-md active:scale-95 transition-transform"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">+ Thêm giao dịch</span>
@@ -2041,7 +2086,7 @@ export default function App() {
             <div>
               {/* VIEW 1: DASHBOARD */}
               {activeTab === 'dashboard' && (
-                <div key="dashboard" className="space-y-5 animate-in fade-in duration-200">
+                <div key="dashboard" ref={dashboardRef} className="space-y-5">
                 {/* ═══════ KINLO HERO ASYMMETRIC 7fr / 5fr GRID ═══════ */}
                 {categoryKpiStats ? (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
@@ -2395,74 +2440,127 @@ export default function App() {
 
       {/* ═══════ KINLO MOBILE BOTTOM NAVIGATION BAR (< md) ═══════ */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--glass)] backdrop-blur-2xl border-t border-[var(--line)] shadow-2xl px-2 py-1.5 flex items-center justify-around text-center">
+        {/* Tab 1: Dashboard */}
         <button
           type="button"
-          onClick={() => setActiveTab('dashboard')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer ${
+          onClick={(e) => {
+            animateIconBounce(e.currentTarget);
+            setActiveTab('dashboard');
+          }}
+          className={`relative flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-colors cursor-pointer ${
             activeTab === 'dashboard'
               ? 'text-[var(--accent-text)] font-bold'
               : 'text-[var(--muted)] font-medium hover:text-[var(--ink)]'
           }`}
         >
-          <LayoutDashboard className="w-4 h-4 mb-0.5" />
-          <span className="text-[10px]">Dashboard</span>
+          {activeTab === 'dashboard' && (
+            <motion.div
+              layoutId="kinlo-active-mobile-pill"
+              className="absolute inset-0 bg-[var(--accent)]/15 rounded-xl -z-0"
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+          )}
+          <div className="relative z-10 flex flex-col items-center">
+            <LayoutDashboard className="w-4 h-4 mb-0.5" />
+            <span className="text-[10px]">Dashboard</span>
+          </div>
         </button>
 
+        {/* Tab 2: Ledger */}
         <button
           type="button"
-          onClick={() => setActiveTab('ledger')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer relative ${
+          onClick={(e) => {
+            animateIconBounce(e.currentTarget);
+            setActiveTab('ledger');
+          }}
+          className={`relative flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-colors cursor-pointer ${
             activeTab === 'ledger'
               ? 'text-[var(--accent-text)] font-bold'
               : 'text-[var(--muted)] font-medium hover:text-[var(--ink)]'
           }`}
         >
-          <ReceiptText className="w-4 h-4 mb-0.5" />
-          <span className="text-[10px]">Sổ cái</span>
+          {activeTab === 'ledger' && (
+            <motion.div
+              layoutId="kinlo-active-mobile-pill"
+              className="absolute inset-0 bg-[var(--accent)]/15 rounded-xl -z-0"
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+          )}
+          <div className="relative z-10 flex flex-col items-center">
+            <ReceiptText className="w-4 h-4 mb-0.5" />
+            <span className="text-[10px]">Sổ cái</span>
+          </div>
           {periodRecords.length > 0 && (
-            <span className="absolute -top-0.5 right-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-[var(--accent)] text-[var(--accent-ink)]">
+            <span className="absolute -top-0.5 right-0.5 z-20 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-[var(--accent)] text-[var(--accent-ink)]">
               {periodRecords.length}
             </span>
           )}
         </button>
 
-        {/* Central Prominent Quick Add Button */}
+        {/* Central Prominent Quick Add Button (Kinlo Accent Floating Action) */}
         <button
           type="button"
-          onClick={() => {
+          onClick={(e) => {
+            animateIconBounce(e.currentTarget);
             setAddModalPreset(null);
             setIsAddModalOpen(true);
           }}
-          className="w-10 h-10 -mt-2 rounded-2xl bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center shadow-lg active:scale-95 transition-transform cursor-pointer"
+          className="magnetic w-11 h-11 -mt-3 rounded-2xl bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center shadow-lg active:scale-90 transition-transform cursor-pointer"
           title="Thêm giao dịch mới"
         >
           <Plus className="w-5 h-5 stroke-[2.5]" />
         </button>
 
+        {/* Tab 3: Reconcile */}
         <button
           type="button"
-          onClick={() => setActiveTab('reconcile')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer ${
+          onClick={(e) => {
+            animateIconBounce(e.currentTarget);
+            setActiveTab('reconcile');
+          }}
+          className={`relative flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-colors cursor-pointer ${
             activeTab === 'reconcile'
               ? 'text-[var(--accent-text)] font-bold'
               : 'text-[var(--muted)] font-medium hover:text-[var(--ink)]'
           }`}
         >
-          <Scale className="w-4 h-4 mb-0.5" />
-          <span className="text-[10px]">Đối soát</span>
+          {activeTab === 'reconcile' && (
+            <motion.div
+              layoutId="kinlo-active-mobile-pill"
+              className="absolute inset-0 bg-[var(--accent)]/15 rounded-xl -z-0"
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+          )}
+          <div className="relative z-10 flex flex-col items-center">
+            <Scale className="w-4 h-4 mb-0.5" />
+            <span className="text-[10px]">Đối soát</span>
+          </div>
         </button>
 
+        {/* Tab 4: Sync */}
         <button
           type="button"
-          onClick={() => setActiveTab('sync')}
-          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer ${
+          onClick={(e) => {
+            animateIconBounce(e.currentTarget);
+            setActiveTab('sync');
+          }}
+          className={`relative flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-colors cursor-pointer ${
             activeTab === 'sync'
               ? 'text-[var(--accent-text)] font-bold'
               : 'text-[var(--muted)] font-medium hover:text-[var(--ink)]'
           }`}
         >
-          <RefreshCw className="w-4 h-4 mb-0.5" />
-          <span className="text-[10px]">Đồng bộ</span>
+          {activeTab === 'sync' && (
+            <motion.div
+              layoutId="kinlo-active-mobile-pill"
+              className="absolute inset-0 bg-[var(--accent)]/15 rounded-xl -z-0"
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
+          )}
+          <div className="relative z-10 flex flex-col items-center">
+            <RefreshCw className="w-4 h-4 mb-0.5" />
+            <span className="text-[10px]">Đồng bộ</span>
+          </div>
         </button>
       </nav>
     </div>

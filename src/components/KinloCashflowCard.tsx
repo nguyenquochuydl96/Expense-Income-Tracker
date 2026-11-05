@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'motion/react';
 import { TrendingUp, TrendingDown, Wallet, ArrowUpRight, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { AnimatedCurrency } from './AnimatedCurrency';
 import { CashflowSegmentedBar } from './CashflowSegmentedBar';
@@ -37,10 +36,9 @@ export const KinloCashflowCard: React.FC<KinloCashflowCardProps> = ({
   const isHealthy = netBalance >= 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+    <div
+      data-lift
+      data-card-entrance
       className={`kinlo-card p-5 sm:p-6 flex flex-col justify-between ${className}`}
     >
       <div>
@@ -170,6 +168,6 @@ export const KinloCashflowCard: React.FC<KinloCashflowCardProps> = ({
           totalExpense={totalExpense}
         />
       </div>
-    </motion.div>
+    </div>
   );
 };
