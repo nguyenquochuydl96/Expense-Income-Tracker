@@ -20,6 +20,9 @@ import {
   Moon,
   Sun,
   Share2,
+  TrendingUp,
+  TrendingDown,
+  Wallet,
 } from 'lucide-react';
 import { PigIcon, SiameseCatIcon } from './utils/categoryIcons';
 import { AppLockScreen, isDeviceUnlocked, lockDevice } from './components/AppLockScreen';
@@ -32,7 +35,8 @@ import { MultiMonthPickerDropdown, formatSelectedMonthsDisplay } from './compone
 import { MultiCategoryPickerDropdown } from './components/MultiCategoryPickerDropdown';
 import { AnimatedCurrency } from './components/AnimatedCurrency';
 import { TiltCard } from './components/TiltCard';
-import { ThemeSelectorDropdown } from './components/ThemeSelectorDropdown';
+import { RealisticBankCard } from './components/RealisticBankCard';
+import { CashflowSegmentedBar } from './components/CashflowSegmentedBar';
 import { motion, AnimatePresence } from 'motion/react';
 import { User } from 'firebase/auth';
 import {
@@ -1745,17 +1749,25 @@ export default function App() {
 
           {/* Right Action Buttons */}
           <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Theme Palette Dropdown */}
-            <ThemeSelectorDropdown />
-
-            {/* Dark Mode Toggle Button */}
+            {/* Theme Mode Toggle Button (Light / Dark) */}
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 text-xs font-semibold rounded-lg transition-colors flex items-center justify-center bg-white/10 hover:bg-white/20 text-white border border-white/20 cursor-pointer shadow-xs"
-              title={isDark ? 'Chuyển sang chế độ Sáng (Light Mode)' : 'Chuyển sang chế độ Tối (Dark Mode)'}
+              className="px-2.5 sm:px-3 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 cursor-pointer shadow-xs active:scale-95"
+              title={isDark ? 'Chuyển sang giao diện Sáng (Light Mode)' : 'Chuyển sang giao diện Tối (Dark Mode)'}
+              aria-label="Chuyển chế độ sáng tối"
             >
-              {isDark ? <Sun className="w-3.5 h-3.5 text-amber-300" /> : <Moon className="w-3.5 h-3.5 text-slate-200" />}
+              {isDark ? (
+                <>
+                  <Sun className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                  <span className="hidden sm:inline font-medium text-amber-100">Sáng</span>
+                </>
+              ) : (
+                <>
+                  <Moon className="w-3.5 h-3.5 text-sky-200 shrink-0" />
+                  <span className="hidden sm:inline font-medium text-sky-100">Tối</span>
+                </>
+              )}
             </button>
 
             {/* Monthly Report Card Button */}
@@ -2056,203 +2068,268 @@ export default function App() {
                   transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                   className="space-y-5"
                 >
-                {/* ═══════ 5 KPI CARDS (General vs Category-specific) ═══════ */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-                  {categoryKpiStats ? (
-                    <>
-                      {/* Category Card 1: Ngân sách danh mục (Budget) */}
-                      <TiltCard
-                        className="p-4 sm:p-5 kpi-card-income"
-                      >
-                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
-                          Ngân sách khả dụng · {categoryKpiStats.category}
-                        </div>
-                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          <AnimatedCurrency value={categoryKpiStats.budget} />
-                        </div>
-                        <div className="text-[11px] text-white/80 font-medium truncate flex items-center gap-1.5 flex-wrap">
-                          <span>Định mức: {formatCurrency(categoryKpiStats.baseBudget)}</span>
-                          {categoryKpiStats.carryover !== 0 && (
-                            <span>· Lũy kế: {formatCurrency(categoryKpiStats.carryover, true)}</span>
-                          )}
-                          {categoryKpiStats.netTransfer !== 0 && (
-                            <span>· Chuyển quỹ: {formatCurrency(categoryKpiStats.netTransfer, true)}</span>
-                          )}
-                        </div>
-                      </TiltCard>
+                {/* ═══════ HERO: 3 CORE METRICS + CASHFLOW RATIO + 3D BANK CARDS ═══════ */}
+                {categoryKpiStats ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-stretch">
+                    {/* Left Column: 3 Category Metrics + Segmented Bar */}
+                    <div className="lg:col-span-7 xl:col-span-8 flex flex-col justify-between gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-3.5">
+                        {/* Category Card 1: Ngân sách danh mục (Budget) */}
+                        <TiltCard className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+                              Ngân sách · {categoryKpiStats.category}
+                            </span>
+                            <div className="p-1.5 rounded-lg bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-200/60 dark:border-sky-500/20">
+                              <Layers className="w-4 h-4" />
+                            </div>
+                          </div>
+                          <div className="text-xl sm:text-2xl lg:text-[26px] font-extrabold font-mono-tabular text-slate-900 dark:text-white mb-1.5 truncate">
+                            <AnimatedCurrency value={categoryKpiStats.budget} />
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate flex items-center gap-1.5 flex-wrap">
+                            <span>Định mức: {formatCurrency(categoryKpiStats.baseBudget)}</span>
+                            {categoryKpiStats.carryover !== 0 && (
+                              <span>· Lũy kế: {formatCurrency(categoryKpiStats.carryover, true)}</span>
+                            )}
+                          </div>
+                        </TiltCard>
 
-                      {/* Category Card 2: Đã chi danh mục */}
-                      <TiltCard
-                        className="p-4 sm:p-5 cursor-pointer kpi-card-expense"
-                        onClick={() => setActiveTab('ledger')}
-                      >
-                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
-                          Đã chi · {categoryKpiStats.category}
-                        </div>
-                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          <AnimatedCurrency value={categoryKpiStats.spent} />
-                        </div>
-                        <div className="text-xs text-white/70 font-medium">
-                          {categoryKpiStats.count} giao dịch trong kỳ
-                        </div>
-                      </TiltCard>
-
-                      {/* Category Card 3: Còn lại danh mục (Dương / Âm) */}
-                      <TiltCard
-                        className={`p-4 sm:p-5 ${
-                          categoryKpiStats.remaining >= 0 ? 'kpi-card-net' : 'kpi-card-net-negative'
-                        }`}
-                      >
-                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
-                          {categoryKpiStats.remaining >= 0 ? 'Còn lại (Dư)' : 'Bội chi (Âm)'}
-                        </div>
-                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          <AnimatedCurrency value={categoryKpiStats.remaining} />
-                        </div>
-                        <div className="text-xs text-white/80 font-medium truncate">
-                          {categoryKpiStats.remaining >= 0 ? 'Trong hạn mức khả dụng' : 'Vượt quá định mức tháng!'}
-                        </div>
-                      </TiltCard>
-
-                      {/* Category Card 4: BE Corp cho danh mục */}
-                      <TiltCard
-                        className="p-4 sm:p-5 kpi-card-becorp"
-                      >
-                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
-                          BE Corp ({categoryKpiStats.category})
-                        </div>
-                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          <AnimatedCurrency value={categoryKpiStats.beCorp} />
-                        </div>
-                        <div className="text-xs text-white/80 font-medium">
-                          Thanh toán qua ví công ty
-                        </div>
-                      </TiltCard>
-
-                      {/* Category Card 5: Credit cho danh mục */}
-                      <div className="col-span-2 sm:col-span-1">
+                        {/* Category Card 2: Đã chi danh mục */}
                         <TiltCard
-                          className="p-4 sm:p-5 kpi-card-credit"
+                          className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all cursor-pointer group"
+                          onClick={() => setActiveTab('ledger')}
                         >
-                          <div className="text-xs font-semibold text-white/90 tracking-wide mb-1 truncate">
-                            Credit ({categoryKpiStats.category})
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+                              Đã chi · {categoryKpiStats.category}
+                            </span>
+                            <div className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-500/20 group-hover:scale-110 transition-transform">
+                              <TrendingDown className="w-4 h-4" />
+                            </div>
                           </div>
-                          <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                            <AnimatedCurrency value={categoryKpiStats.credit} />
+                          <div className="text-xl sm:text-2xl lg:text-[26px] font-extrabold font-mono-tabular text-slate-900 dark:text-white mb-1.5 truncate">
+                            <AnimatedCurrency value={categoryKpiStats.spent} />
                           </div>
-                          <div className="text-xs text-white/80 font-medium">
-                            Thanh toán qua thẻ tín dụng
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block shrink-0" />
+                            <span>{categoryKpiStats.count} giao dịch trong kỳ</span>
+                          </div>
+                        </TiltCard>
+
+                        {/* Category Card 3: Còn lại danh mục (Dương / Âm) */}
+                        <TiltCard className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
+                              {categoryKpiStats.remaining >= 0 ? 'Còn lại (Dư)' : 'Bội chi (Âm)'}
+                            </span>
+                            <div
+                              className={`p-1.5 rounded-lg border ${
+                                categoryKpiStats.remaining >= 0
+                                  ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-500/20'
+                                  : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200/60 dark:border-rose-500/20'
+                              }`}
+                            >
+                              <Wallet className="w-4 h-4" />
+                            </div>
+                          </div>
+                          <div
+                            className={`text-xl sm:text-2xl lg:text-[26px] font-extrabold font-mono-tabular mb-1.5 truncate ${
+                              categoryKpiStats.remaining >= 0
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-rose-600 dark:text-rose-400'
+                            }`}
+                          >
+                            <AnimatedCurrency value={categoryKpiStats.remaining} />
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate">
+                            {categoryKpiStats.remaining >= 0 ? 'Trong hạn mức khả dụng' : 'Vượt quá định mức tháng!'}
                           </div>
                         </TiltCard>
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      {/* Card 1: Tổng thu nhập (Deep Blue) */}
-                      <TiltCard
-                        className="p-4 sm:p-5 cursor-pointer kpi-card-income"
-                        onClick={() => {
-                          setAddModalPreset({
-                            sheetType: 'Income',
-                            isoDate: selectedMonth !== 'ALL' ? `${selectedMonth}-01` : `${defaultLatestMonth}-01`,
-                            category: 'Lương Yes4All',
-                          });
-                          setIsAddModalOpen(true);
-                        }}
-                      >
-                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
-                          Tổng thu nhập
-                        </div>
-                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          <AnimatedCurrency value={kpiStats.effectiveIncome} />
-                        </div>
-                        <div className="text-xs text-white/70 font-medium">
-                          {isAllMonthsSelected
-                            ? `Tất cả các tháng · ${kpiStats.incomeCount} khoản thu`
-                            : selectedMonths.length > 1
-                              ? `${selectedMonths.length} tháng đã chọn · ${kpiStats.incomeCount} khoản thu`
-                              : kpiStats.incomeCount > 0
-                                ? `${formatMonthLabel(selectedMonth)} · ${kpiStats.incomeCount} khoản thu`
-                                : `${formatMonthLabel(selectedMonth)} · Chưa có giao dịch`}
-                        </div>
-                      </TiltCard>
 
-                      {/* Card 2: Tổng chi tiêu (Ocean Blue - Calendar Month) */}
-                      <TiltCard
-                        className="p-4 sm:p-5 cursor-pointer kpi-card-expense"
-                        onClick={() => setActiveTab('ledger')}
-                      >
-                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
-                          Tổng chi tiêu
-                        </div>
-                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          <AnimatedCurrency value={kpiStats.totalExpense} />
-                        </div>
-                        <div className="text-xs text-white/70 font-medium">
-                          {isAllMonthsSelected
-                            ? `${kpiStats.expenseCount} giao dịch (Tất cả thời gian)`
-                            : selectedMonths.length > 1
-                              ? `${kpiStats.expenseCount} giao dịch (${selectedMonths.length} tháng đã chọn)`
-                              : `${kpiStats.expenseCount} giao dịch (01/${selectedMonth.split('-')[1]} – Hết tháng)`}
-                        </div>
-                      </TiltCard>
+                      {/* Segmented Cash Flow for Category */}
+                      <CashflowSegmentedBar
+                        income={categoryKpiStats.budget}
+                        livingExpense={Math.max(0, categoryKpiStats.spent - categoryKpiStats.beCorp - categoryKpiStats.credit)}
+                        savings={0}
+                        beCorp={categoryKpiStats.beCorp}
+                        credit={categoryKpiStats.credit}
+                        netBalance={categoryKpiStats.remaining}
+                        totalExpense={categoryKpiStats.spent}
+                      />
+                    </div>
 
-                      {/* Card 3: Số dư khả dụng Net Balance (Mint Green or Red) */}
-                      <TiltCard
-                        className={`p-4 sm:p-5 cursor-pointer ${
-                          kpiStats.netBalance >= 0 ? 'kpi-card-net' : 'kpi-card-net-negative'
-                        }`}
+                    {/* Right Column: 2 Realistic Cards for this category */}
+                    <div className="lg:col-span-5 xl:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+                      <RealisticBankCard
+                        variant="becorp"
+                        cardholderName={`BE CORP · ${categoryKpiStats.category}`}
+                        cardNumberMasked="••••  ••••  ••••  2625"
+                        cycleLabel={kpiStats.beRange.displayLabel}
+                        amount={categoryKpiStats.beCorp}
+                        transactionCount={0}
                         onClick={() => setActiveTab('reconcile')}
-                      >
-                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
-                          Số dư khả dụng (Net)
-                        </div>
-                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          <AnimatedCurrency value={kpiStats.netBalance} />
-                        </div>
-                        <div className="text-xs text-white/70 font-medium">
-                          Thu − Chi còn lại
-                        </div>
-                      </TiltCard>
-
-                      {/* Card 4: Ví BE Corp (Riêng biệt - Amber / Orange) */}
-                      <TiltCard
-                        className="p-4 sm:p-5 cursor-pointer kpi-card-becorp"
+                      />
+                      <RealisticBankCard
+                        variant="credit"
+                        cardholderName={`CREDIT · ${categoryKpiStats.category}`}
+                        cardNumberMasked="••••  ••••  ••••  2019"
+                        cycleLabel={kpiStats.creditRange.displayLabel}
+                        amount={categoryKpiStats.credit}
+                        transactionCount={0}
                         onClick={() => setActiveTab('reconcile')}
-                      >
-                        <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
-                          Ví BE Corp
-                        </div>
-                        <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                          <AnimatedCurrency value={kpiStats.beCorpCycleTotal} />
-                        </div>
-                        <div className="text-xs text-white/80 font-medium flex items-center gap-1 font-mono-tabular">
-                          <CalendarRange className="w-3 h-3 text-white/70" />
-                          <span>{kpiStats.beRange.displayLabel}</span>
-                        </div>
-                      </TiltCard>
-
-                      {/* Card 5: Thẻ tín dụng Credit (Riêng biệt - Purple / Violet) */}
-                      <div className="col-span-2 sm:col-span-1">
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5 items-stretch">
+                    {/* Left Column: 3 Core KPIs + Segmented Cash Flow Ratio Bar */}
+                    <div className="lg:col-span-7 xl:col-span-8 flex flex-col justify-between gap-4">
+                      {/* 3 Core Metric Cards */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-3.5">
+                        {/* Card 1: Tổng thu nhập */}
                         <TiltCard
-                          className="p-4 sm:p-5 cursor-pointer kpi-card-credit"
+                          className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all cursor-pointer group"
+                          onClick={() => {
+                            setAddModalPreset({
+                              sheetType: 'Income',
+                              isoDate: selectedMonth !== 'ALL' ? `${selectedMonth}-01` : `${defaultLatestMonth}-01`,
+                              category: 'Lương Yes4All',
+                            });
+                            setIsAddModalOpen(true);
+                          }}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                              Tổng thu nhập
+                            </span>
+                            <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20 group-hover:scale-110 transition-transform">
+                              <TrendingUp className="w-4 h-4" />
+                            </div>
+                          </div>
+                          <div className="text-xl sm:text-2xl lg:text-[26px] font-extrabold font-mono-tabular text-slate-900 dark:text-white mb-1.5 truncate">
+                            <AnimatedCurrency value={kpiStats.effectiveIncome} />
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shrink-0" />
+                            <span className="truncate">
+                              {isAllMonthsSelected
+                                ? `Tất cả · ${kpiStats.incomeCount} khoản thu`
+                                : selectedMonths.length > 1
+                                  ? `${selectedMonths.length} tháng · ${kpiStats.incomeCount} khoản`
+                                  : kpiStats.incomeCount > 0
+                                    ? `${formatMonthLabel(selectedMonth)} · ${kpiStats.incomeCount} khoản`
+                                    : `${formatMonthLabel(selectedMonth)} · Chưa có thu`}
+                            </span>
+                          </div>
+                        </TiltCard>
+
+                        {/* Card 2: Tổng chi tiêu */}
+                        <TiltCard
+                          className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all cursor-pointer group"
+                          onClick={() => setActiveTab('ledger')}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                              Tổng chi tiêu
+                            </span>
+                            <div className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-500/20 group-hover:scale-110 transition-transform">
+                              <TrendingDown className="w-4 h-4" />
+                            </div>
+                          </div>
+                          <div className="text-xl sm:text-2xl lg:text-[26px] font-extrabold font-mono-tabular text-slate-900 dark:text-white mb-1.5 truncate">
+                            <AnimatedCurrency value={kpiStats.totalExpense} />
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block shrink-0" />
+                            <span className="truncate">
+                              {isAllMonthsSelected
+                                ? `${kpiStats.expenseCount} giao dịch (Toàn bộ)`
+                                : selectedMonths.length > 1
+                                  ? `${kpiStats.expenseCount} gd (${selectedMonths.length} tháng)`
+                                  : `${kpiStats.expenseCount} gd (01/${selectedMonth.split('-')[1]} – Hết tháng)`}
+                            </span>
+                          </div>
+                        </TiltCard>
+
+                        {/* Card 3: Số dư khả dụng (Net) */}
+                        <TiltCard
+                          className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all cursor-pointer group"
                           onClick={() => setActiveTab('reconcile')}
                         >
-                          <div className="text-xs font-semibold text-white/90 tracking-wide mb-1">
-                            Thẻ tín dụng (Credit)
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                              Số dư khả dụng
+                            </span>
+                            <div
+                              className={`p-1.5 rounded-lg border group-hover:scale-110 transition-transform ${
+                                kpiStats.netBalance >= 0
+                                  ? 'bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-200/60 dark:border-sky-500/20'
+                                  : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200/60 dark:border-rose-500/20'
+                              }`}
+                            >
+                              <Wallet className="w-4 h-4" />
+                            </div>
                           </div>
-                          <div className="text-xl sm:text-2xl lg:text-3xl font-extrabold font-mono-tabular text-white mb-2 truncate">
-                            <AnimatedCurrency value={kpiStats.creditCycleTotal} />
+                          <div
+                            className={`text-xl sm:text-2xl lg:text-[26px] font-extrabold font-mono-tabular mb-1.5 truncate ${
+                              kpiStats.netBalance >= 0 ? 'text-slate-900 dark:text-white' : 'text-rose-600 dark:text-rose-400'
+                            }`}
+                          >
+                            <AnimatedCurrency value={kpiStats.netBalance} />
                           </div>
-                          <div className="text-xs text-white/80 font-medium flex items-center gap-1 font-mono-tabular">
-                            <CalendarRange className="w-3 h-3 text-white/70" />
-                            <span>Sao kê: {kpiStats.creditRange.displayLabel}</span>
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate flex items-center gap-1.5">
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full inline-block shrink-0 ${
+                                kpiStats.netBalance >= 0 ? 'bg-sky-500' : 'bg-rose-500'
+                              }`}
+                            />
+                            <span className="truncate">
+                              {kpiStats.netBalance >= 0 ? 'Thu − Chi an toàn' : 'Chi vượt định mức thu'}
+                            </span>
                           </div>
                         </TiltCard>
                       </div>
-                    </>
-                  )}
-                </div>
+
+                      {/* Segmented Cash Flow Ratio Bar */}
+                      <CashflowSegmentedBar
+                        income={kpiStats.effectiveIncome}
+                        livingExpense={kpiStats.livingExpense}
+                        savings={kpiStats.savingsExpense}
+                        beCorp={kpiStats.beCorpCycleTotal}
+                        credit={kpiStats.creditCycleTotal}
+                        netBalance={kpiStats.netBalance}
+                        totalExpense={kpiStats.totalExpense}
+                      />
+                    </div>
+
+                    {/* Right Column: 2 Realistic 3D Bank Cards */}
+                    <div className="lg:col-span-5 xl:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+                      {/* Physical Card 1: Ví BE Corp */}
+                      <RealisticBankCard
+                        variant="becorp"
+                        cardholderName="BE CORP · HEO & MÈO"
+                        cardNumberMasked="••••  ••••  ••••  2625"
+                        cycleLabel={kpiStats.beRange.displayLabel}
+                        amount={kpiStats.beCorpCycleTotal}
+                        transactionCount={kpiStats.beCorpCount}
+                        onClick={() => setActiveTab('reconcile')}
+                      />
+
+                      {/* Physical Card 2: Thẻ tín dụng Credit */}
+                      <RealisticBankCard
+                        variant="credit"
+                        cardholderName="HEO & MÈO"
+                        cardNumberMasked="••••  ••••  ••••  2019"
+                        cycleLabel={kpiStats.creditRange.displayLabel}
+                        amount={kpiStats.creditCycleTotal}
+                        transactionCount={kpiStats.creditCount}
+                        onClick={() => setActiveTab('reconcile')}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* ═══════ MULTI-MONTH BUDGET & CASHFLOW SUMMARY MATRIX (Answers Requirement 5) ═══════ */}
                 <MultiMonthSummaryTable

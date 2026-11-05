@@ -1,97 +1,38 @@
 import { useState, useEffect } from 'react';
 
-export type ThemePalette = 'obsidian' | 'emerald' | 'oceanic' | 'espresso' | 'classic';
 export type ThemeMode = 'light' | 'dark';
 
-export interface ThemeConfig {
-  id: ThemePalette;
-  name: string;
-  tagline: string;
-  icon: string;
-  accentColor: string;
-  secondaryColor: string;
-  cardGlow: string;
-}
-
-export const AVAILABLE_PALETTES: ThemeConfig[] = [
-  {
-    id: 'obsidian',
-    name: 'Copilot Obsidian & Aurora',
-    tagline: 'Fintech cao cấp, viền ánh cực quang (Apple Award)',
-    icon: '✨',
-    accentColor: '#06B6D4',
-    secondaryColor: '#6366F1',
-    cardGlow: 'rgba(6, 182, 212, 0.25)',
-  },
-  {
-    id: 'emerald',
-    name: 'Monarch Emerald & Gold',
-    tagline: 'Xanh ngọc lục bảo & Vàng kim thịnh vượng',
-    icon: '🍀',
-    accentColor: '#10B981',
-    secondaryColor: '#F59E0B',
-    cardGlow: 'rgba(16, 185, 129, 0.25)',
-  },
-  {
-    id: 'oceanic',
-    name: 'Oceanic Navy & Tangerine',
-    tagline: 'Ngân hàng số Neobank dứt khoát, năng động',
-    icon: '⚡',
-    accentColor: '#FF6B00',
-    secondaryColor: '#2563EB',
-    cardGlow: 'rgba(255, 107, 0, 0.25)',
-  },
-  {
-    id: 'espresso',
-    name: 'Warm Canvas & Espresso',
-    tagline: 'Sổ da thủ công & Cà phê ấm cúng thư thái',
-    icon: '☕',
-    accentColor: '#D97706',
-    secondaryColor: '#EA580C',
-    cardGlow: 'rgba(217, 119, 6, 0.25)',
-  },
-  {
-    id: 'classic',
-    name: 'Classic Slate & Blue',
-    tagline: 'Giao diện truyền thống nguyên bản',
-    icon: '🔷',
-    accentColor: '#4F46E5',
-    secondaryColor: '#0284C7',
-    cardGlow: 'rgba(79, 70, 229, 0.25)',
-  },
-];
-
-export const STORAGE_KEY_PALETTE = 'heomeo_theme_palette_v1';
 export const STORAGE_KEY_THEME = 'heomeo_theme_mode_v1';
 
 // Initial state resolution from localStorage
-let currentPalette: ThemePalette = 'obsidian';
-try {
-  const savedPalette = localStorage.getItem(STORAGE_KEY_PALETTE);
-  if (savedPalette && AVAILABLE_PALETTES.some((p) => p.id === savedPalette)) {
-    currentPalette = savedPalette as ThemePalette;
-  }
-} catch {
-  currentPalette = 'obsidian';
-}
-
-let currentMode: ThemeMode = 'dark';
+let currentMode: ThemeMode = 'light';
 try {
   const savedMode = localStorage.getItem(STORAGE_KEY_THEME);
   if (savedMode === 'dark' || savedMode === 'light') {
     currentMode = savedMode;
-  } else {
-    // Default to dark mode for new users to experience the Obsidian palette
+  } else if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
     currentMode = 'dark';
+  } else {
+    currentMode = 'light';
   }
 } catch {
-  currentMode = 'dark';
+  currentMode = 'light';
 }
 
-// Apply class and data-theme to HTML tag immediately
-export function applyThemeToDom(palette: ThemePalette, mode: ThemeMode) {
+// Clean up legacy multi-theme palette key if present
+try {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.removeItem('heomeo_theme_palette_v1');
+  }
+} catch {
+  // ignore
+}
+
+// Apply class to HTML tag immediately
+export function applyThemeToDom(mode: ThemeMode) {
   if (typeof document !== 'undefined') {
-    document.documentElement.setAttribute('data-theme', palette);
+    // Remove obsolete data-theme attribute
+    document.documentElement.removeAttribute('data-theme');
     if (mode === 'dark') {
       document.documentElement.classList.add('dark');
       document.documentElement.classList.remove('light');
@@ -103,36 +44,9 @@ export function applyThemeToDom(palette: ThemePalette, mode: ThemeMode) {
 }
 
 // Initial application on bundle load
-applyThemeToDom(currentPalette, currentMode);
+applyThemeToDom(currentMode);
 
-const paletteListeners = new Set<(palette: ThemePalette) => void>();
 const modeListeners = new Set<(mode: ThemeMode) => void>();
-
-export function getThemePalette(): ThemePalette {
-  return currentPalette;
-}
-
-export function setThemePalette(palette: ThemePalette) {
-  currentPalette = palette;
-  // When switching to dark-centric luxury themes, automatically activate dark mode
-  // so the user immediately experiences the full visual transformation
-  if (palette === 'obsidian' || palette === 'emerald' || palette === 'oceanic' || palette === 'espresso') {
-    currentMode = 'dark';
-    try {
-      localStorage.setItem(STORAGE_KEY_THEME, 'dark');
-    } catch {
-      // ignore
-    }
-    modeListeners.forEach((fn) => fn(currentMode));
-  }
-  applyThemeToDom(currentPalette, currentMode);
-  try {
-    localStorage.setItem(STORAGE_KEY_PALETTE, palette);
-  } catch {
-    // ignore
-  }
-  paletteListeners.forEach((fn) => fn(palette));
-}
 
 export function getThemeMode(): ThemeMode {
   return currentMode;
@@ -140,7 +54,7 @@ export function getThemeMode(): ThemeMode {
 
 export function setThemeMode(mode: ThemeMode) {
   currentMode = mode;
-  applyThemeToDom(currentPalette, currentMode);
+  applyThemeToDom(currentMode);
   try {
     localStorage.setItem(STORAGE_KEY_THEME, mode);
   } catch {
@@ -156,49 +70,49 @@ export function toggleThemeMode(): ThemeMode {
 }
 
 /**
- * Full Theme System hook supporting both palette and light/dark modes
+ * Main theme hook: light / dark mode
  */
-export function useThemeSystem() {
-  const [palette, setPaletteState] = useState<ThemePalette>(currentPalette);
+export function useThemeMode() {
   const [mode, setModeState] = useState<ThemeMode>(currentMode);
 
   useEffect(() => {
-    const pHandler = (newPalette: ThemePalette) => setPaletteState(newPalette);
     const mHandler = (newMode: ThemeMode) => setModeState(newMode);
-
-    paletteListeners.add(pHandler);
     modeListeners.add(mHandler);
-
     return () => {
-      paletteListeners.delete(pHandler);
       modeListeners.delete(mHandler);
     };
   }, []);
 
-  const activeThemeConfig =
-    AVAILABLE_PALETTES.find((p) => p.id === palette) || AVAILABLE_PALETTES[0];
-
   return {
-    palette,
-    setPalette: setThemePalette,
     mode,
+    theme: mode,
     isDark: mode === 'dark',
-    toggleMode: toggleThemeMode,
-    setMode: setThemeMode,
-    activeThemeConfig,
-    availablePalettes: AVAILABLE_PALETTES,
+    toggleTheme: toggleThemeMode,
+    setTheme: setThemeMode,
   };
 }
 
 /**
- * Backward compatibility hook for useThemeMode
+ * Backward compatibility hook for useThemeSystem
  */
-export function useThemeMode() {
-  const { mode, isDark, toggleMode, setMode } = useThemeSystem();
+export function useThemeSystem() {
+  const { mode, isDark, toggleTheme, setTheme } = useThemeMode();
   return {
-    theme: mode,
+    palette: 'natural',
+    setPalette: () => {},
+    mode,
     isDark,
-    toggleTheme: toggleMode,
-    setTheme: setMode,
+    toggleMode: toggleTheme,
+    setMode: setTheme,
+    activeThemeConfig: {
+      id: 'natural',
+      name: 'Natural Organic Fintech',
+      tagline: 'Giao diện tự nhiên, tinh tế, tối giản',
+      icon: '🌿',
+      accentColor: '#0EA5E9',
+      secondaryColor: '#10B981',
+      cardGlow: 'rgba(14, 165, 233, 0.15)',
+    },
+    availablePalettes: [],
   };
 }
