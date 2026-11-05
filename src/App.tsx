@@ -23,6 +23,7 @@ import {
   TrendingUp,
   TrendingDown,
   Wallet,
+  ArrowLeftRight,
 } from 'lucide-react';
 import { PigIcon, SiameseCatIcon } from './utils/categoryIcons';
 import { AppLockScreen, isDeviceUnlocked, lockDevice } from './components/AppLockScreen';
@@ -37,6 +38,8 @@ import { AnimatedCurrency } from './components/AnimatedCurrency';
 import { TiltCard } from './components/TiltCard';
 import { RealisticBankCard } from './components/RealisticBankCard';
 import { CashflowSegmentedBar } from './components/CashflowSegmentedBar';
+import { KinloCashflowCard } from './components/KinloCashflowCard';
+import { KinloBankAccountsCard } from './components/KinloBankAccountsCard';
 import { motion, AnimatePresence } from 'motion/react';
 import { User } from 'firebase/auth';
 import {
@@ -116,6 +119,16 @@ const SAVED_LAST_SYNCED_KEY = 'heomeo_last_synced_at_v1';
 const SAVED_BUDGET_TRANSFERS_KEY = 'heomeo_cached_budget_transfers_v1';
 
 
+
+const formatTodayDate = (): string => {
+  const now = new Date();
+  const days = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+  const dayName = days[now.getDay()];
+  const d = String(now.getDate()).padStart(2, '0');
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const y = now.getFullYear();
+  return `${dayName}, ${d}/${m}/${y}`;
+};
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
@@ -1708,64 +1721,124 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#EEF2F6] dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors">
-      {/* ═══════ TOP HEADER (Xero Coupler Curved Dark Navy Banner) ═══════ */}
-      <div className="w-full pt-0">
-        <header
-          className="w-full px-6 py-4 flex flex-wrap items-center justify-between gap-4 text-white shadow-md rounded-br-[36px] sm:rounded-br-[48px] app-header-gradient"
-        >
-          {/* Left Brand: Modern, Youthful Duo Avatar & Concise Title */}
+    <div className="min-h-screen flex flex-col bg-transparent text-[var(--ink)] transition-colors">
+      {/* ═══════ KINLO FLOATING GLASS HEADER ═══════ */}
+      <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 pt-3 sm:pt-4">
+        <header className="w-full px-4 sm:px-6 py-3 rounded-2xl sm:rounded-3xl bg-[var(--glass)] backdrop-blur-xl border border-[var(--line)] shadow-[var(--shadow)] flex flex-wrap items-center justify-between gap-3 text-[var(--ink)] transition-all">
+          {/* Left Brand Badge (Kinlo Style Icon + Duo Avatars) */}
           <div className="flex items-center gap-3">
-            {/* Adorable Duo Avatar (Heo 🐷 + Siamese Cat 🐱) */}
-            <div className="flex items-center -space-x-2.5 p-1 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-xs hover:scale-105 transition-transform cursor-pointer">
-              <div
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-rose-100 ring-2 ring-white/80 flex items-center justify-center shadow-xs z-10"
-                title="Heo 🐷"
-              >
-                <PigIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
-              </div>
-              <div
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#FAF4EE] ring-2 ring-white/80 flex items-center justify-center shadow-xs z-0"
-                title="Mèo Xiêm 🐱"
-              >
-                <SiameseCatIcon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
+            <div
+              className="w-10 h-10 rounded-2xl bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center shadow-xs shrink-0 cursor-pointer hover:scale-105 transition-transform"
+              onClick={() => setActiveTab('dashboard')}
+              title="Heo & Mèo Finance"
+            >
+              <div className="flex items-center -space-x-1.5">
+                <PigIcon className="w-4 h-4" />
+                <SiameseCatIcon className="w-4 h-4" />
               </div>
             </div>
 
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-bold tracking-tight text-white">
+                <h1 className="text-base sm:text-lg font-bold tracking-tight text-[var(--ink)]">
                   Heo &amp; Mèo
                 </h1>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/15 text-pink-200 border border-white/15 backdrop-blur-xs">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--card-2)] text-[var(--accent-text)] border border-[var(--line)]">
                   Finance
                 </span>
               </div>
-              <span className="text-[11px] font-medium text-sky-200/80 block mt-0.5">
+              <span className="text-[11px] text-[var(--muted)] block font-medium">
                 Sổ chi tiêu của ba mẹ Chuối, Đậu, Vịt
               </span>
             </div>
           </div>
 
-          {/* Right Action Buttons */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Theme Mode Toggle Button (Light / Dark) */}
+          {/* Center Navigation Tabs (Kinlo Glass Nav Rail) */}
+          <nav className="flex items-center gap-1 text-xs font-semibold p-1 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] overflow-x-auto max-w-full">
+            {[
+              { id: 'dashboard', label: 'Dashboard' },
+              { id: 'ledger', label: `Sổ giao dịch (${periodRecords.length})` },
+              { id: 'reconcile', label: 'Check tiền & Đối soát' },
+              {
+                id: 'sync',
+                label: `Đồng bộ (${
+                  sheetRecords && sheetRecords.length > 0
+                    ? accessToken
+                      ? 'Đã kết nối'
+                      : 'Đã lưu máy'
+                    : 'Chưa kết nối'
+                })`,
+              },
+            ].map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`px-3.5 py-1.5 rounded-xl transition-all cursor-pointer font-semibold ${
+                    isActive
+                      ? 'bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs font-bold'
+                      : 'text-[var(--muted)] hover:text-[var(--ink)] hover:bg-white/40 dark:hover:bg-white/5'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setIsTelegramModalOpen(true)}
+              className="px-2.5 py-1.5 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] transition-colors flex items-center gap-1 text-xs font-semibold cursor-pointer"
+              title="Mở hướng dẫn & cú pháp Telegram Bot"
+            >
+              <Bot className="w-3.5 h-3.5 text-amber-500" />
+              <span>Bot Telegram</span>
+            </button>
+          </nav>
+
+          {/* Right Action Controls */}
+          <div className="flex items-center gap-2">
+            {/* Theme Toggle Button (☀️ Sáng / 🌙 Tối) */}
             <button
               type="button"
               onClick={toggleTheme}
-              className="px-2.5 sm:px-3 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 cursor-pointer shadow-xs active:scale-95"
-              title={isDark ? 'Chuyển sang giao diện Sáng (Light Mode)' : 'Chuyển sang giao diện Tối (Dark Mode)'}
-              aria-label="Chuyển chế độ sáng tối"
+              className="p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line)] cursor-pointer"
+              title={isDark ? 'Chuyển sang giao diện Sáng' : 'Chuyển sang giao diện Tối'}
             >
               {isDark ? (
                 <>
-                  <Sun className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                  <span className="hidden sm:inline font-medium text-amber-100">Sáng</span>
+                  <Sun className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span className="hidden sm:inline font-medium">Sáng</span>
                 </>
               ) : (
                 <>
-                  <Moon className="w-3.5 h-3.5 text-sky-200 shrink-0" />
-                  <span className="hidden sm:inline font-medium text-sky-100">Tối</span>
+                  <Moon className="w-4 h-4 text-sky-600 shrink-0" />
+                  <span className="hidden sm:inline font-medium">Tối</span>
+                </>
+              )}
+            </button>
+
+            {/* Privacy Mode Toggle */}
+            <button
+              type="button"
+              onClick={togglePrivacy}
+              className={`p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 border cursor-pointer ${
+                isPrivate
+                  ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30'
+                  : 'bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border-[var(--line)]'
+              }`}
+              title={isPrivate ? 'Đang ẩn số tiền — Bấm để hiện' : 'Đang hiện số tiền — Bấm để ẩn'}
+            >
+              {isPrivate ? (
+                <>
+                  <EyeOff className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span className="hidden md:inline">Đang ẩn</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 text-[var(--muted)] shrink-0" />
+                  <span className="hidden md:inline">Hiện số</span>
                 </>
               )}
             </button>
@@ -1774,167 +1847,37 @@ export default function App() {
             <button
               type="button"
               onClick={() => setIsReportModalOpen(true)}
-              className="px-3 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 bg-gradient-to-r from-amber-500/20 to-pink-500/20 hover:from-amber-500/30 hover:to-pink-500/30 text-amber-200 border border-amber-300/30 cursor-pointer shadow-xs"
-              title="Xem & xuất thiệp tổng kết báo cáo tài chính tháng"
+              className="p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border border-[var(--line)] transition-all cursor-pointer flex items-center gap-1.5"
+              title="Báo cáo tài chính tháng"
             >
-              <Share2 className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-              <span className="hidden sm:inline">Báo cáo tháng</span>
+              <Share2 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span className="hidden lg:inline">Báo cáo</span>
             </button>
 
-            {/* Privacy Mode Toggle Button */}
-            <button
-              type="button"
-              onClick={togglePrivacy}
-              className={`px-3 py-2 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 border cursor-pointer ${
-                isPrivate
-                  ? 'bg-amber-400/25 hover:bg-amber-400/35 text-amber-200 border-amber-300/40 shadow-xs'
-                  : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
-              }`}
-              title={
-                isPrivate
-                  ? 'Đang ẩn số tiền (mặc định an toàn) — Nhấp hoặc bấm Alt+P để hiện số'
-                  : 'Đang hiện số tiền — Nhấp hoặc bấm Alt+P để ẩn nhanh'
-              }
-            >
-              {isPrivate ? (
-                <>
-                  <EyeOff className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-                  <span className="hidden md:inline">Đang ẩn tiền</span>
-                </>
-              ) : (
-                <>
-                  <Eye className="w-3.5 h-3.5 text-slate-200 shrink-0" />
-                  <span className="hidden md:inline">Ẩn số tiền</span>
-                </>
-              )}
-            </button>
-
-            {/* PWA Install Button (Only show if not already in standalone app mode) */}
-            {!isStandalone && (
-              <button
-                type="button"
-                onClick={() => setIsInstallModalOpen(true)}
-                className="px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 cursor-pointer shadow-xs"
-                title="Cài đặt Heo & Mèo vào màn hình chính điện thoại"
-              >
-                <Smartphone className="w-3.5 h-3.5 text-emerald-300 shrink-0" />
-                <span className="hidden md:inline">Cài App</span>
-              </button>
-            )}
-
+            {/* Lock App Button */}
             <button
               type="button"
               onClick={handleLockApp}
-              className="px-3 py-2 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white border border-white/20 cursor-pointer"
+              className="p-2 rounded-xl bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] transition-colors cursor-pointer"
               title="Khóa ứng dụng an toàn"
             >
-              <Lock className="w-3.5 h-3.5 text-amber-300" />
-              <span className="hidden sm:inline">Khóa App</span>
+              <Lock className="w-3.5 h-3.5" />
             </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab(activeTab === 'dashboard' ? 'ledger' : 'dashboard')}
-              className="px-4 py-2 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer theme-btn-secondary hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>{activeTab === 'dashboard' ? 'Xem sổ chi tiết' : 'Về Dashboard'}</span>
-            </button>
-
+            {/* Kinlo Primary Action Button (+ Thêm giao dịch) */}
             <button
               type="button"
               onClick={() => {
                 setAddModalPreset(null);
                 setIsAddModalOpen(true);
               }}
-              className="px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-md theme-btn-primary hover:scale-[1.03] active:scale-[0.98]"
+              className="kinlo-btn-primary px-3.5 sm:px-4 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
               <span>+ Thêm giao dịch</span>
             </button>
           </div>
         </header>
-      </div>
-
-      {/* Navigation Sub-bar */}
-      <div className="max-w-[1400px] w-full mx-auto px-4 sm:px-6 pt-3 flex flex-wrap items-center justify-between gap-2">
-        <nav className="flex items-center gap-1 sm:gap-1.5 text-xs font-semibold overflow-x-auto max-w-full p-1.5 bg-slate-900/30 dark:bg-slate-900/70 backdrop-blur-xl rounded-2xl border border-slate-300/60 dark:border-white/10 shadow-sm">
-          {[
-            { id: 'dashboard', label: 'Dashboard' },
-            { id: 'ledger', label: `Sổ giao dịch (${periodRecords.length})` },
-            { id: 'reconcile', label: 'Check tiền & Đối soát' },
-            {
-              id: 'sync',
-              label: `Đồng bộ dữ liệu (${
-                sheetRecords && sheetRecords.length > 0
-                  ? accessToken
-                    ? 'Đã kết nối'
-                    : 'Đã lưu máy'
-                  : 'Chưa kết nối'
-              })`,
-            },
-          ].map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id as any)}
-                className="relative px-3.5 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeTabIndicator"
-                    className="absolute inset-0 rounded-xl theme-active-indicator"
-                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                  />
-                )}
-                <span
-                  className={`relative z-10 transition-colors ${
-                    isActive
-                      ? 'text-white font-bold'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  {tab.label}
-                </span>
-              </button>
-            );
-          })}
-          <button
-            type="button"
-            onClick={() => setIsTelegramModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl transition-all font-semibold cursor-pointer shrink-0 theme-btn-secondary"
-            title="Mở hướng dẫn & cú pháp Telegram Bot Quick-Add"
-          >
-            <Bot className="w-3.5 h-3.5 text-amber-300" />
-            <span>Bot Telegram</span>
-            <span className="hidden sm:inline-block px-1.5 py-0.2 rounded text-[10px] bg-white/20 text-white font-bold">Mới</span>
-          </button>
-        </nav>
-
-        {/* Sync status badge */}
-        {sheetMeta && accessToken ? (
-          <button
-            type="button"
-            onClick={() => handleConnectAndSyncSheet(sheetMeta.spreadsheetId)}
-            disabled={isSyncing}
-            className="text-[11px] font-medium text-emerald-800 hover:underline flex items-center gap-1.5"
-          >
-            <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin text-emerald-600' : 'text-emerald-600'}`} />
-            <span>Dữ liệu: {sheetMeta.title}</span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => handleConnectAndSyncSheet()}
-            disabled={isSyncing}
-            className="text-[11px] font-semibold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2.5 py-1 rounded-md transition-colors flex items-center gap-1.5 shadow-xs"
-          >
-            <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin text-amber-700' : 'text-amber-700'}`} />
-            <span>{isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ dữ liệu'}</span>
-          </button>
-        )}
       </div>
 
       {/* Toast Notification */}
@@ -1958,10 +1901,24 @@ export default function App() {
       </AnimatePresence>
 
       {/* Main Content Container */}
-      <main className="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-6 py-4 space-y-5">
-        {/* ═══════ FLOATING FILTER BAR ═══════ */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
+      <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-4 space-y-5">
+        {/* ═══════ KINLO GREETING HERO BAR (PHEAD) ═══════ */}
+        <div className="flex flex-wrap items-end justify-between gap-4 pt-1">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--ink)] font-display">
+              Xin chào, Heo &amp; Mèo 👋
+            </h2>
+            <div className="text-xs sm:text-sm text-[var(--muted)] mt-1 flex flex-wrap items-center gap-2 font-medium">
+              <span>{formatTodayDate()}</span>
+              <span>·</span>
+              <span className="font-mono-tabular">Chu kỳ BE: <strong>{kpiStats.beRange.displayLabel}</strong></span>
+              <span>·</span>
+              <span className="font-mono-tabular">Sao kê Credit: <strong>{kpiStats.creditRange.displayLabel}</strong></span>
+            </div>
+          </div>
+
+          {/* Kinlo Action Controls Row */}
+          <div className="flex flex-wrap items-center gap-2.5">
             {/* Filter 1: Date Range Multi-Month Picker */}
             <MultiMonthPickerDropdown
               availableMonths={availableMonths}
@@ -1995,18 +1952,38 @@ export default function App() {
                   setSelectedMonths([defaultLatestMonth]);
                   setSelectedCategories([]);
                 }}
-                className="text-xs text-sky-700 hover:text-sky-900 dark:text-sky-400 dark:hover:text-sky-300 font-medium px-2 py-1 cursor-pointer"
+                className="text-xs text-[var(--accent-text)] hover:underline font-semibold px-2 py-1 cursor-pointer"
               >
                 Đặt lại bộ lọc
               </button>
             )}
-          </div>
 
-          {/* Quick cycle info pill */}
-          <div className="flex items-center gap-2 text-[11px] text-slate-500 font-mono-tabular">
-            <span className="hidden sm:inline">Chu kỳ BE: <strong>{kpiStats.beRange.displayLabel}</strong></span>
-            <span className="hidden sm:inline">·</span>
-            <span className="hidden sm:inline">Sao kê Credit: <strong>{kpiStats.creditRange.displayLabel}</strong></span>
+            {/* Quick Move Budget Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setAddModalPreset({ note: 'TRANSFER_MODE' });
+                setIsAddModalOpen(true);
+              }}
+              className="kinlo-btn-secondary px-3.5 py-2 text-xs flex items-center gap-1.5 cursor-pointer"
+              title="Chuyển hạn mức ngân sách giữa 2 danh mục"
+            >
+              <ArrowLeftRight className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+              <span>Chuyển Budget</span>
+            </button>
+
+            {/* Quick Sync Sheet Button */}
+            {sheetMeta && accessToken ? (
+              <button
+                type="button"
+                onClick={() => handleConnectAndSyncSheet(sheetMeta.spreadsheetId)}
+                disabled={isSyncing}
+                className="kinlo-btn-secondary px-3 py-2 text-xs flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span>Đồng bộ Sheet</span>
+              </button>
+            ) : null}
           </div>
         </div>
 
@@ -2068,274 +2045,76 @@ export default function App() {
                   transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
                   className="space-y-5"
                 >
-                {/* ═══════ HERO: 5 BALANCED CARDS + FULL-WIDTH CASHFLOW RATIO ═══════ */}
+                {/* ═══════ KINLO HERO ASYMMETRIC 7fr / 5fr GRID ═══════ */}
                 {categoryKpiStats ? (
-                  <div className="space-y-4">
-                    {/* 5 Cards Row for Category */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 items-stretch">
-                      {/* Category Card 1: Ngân sách danh mục (Budget) */}
-                      <TiltCard className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all flex flex-col justify-between min-h-[160px] sm:min-h-[175px]">
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
-                              Ngân sách · {categoryKpiStats.category}
-                            </span>
-                            <div className="p-1.5 rounded-lg bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-200/60 dark:border-sky-500/20">
-                              <Layers className="w-3.5 h-3.5" />
-                            </div>
-                          </div>
-                          <div className="text-lg sm:text-xl lg:text-2xl font-extrabold font-mono-tabular text-slate-900 dark:text-white mb-1.5 truncate">
-                            <AnimatedCurrency value={categoryKpiStats.budget} />
-                          </div>
-                        </div>
-                        <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate flex items-center gap-1.5 flex-wrap pt-1 border-t border-slate-100 dark:border-slate-800">
-                          <span>Định mức: {formatCurrency(categoryKpiStats.baseBudget)}</span>
-                          {categoryKpiStats.carryover !== 0 && (
-                            <span>· Lũy kế: {formatCurrency(categoryKpiStats.carryover, true)}</span>
-                          )}
-                        </div>
-                      </TiltCard>
-
-                      {/* Category Card 2: Đã chi danh mục */}
-                      <TiltCard
-                        className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between min-h-[160px] sm:min-h-[175px]"
-                        onClick={() => setActiveTab('ledger')}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
-                              Đã chi · {categoryKpiStats.category}
-                            </span>
-                            <div className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-500/20 group-hover:scale-110 transition-transform">
-                              <TrendingDown className="w-3.5 h-3.5" />
-                            </div>
-                          </div>
-                          <div className="text-lg sm:text-xl lg:text-2xl font-extrabold font-mono-tabular text-slate-900 dark:text-white mb-1.5 truncate">
-                            <AnimatedCurrency value={categoryKpiStats.spent} />
-                          </div>
-                        </div>
-                        <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate flex items-center gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block shrink-0" />
-                          <span>{categoryKpiStats.count} giao dịch trong kỳ</span>
-                        </div>
-                      </TiltCard>
-
-                      {/* Category Card 3: Còn lại danh mục (Dương / Âm) */}
-                      <TiltCard className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all flex flex-col justify-between min-h-[160px] sm:min-h-[175px]">
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate">
-                              {categoryKpiStats.remaining >= 0 ? 'Còn lại (Dư)' : 'Bội chi (Âm)'}
-                            </span>
-                            <div
-                              className={`p-1.5 rounded-lg border ${
-                                categoryKpiStats.remaining >= 0
-                                  ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-500/20'
-                                  : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200/60 dark:border-rose-500/20'
-                              }`}
-                            >
-                              <Wallet className="w-3.5 h-3.5" />
-                            </div>
-                          </div>
-                          <div
-                            className={`text-lg sm:text-xl lg:text-2xl font-extrabold font-mono-tabular mb-1.5 truncate ${
-                              categoryKpiStats.remaining >= 0
-                                ? 'text-emerald-600 dark:text-emerald-400'
-                                : 'text-rose-600 dark:text-rose-400'
-                            }`}
-                          >
-                            <AnimatedCurrency value={categoryKpiStats.remaining} />
-                          </div>
-                        </div>
-                        <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate pt-1 border-t border-slate-100 dark:border-slate-800">
-                          {categoryKpiStats.remaining >= 0 ? 'Trong hạn mức khả dụng' : 'Vượt quá định mức tháng!'}
-                        </div>
-                      </TiltCard>
-
-                      {/* Category Card 4: Ví BE Corp */}
-                      <RealisticBankCard
-                        variant="becorp"
-                        cardholderName={`BE CORP · ${categoryKpiStats.category}`}
-                        cardNumberMasked="••••  ••••  2625"
-                        cycleLabel={kpiStats.beRange.displayLabel}
-                        amount={categoryKpiStats.beCorp}
-                        transactionCount={0}
-                        onClick={() => setActiveTab('reconcile')}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+                    {/* Left 7 Cols: Category Cashflow & Budget Card */}
+                    <div className="lg:col-span-7">
+                      <KinloCashflowCard
+                        income={categoryKpiStats.budget}
+                        totalExpense={categoryKpiStats.spent}
+                        netBalance={categoryKpiStats.remaining}
+                        livingExpense={Math.max(0, categoryKpiStats.spent - categoryKpiStats.beCorp - categoryKpiStats.credit)}
+                        savingsExpense={0}
+                        beCorpCycleTotal={categoryKpiStats.beCorp}
+                        creditCycleTotal={categoryKpiStats.credit}
+                        incomeCount={1}
+                        expenseCount={categoryKpiStats.count}
+                        periodLabel={`Đang xem danh mục: ${categoryKpiStats.category}`}
+                        onViewLedger={() => setActiveTab('ledger')}
+                        className="h-full"
                       />
-
-                      {/* Category Card 5: Thẻ tín dụng Credit */}
-                      <div className="col-span-2 sm:col-span-1">
-                        <RealisticBankCard
-                          variant="credit"
-                          cardholderName={`CREDIT · ${categoryKpiStats.category}`}
-                          cardNumberMasked="••••  ••••  2019"
-                          cycleLabel={kpiStats.creditRange.displayLabel}
-                          amount={categoryKpiStats.credit}
-                          transactionCount={0}
-                          onClick={() => setActiveTab('reconcile')}
-                        />
-                      </div>
                     </div>
 
-                    {/* Segmented Cash Flow for Category */}
-                    <CashflowSegmentedBar
-                      income={categoryKpiStats.budget}
-                      livingExpense={Math.max(0, categoryKpiStats.spent - categoryKpiStats.beCorp - categoryKpiStats.credit)}
-                      savings={0}
-                      beCorp={categoryKpiStats.beCorp}
-                      credit={categoryKpiStats.credit}
-                      netBalance={categoryKpiStats.remaining}
-                      totalExpense={categoryKpiStats.spent}
-                    />
+                    {/* Right 5 Cols: Category In the Bank & Cards Card */}
+                    <div className="lg:col-span-5">
+                      <KinloBankAccountsCard
+                        beCorpAmount={categoryKpiStats.beCorp}
+                        creditAmount={categoryKpiStats.credit}
+                        beCorpCount={0}
+                        creditCount={0}
+                        beRangeLabel={kpiStats.beRange.displayLabel}
+                        creditRangeLabel={kpiStats.creditRange.displayLabel}
+                        dailySafeSpend={0}
+                        onReconcileClick={() => setActiveTab('reconcile')}
+                        className="h-full"
+                      />
+                    </div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {/* 5 Balanced Cards Row */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 items-stretch">
-                      {/* Card 1: Tổng thu nhập */}
-                      <TiltCard
-                        className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between min-h-[160px] sm:min-h-[175px]"
-                        onClick={() => {
-                          setAddModalPreset({
-                            sheetType: 'Income',
-                            isoDate: selectedMonth !== 'ALL' ? `${selectedMonth}-01` : `${defaultLatestMonth}-01`,
-                            category: 'Lương Yes4All',
-                          });
-                          setIsAddModalOpen(true);
-                        }}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                              Tổng thu nhập
-                            </span>
-                            <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-500/20 group-hover:scale-110 transition-transform">
-                              <TrendingUp className="w-3.5 h-3.5" />
-                            </div>
-                          </div>
-                          <div className="text-lg sm:text-xl lg:text-2xl font-extrabold font-mono-tabular text-slate-900 dark:text-white mb-1.5 truncate">
-                            <AnimatedCurrency value={kpiStats.effectiveIncome} />
-                          </div>
-                        </div>
-                        <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate flex items-center gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shrink-0" />
-                          <span className="truncate">
-                            {isAllMonthsSelected
-                              ? `Tất cả · ${kpiStats.incomeCount} khoản`
-                              : selectedMonths.length > 1
-                                ? `${selectedMonths.length} tháng · ${kpiStats.incomeCount} khoản`
-                                : kpiStats.incomeCount > 0
-                                  ? `${formatMonthLabel(selectedMonth)} · ${kpiStats.incomeCount} khoản`
-                                  : `${formatMonthLabel(selectedMonth)} · Chưa có thu`}
-                          </span>
-                        </div>
-                      </TiltCard>
-
-                      {/* Card 2: Tổng chi tiêu */}
-                      <TiltCard
-                        className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between min-h-[160px] sm:min-h-[175px]"
-                        onClick={() => setActiveTab('ledger')}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                              Tổng chi tiêu
-                            </span>
-                            <div className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-500/20 group-hover:scale-110 transition-transform">
-                              <TrendingDown className="w-3.5 h-3.5" />
-                            </div>
-                          </div>
-                          <div className="text-lg sm:text-xl lg:text-2xl font-extrabold font-mono-tabular text-slate-900 dark:text-white mb-1.5 truncate">
-                            <AnimatedCurrency value={kpiStats.totalExpense} />
-                          </div>
-                        </div>
-                        <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate flex items-center gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block shrink-0" />
-                          <span className="truncate">
-                            {isAllMonthsSelected
-                              ? `${kpiStats.expenseCount} gd (Toàn bộ)`
-                              : selectedMonths.length > 1
-                                ? `${kpiStats.expenseCount} gd (${selectedMonths.length} tháng)`
-                                : `${kpiStats.expenseCount} gd (01/${selectedMonth.split('-')[1]} – Hết tháng)`}
-                          </span>
-                        </div>
-                      </TiltCard>
-
-                      {/* Card 3: Số dư khả dụng (Net) */}
-                      <TiltCard
-                        className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:shadow-md transition-all cursor-pointer group flex flex-col justify-between min-h-[160px] sm:min-h-[175px]"
-                        onClick={() => setActiveTab('reconcile')}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                              Số dư khả dụng
-                            </span>
-                            <div
-                              className={`p-1.5 rounded-lg border group-hover:scale-110 transition-transform ${
-                                kpiStats.netBalance >= 0
-                                  ? 'bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-200/60 dark:border-sky-500/20'
-                                  : 'bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-200/60 dark:border-rose-500/20'
-                              }`}
-                            >
-                              <Wallet className="w-3.5 h-3.5" />
-                            </div>
-                          </div>
-                          <div
-                            className={`text-lg sm:text-xl lg:text-2xl font-extrabold font-mono-tabular mb-1.5 truncate ${
-                              kpiStats.netBalance >= 0 ? 'text-slate-900 dark:text-white' : 'text-rose-600 dark:text-rose-400'
-                            }`}
-                          >
-                            <AnimatedCurrency value={kpiStats.netBalance} />
-                          </div>
-                        </div>
-                        <div className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium truncate flex items-center gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full inline-block shrink-0 ${
-                              kpiStats.netBalance >= 0 ? 'bg-sky-500' : 'bg-rose-500'
-                            }`}
-                          />
-                          <span className="truncate">
-                            {kpiStats.netBalance >= 0 ? 'Thu − Chi an toàn' : 'Chi vượt định mức thu'}
-                          </span>
-                        </div>
-                      </TiltCard>
-
-                      {/* Card 4: Ví BE Corp */}
-                      <RealisticBankCard
-                        variant="becorp"
-                        cardholderName="BE CORP · HEO & MÈO"
-                        cardNumberMasked="••••  ••••  2625"
-                        cycleLabel={kpiStats.beRange.displayLabel}
-                        amount={kpiStats.beCorpCycleTotal}
-                        transactionCount={kpiStats.beCorpCount}
-                        onClick={() => setActiveTab('reconcile')}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+                    {/* Left 7 Cols: Kinlo Cashflow & Budget Card */}
+                    <div className="lg:col-span-7">
+                      <KinloCashflowCard
+                        income={kpiStats.effectiveIncome}
+                        totalExpense={kpiStats.totalExpense}
+                        netBalance={kpiStats.netBalance}
+                        livingExpense={kpiStats.livingExpense}
+                        savingsExpense={kpiStats.savingsExpense}
+                        beCorpCycleTotal={kpiStats.beCorpCycleTotal}
+                        creditCycleTotal={kpiStats.creditCycleTotal}
+                        incomeCount={kpiStats.incomeCount}
+                        expenseCount={kpiStats.expenseCount}
+                        periodLabel={selectedMonthsLabel}
+                        onViewLedger={() => setActiveTab('ledger')}
+                        className="h-full"
                       />
-
-                      {/* Card 5: Thẻ tín dụng Credit */}
-                      <div className="col-span-2 sm:col-span-1">
-                        <RealisticBankCard
-                          variant="credit"
-                          cardholderName="HEO & MÈO"
-                          cardNumberMasked="••••  ••••  2019"
-                          cycleLabel={kpiStats.creditRange.displayLabel}
-                          amount={kpiStats.creditCycleTotal}
-                          transactionCount={kpiStats.creditCount}
-                          onClick={() => setActiveTab('reconcile')}
-                        />
-                      </div>
                     </div>
 
-                    {/* Full-width Segmented Cash Flow Ratio Bar */}
-                    <CashflowSegmentedBar
-                      income={kpiStats.effectiveIncome}
-                      livingExpense={kpiStats.livingExpense}
-                      savings={kpiStats.savingsExpense}
-                      beCorp={kpiStats.beCorpCycleTotal}
-                      credit={kpiStats.creditCycleTotal}
-                      netBalance={kpiStats.netBalance}
-                      totalExpense={kpiStats.totalExpense}
-                    />
+                    {/* Right 5 Cols: Kinlo In The Bank & Cards Card */}
+                    <div className="lg:col-span-5">
+                      <KinloBankAccountsCard
+                        beCorpAmount={kpiStats.beCorpCycleTotal}
+                        creditAmount={kpiStats.creditCycleTotal}
+                        beCorpCount={kpiStats.beCorpCount}
+                        creditCount={kpiStats.creditCount}
+                        beRangeLabel={kpiStats.beRange.displayLabel}
+                        creditRangeLabel={kpiStats.creditRange.displayLabel}
+                        dailySafeSpend={Math.max(0, Math.round(kpiStats.netBalance / 30))}
+                        onReconcileClick={() => setActiveTab('reconcile')}
+                        className="h-full"
+                      />
+                    </div>
                   </div>
                 )}
 

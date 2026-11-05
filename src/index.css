@@ -3,39 +3,198 @@
 
 @layer base {
   :root {
-    --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-display: 'Urbanist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-sans: 'Urbanist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font: 'Urbanist', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-    /* Dashboard color palette inspired by modern fintech dashboards */
-    --color-navy: #0F172A;
-    --color-navy-light: #1E293B;
-    --color-card-blue: #0284C7;
-    --color-card-green: #059669;
-    --color-card-coral: #EA580C;
-    --color-card-purple: #7C3AED;
-    --color-bg: #F8FAFC;
+    /* Kinlo Design Tokens (Light Mode) */
+    --fs-2xs: 11px;
+    --fs-xs: 12px;
+    --fs-sm: 12.5px;
+    --fs-md: 13.5px;
+    --fs-base: 14px;
+    --fs-lg: 15px;
+    --fs-xl: 17px;
+    --fs-2xl: 20px;
+    --fs-3xl: 22px;
+    --fs-4xl: 26px;
+    --fs-display: 34px;
+
+    --r-sm: 10px;
+    --r-md: 14px;
+    --r-lg: 18px;
+    --r-xl: 22px;
+    --ease: cubic-bezier(.22, 1, .36, 1);
+
+    --bg: #eef1f3;
+    --wash-a: #f4bfa6;
+    --wash-wave: #f7d6c4d9;
+    --wash-b: #bfe2e6;
+    --wash-c: #e1eaf3;
+    --wash-band: #f6cdba8c;
+
+    --glass: rgba(255, 255, 255, 0.85);
+    --glass-hi: rgba(255, 255, 255, 0.95);
+    --glass-rim: rgba(255, 255, 255, 0.90);
+    --glass-edge: rgba(23, 37, 45, 0.08);
+    --blur: blur(26px) saturate(180%);
+
+    --card: #fbfcfc;
+    --card-2: rgba(23, 37, 45, 0.04);
+    --card-3: rgba(23, 37, 45, 0.09);
+    --ink: #15212a;
+    --ink-2: #354550;
+    --muted: #55616a;
+    --line: rgba(23, 37, 45, 0.08);
+    --line-2: rgba(23, 37, 45, 0.15);
+
+    --shadow: 0 1px 2px rgba(23, 37, 45, 0.04), 0 14px 34px -18px rgba(23, 37, 45, 0.20);
+    --shadow-lg: 0 2px 6px rgba(23, 37, 45, 0.06), 0 28px 60px -24px rgba(23, 37, 45, 0.35);
+
+    --accent: #0e6c84;
+    --accent-ink: #ffffff;
+    --accent-hi: #127d98;
+    --accent-soft: rgba(14, 108, 132, 0.12);
+    --accent-text: #0b5f74;
+
+    --night: #102e37e6;
+    --night-2: rgba(255, 255, 255, 0.08);
+    --night-ink: #eef6f7;
+    --night-muted: #a9c0c6;
+
+    --tile-aqua: rgba(196, 232, 236, 0.72);
+    --tile-slate: rgba(214, 226, 238, 0.72);
+    --tile-sage: rgba(208, 232, 216, 0.72);
+    --tile-peach: rgba(250, 214, 198, 0.72);
+  }
+
+  [data-theme="dark"], html.dark {
+    /* Kinlo Design Tokens (Dark Mode) */
+    --bg: #0d1214;
+    --wash-a: rgba(238, 138, 106, 0.20);
+    --wash-wave: rgba(238, 150, 120, 0.10);
+    --wash-b: rgba(60, 178, 190, 0.18);
+    --wash-c: rgba(90, 130, 170, 0.12);
+    --wash-band: rgba(76, 192, 214, 0.08);
+
+    --glass: rgba(24, 31, 35, 0.85);
+    --glass-hi: rgba(255, 255, 255, 0.05);
+    --glass-rim: rgba(255, 255, 255, 0.09);
+    --glass-edge: rgba(255, 255, 255, 0.06);
+
+    --card: #172024;
+    --card-2: rgba(236, 244, 246, 0.04);
+    --card-3: rgba(236, 244, 246, 0.09);
+    --ink: #ecf2f3;
+    --ink-2: #cbd6d9;
+    --muted: #9aaab0;
+    --line: rgba(236, 244, 246, 0.08);
+    --line-2: rgba(236, 244, 246, 0.16);
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 14px 32px -16px rgba(0, 0, 0, 0.65);
+    --shadow-lg: 0 2px 6px rgba(0, 0, 0, 0.4), 0 30px 70px -24px rgba(0, 0, 0, 0.8);
+
+    --accent: #4cc0d6;
+    --accent-ink: #04222b;
+    --accent-hi: #6ccde0;
+    --accent-soft: rgba(76, 192, 214, 0.15);
+    --accent-text: #6fd0e3;
+
+    --night: #0c262ee0;
+    --night-2: rgba(255, 255, 255, 0.07);
+    --night-ink: #eef6f7;
+    --night-muted: #9fb0b6;
+
+    --tile-aqua: rgba(30, 80, 90, 0.45);
+    --tile-slate: rgba(48, 66, 82, 0.42);
+    --tile-sage: rgba(40, 80, 56, 0.42);
+    --tile-peach: rgba(110, 60, 40, 0.4);
   }
 
   body {
     font-family: var(--font-sans);
-    background-color: var(--color-bg);
-    color: #0F172A;
+    background-color: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    position: relative;
+  }
+
+  /* Kinlo Atmospheric Multi-Point Organic Wash Aura */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      linear-gradient(162deg, transparent 38%, var(--wash-band) 52%, transparent 66%),
+      radial-gradient(70% 22% at 38% 86%, var(--wash-wave), transparent 72%),
+      radial-gradient(60% 70% at 0% 100%, var(--wash-a), transparent 68%),
+      radial-gradient(48% 62% at 104% 70%, var(--wash-b), transparent 70%),
+      radial-gradient(55% 45% at 72% -8%, var(--wash-c), transparent 70%),
+      var(--bg);
+    transition: background 0.3s var(--ease);
   }
 
   h1, h2, h3, h4, .font-display {
     font-family: var(--font-display);
-    letter-spacing: -0.015em;
+    letter-spacing: -0.018em;
   }
 
-  /* Clean, highly readable tabular numbers without blocky terminal font */
+  /* Clean, highly readable tabular numbers */
   .font-mono-tabular {
     font-family: var(--font-sans);
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum";
     letter-spacing: -0.015em;
   }
+}
+
+/* Kinlo Surface & Component Utilities */
+.kinlo-card {
+  background: radial-gradient(120% 80% at 0% 0%, var(--glass-hi), transparent 55%), var(--card);
+  border-radius: var(--r-xl);
+  box-shadow: inset 0 1px 0 var(--glass-rim), inset 0 0 0 1px var(--line), var(--shadow);
+  transition: box-shadow 0.25s var(--ease), border-color 0.25s var(--ease);
+}
+
+.kinlo-card-night {
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  background: radial-gradient(120% 80% at 0% 0%, rgba(255, 255, 255, 0.12), transparent 55%), var(--night);
+  color: var(--night-ink);
+  border-radius: var(--r-xl);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 0 0 1px rgba(255, 255, 255, 0.08), var(--shadow-lg);
+}
+
+.kinlo-btn-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-radius: 12px;
+  font-weight: 700;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 8px 18px -8px var(--accent);
+  transition: all 0.2s var(--ease);
+}
+.kinlo-btn-primary:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.kinlo-btn-secondary {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--ink);
+  border-radius: 12px;
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 var(--glass-rim), inset 0 0 0 1px var(--line-2);
+  transition: all 0.2s var(--ease);
+}
+.kinlo-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.95);
+  transform: translateY(-1px);
 }
 
 /* Custom scrollbar for dashboard feel */
@@ -60,18 +219,18 @@ html.dark {
 }
 
 html.dark body {
-  background-color: #0B1120 !important;
-  color: #F1F5F9;
+  background-color: var(--bg) !important;
+  color: var(--ink) !important;
 }
 
 html.dark .min-h-screen {
-  background-color: #0B1120 !important;
+  background-color: transparent !important;
 }
 
 /* Card surfaces and containers in dark mode */
 html.dark .bg-white {
-  background-color: #131C31 !important;
-  color: #F8FAFC;
+  background-color: var(--card) !important;
+  color: var(--ink) !important;
 }
 
 /* Table row alternating backgrounds and subtle surfaces */
