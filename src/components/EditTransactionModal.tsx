@@ -91,20 +91,22 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   const sheetDatePreview = isoToSheetDate(isoDate);
   const finalCategory = category === '__CUSTOM__' ? customCategory.trim() || 'Khác' : category;
 
-  const handleAmountChange = (raw: string, setter: (val: string) => void) => {
-    const trimmed = raw.trim();
-    if (!trimmed) {
-      setter('');
-      return;
-    }
-    const isNegative = trimmed.startsWith('-');
-    const digits = trimmed.replace(/[^0-9]/g, '');
-    if (!digits) {
-      setter(isNegative ? '-' : '');
-      return;
-    }
-    const num = parseInt(digits, 10);
-    setter((isNegative ? '-' : '') + (Number.isFinite(num) ? num.toLocaleString('en-US') : ''));
+  // Handler khi thay đổi Số tiền chi (Amount)
+  const handleAmountChange = (val: string) => {
+    setAmountStr(val);
+    // Không tự cập nhật BE Corp hay Tín dụng
+  };
+
+  // Handler khi nhập BE Corp: mặc định đồng bộ luôn sang "Số tiền chi"
+  const handleBeCorpChange = (val: string) => {
+    setBeCorpStr(val);
+    setAmountStr(val);
+  };
+
+  // Handler khi nhập Quẹt thẻ Credit: mặc định đồng bộ luôn sang "Số tiền chi"
+  const handleCreditChange = (val: string) => {
+    setCreditStr(val);
+    setAmountStr(val);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -328,49 +330,89 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
           {/* Row 4: Amount, BE Corp, Credit */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                 <DollarSign className="w-3.5 h-3.5 text-slate-400" />
                 <span>Số tiền (₫) *</span>
               </label>
               <MoneyCalculatorInput
                 value={amountStr}
-                onChange={(val) => setAmountStr(val)}
+                onChange={handleAmountChange}
                 placeholder="50,000"
                 theme={sheetType === 'Expenses' ? 'rose' : 'emerald'}
                 size="sm"
                 required
-                inputClassName="font-semibold text-slate-900 bg-slate-50"
+                inputClassName="font-semibold text-slate-900 bg-slate-50 dark:bg-slate-800 dark:text-slate-100"
               />
             </div>
 
             {sheetType === 'Expenses' ? (
               <>
                 <div>
-                  <label className="block text-xs font-semibold text-amber-800 mb-1 flex items-center gap-1">
-                    <span>BE Corp</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-amber-800 dark:text-amber-400 flex items-center gap-1">
+                      <span>BE Corp</span>
+                      <span className="text-[10px] text-amber-600/80 dark:text-amber-400/70 font-normal">
+                        (→ tự điền chi)
+                      </span>
+                    </label>
+                    {parsedAmount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setBeCorpStr(
+                            parsedBeCorp === parsedAmount
+                              ? ''
+                              : formatNumberForSheet(parsedAmount)
+                          )
+                        }
+                        className="text-[11px] text-amber-700 dark:text-amber-400 hover:underline font-medium"
+                      >
+                        {parsedBeCorp === parsedAmount ? 'Xóa' : '= Số tiền'}
+                      </button>
+                    )}
+                  </div>
                   <MoneyCalculatorInput
                     value={beCorpStr}
-                    onChange={(val) => setBeCorpStr(val)}
+                    onChange={handleBeCorpChange}
                     placeholder="Để trống nếu 0"
                     theme="amber"
                     size="sm"
-                    inputClassName="text-amber-900 bg-amber-50/40"
+                    inputClassName="text-amber-900 bg-amber-50/40 dark:bg-amber-950/30 dark:text-amber-200"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-indigo-800 mb-1 flex items-center gap-1">
-                    <CreditCard className="w-3.5 h-3.5 text-indigo-500" />
-                    <span>Quẹt thẻ Credit</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-semibold text-indigo-800 dark:text-indigo-400 flex items-center gap-1">
+                      <CreditCard className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Quẹt thẻ Credit</span>
+                      <span className="text-[10px] text-indigo-600/80 dark:text-indigo-400/70 font-normal">
+                        (→ tự điền chi)
+                      </span>
+                    </label>
+                    {parsedAmount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setCreditStr(
+                            parsedCredit === parsedAmount
+                              ? ''
+                              : formatNumberForSheet(parsedAmount)
+                          )
+                        }
+                        className="text-[11px] text-indigo-700 dark:text-indigo-400 hover:underline font-medium"
+                      >
+                        {parsedCredit === parsedAmount ? 'Xóa' : '= Số tiền'}
+                      </button>
+                    )}
+                  </div>
                   <MoneyCalculatorInput
                     value={creditStr}
-                    onChange={(val) => setCreditStr(val)}
+                    onChange={handleCreditChange}
                     placeholder="Để trống nếu 0"
                     theme="indigo"
                     size="sm"
-                    inputClassName="text-indigo-900 bg-indigo-50/40"
+                    inputClassName="text-indigo-900 bg-indigo-50/40 dark:bg-indigo-950/30 dark:text-indigo-200"
                   />
                 </div>
               </>

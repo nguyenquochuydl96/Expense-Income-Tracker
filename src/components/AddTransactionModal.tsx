@@ -324,12 +324,28 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     if (s.category && category === '__CUSTOM__') {
       setCategory(s.category);
     }
-    if (!amountStr && s.lastAmount > 0) {
-      setAmountStr(formatNumberForSheet(s.lastAmount, false, true));
-      if (s.typicalBeCorp) setBeCorpStr(formatNumberForSheet(s.lastAmount, false, true));
-      if (s.typicalCredit) setCreditStr(formatNumberForSheet(s.lastAmount, false, true));
-    }
+    // Theo yêu cầu người dùng: chỉ điền tên món, không tự động điền sẵn số tiền
+    // vì thực tế ít khi nào tiêu dùng cùng món mà chính xác đến từng giá tiền.
     setShowSuggestions(false);
+  };
+
+  // Handler khi thay đổi Số tiền chi (Amount)
+  const handleAmountChange = (val: string) => {
+    setAmountStr(val);
+    // Lưu ý: Trường hợp ngược lại thì không tự nhập BE Corp hay tín dụng
+    // vì không phải giao dịch nào cũng dùng BE hay tín dụng
+  };
+
+  // Handler khi nhập BE Corp: mặc định đồng bộ luôn sang "Số tiền chi"
+  const handleBeCorpChange = (val: string) => {
+    setBeCorpStr(val);
+    setAmountStr(val);
+  };
+
+  // Handler khi nhập Quẹt thẻ Credit: mặc định đồng bộ luôn sang "Số tiền chi"
+  const handleCreditChange = (val: string) => {
+    setCreditStr(val);
+    setAmountStr(val);
   };
 
   const formatNumericInput = (val: string): string => {
@@ -806,7 +822,9 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                     </strong>
                     :
                   </span>
-                  <span className="text-[10px] text-slate-400">({filteredSuggestions.length})</span>
+                  <span className="text-[10px] text-slate-400 italic">
+                    (chỉ điền tên món · {filteredSuggestions.length})
+                  </span>
                 </div>
                 {filteredSuggestions.map((s) => (
                   <button
@@ -827,9 +845,14 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                         </span>
                       )}
                     </div>
-                    <span className="font-mono-tabular text-slate-500 dark:text-slate-400 shrink-0 text-xs">
-                      {s.lastAmount > 0 ? `${formatNumberForSheet(s.lastAmount)} ₫` : ''}
-                    </span>
+                    {s.lastAmount > 0 && (
+                      <span
+                        className="font-mono-tabular text-slate-400 dark:text-slate-500 shrink-0 text-[11px]"
+                        title="Giá lần gần nhất (chỉ để tham khảo, không tự điền vào ô tiền)"
+                      >
+                        ~{formatNumberForSheet(s.lastAmount)} ₫
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -838,15 +861,15 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
           {/* Row 3: Amounts */}
           {sheetType === 'Expenses' ? (
-            /* Khi là Chi tiêu: Hiện 3 cột (Số tiền chi, BE Corp, Credit) tối giản, KHÔNG có gợi ý số tiền */
+            /* Khi là Chi tiêu: Hiện 3 cột (Số tiền chi, BE Corp, Credit) */
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Số tiền chi (₫) <span className="text-rose-600">*</span>
                 </label>
                 <MoneyCalculatorInput
                   value={amountStr}
-                  onChange={(val) => setAmountStr(val)}
+                  onChange={handleAmountChange}
                   placeholder="VD: 50,000"
                   theme="rose"
                   size="md"
@@ -856,8 +879,11 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-semibold text-amber-800">
-                    BE Corp
+                  <label className="text-xs font-semibold text-amber-800 dark:text-amber-400 flex items-center gap-1">
+                    <span>BE Corp</span>
+                    <span className="text-[10px] text-amber-600/80 dark:text-amber-400/70 font-normal">
+                      (→ tự điền chi)
+                    </span>
                   </label>
                   {parsedAmount > 0 && (
                     <button
@@ -869,7 +895,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                             : formatNumberForSheet(parsedAmount)
                         )
                       }
-                      className="text-[11px] text-amber-700 hover:underline font-medium"
+                      className="text-[11px] text-amber-700 dark:text-amber-400 hover:underline font-medium"
                     >
                       {parsedBeCorp === parsedAmount ? 'Xóa' : '= Số tiền'}
                     </button>
@@ -877,7 +903,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 </div>
                 <MoneyCalculatorInput
                   value={beCorpStr}
-                  onChange={(val) => setBeCorpStr(val)}
+                  onChange={handleBeCorpChange}
                   placeholder="Để trống nếu không"
                   theme="amber"
                   size="md"
@@ -886,8 +912,11 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-semibold text-indigo-800">
-                    Quẹt thẻ Credit
+                  <label className="text-xs font-semibold text-indigo-800 dark:text-indigo-400 flex items-center gap-1">
+                    <span>Quẹt thẻ Credit</span>
+                    <span className="text-[10px] text-indigo-600/80 dark:text-indigo-400/70 font-normal">
+                      (→ tự điền chi)
+                    </span>
                   </label>
                   {parsedAmount > 0 && (
                     <button
@@ -899,7 +928,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                             : formatNumberForSheet(parsedAmount)
                         )
                       }
-                      className="text-[11px] text-indigo-700 hover:underline font-medium"
+                      className="text-[11px] text-indigo-700 dark:text-indigo-400 hover:underline font-medium"
                     >
                       {parsedCredit === parsedAmount ? 'Xóa' : '= Số tiền'}
                     </button>
@@ -907,7 +936,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 </div>
                 <MoneyCalculatorInput
                   value={creditStr}
-                  onChange={(val) => setCreditStr(val)}
+                  onChange={handleCreditChange}
                   placeholder="Để trống nếu không"
                   theme="indigo"
                   size="md"
