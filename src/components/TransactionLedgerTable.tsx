@@ -276,7 +276,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
         {/* Filter Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Interactive Segmented Filter Tabs */}
-          <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-200/80 dark:bg-slate-800/90 rounded-lg border border-slate-300/60 dark:border-slate-700/80">
+          <div className="flex items-center gap-1 p-1 bg-slate-200/80 dark:bg-slate-800/90 rounded-lg border border-slate-300/60 dark:border-slate-700/80 overflow-x-auto no-scrollbar max-w-full">
             {(
               [
                 { id: 'all', label: 'Tất cả' },
@@ -422,7 +422,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
         </div>
 
         {/* Smart Quick Filter Chips (Lọc thông minh 1 chạm) */}
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+        <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 overflow-x-auto no-scrollbar max-w-full">
           <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 shrink-0">
             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
             <span>Lọc thông minh:</span>
@@ -486,8 +486,132 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
         </div>
       </div>
 
-      {/* High-Density Data Grid matching exact Google Sheet Columns */}
-      <div className="overflow-x-auto">
+      {/* ═══════ MOBILE CARD LIST VIEW (< 768px) ═══════ */}
+      <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+        {displayedRows.length === 0 ? (
+          <div className="py-12 px-4 text-center text-slate-500 dark:text-slate-400 text-xs">
+            Không tìm thấy dòng giao dịch nào khớp với bộ lọc hiện tại.
+          </div>
+        ) : (
+          displayedRows.map((rec) => {
+            const isIncome = rec.sheetType === 'Income';
+            return (
+              <div
+                key={rec.id}
+                className="p-3.5 space-y-2 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors"
+              >
+                {/* Header: Date, Category badge, Sheet type */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <CategoryBadge
+                      category={rec.category}
+                      onClick={() =>
+                        onSelectCategory(
+                          selectedCategory === rec.category ? 'ALL' : rec.category
+                        )
+                      }
+                      compact
+                    />
+                    <span className="text-[11px] font-mono-tabular text-slate-500 dark:text-slate-400 shrink-0">
+                      {rec.purchaseDate}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {isIncome && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300">
+                        Thu nhập
+                      </span>
+                    )}
+                    {rec.source === 'local_new' && (
+                      rec.syncedToSheet ? (
+                        <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                          ✓ Đã đồng bộ
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300">
+                          Chờ đồng bộ
+                        </span>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                {/* Main: Item name & prominent Amount */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 break-words flex-1">
+                    {rec.purchaseItem}
+                  </div>
+                  <div
+                    className={`text-sm font-extrabold font-mono-tabular text-right shrink-0 ${
+                      isIncome
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : rec.amount < 0
+                        ? 'text-teal-700 dark:text-teal-400'
+                        : 'text-slate-900 dark:text-slate-100'
+                    }`}
+                  >
+                    {formatNumberForSheet(rec.amount, true, false, isIncome)}
+                  </div>
+                </div>
+
+                {/* Sub-row: BE Corp & Credit & Note */}
+                {(rec.beCorp !== 0 || rec.credit !== 0 || rec.note) && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
+                    {rec.beCorp !== 0 && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[11px] font-mono-tabular font-semibold border border-amber-200/60 dark:border-amber-900/60">
+                        Ví BE: {formatNumberForSheet(rec.beCorp, true)}
+                      </span>
+                    )}
+                    {rec.credit !== 0 && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 text-[11px] font-mono-tabular font-semibold border border-indigo-200/60 dark:border-indigo-900/60">
+                        Credit: {formatNumberForSheet(rec.credit, true)}
+                      </span>
+                    )}
+                    {rec.note && (
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 italic">
+                        {rec.note}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Footer: Row index & Tap Actions */}
+                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400">
+                  <span className="font-mono-tabular">
+                    {rec.rowIndex ? `#${rec.rowIndex}` : 'Giao dịch mới'}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {onEditTransaction && (
+                      <button
+                        type="button"
+                        onClick={() => onEditTransaction(rec)}
+                        className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-sky-100 dark:bg-slate-800 dark:hover:bg-sky-950/60 hover:text-sky-700 dark:hover:text-sky-300 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                        <span>Sửa</span>
+                      </button>
+                    )}
+                    {onDeleteTransaction && (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteTransaction(rec)}
+                        className="px-2.5 py-1 text-xs font-semibold text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Xóa</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* ═══════ DESKTOP DATA GRID (>= 768px) ═══════ */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
@@ -501,21 +625,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
               <th className="py-2.5 px-3 text-center w-20">Thao tác</th>
             </tr>
           </thead>
-          <motion.tbody
-            key={`${selectedCategory}-${quickFilter}-${filterBigExpense}-${sortOrder}-${searchQuery}`}
-            initial="hidden"
-            animate="show"
-            variants={{
-              hidden: { opacity: 0 },
-              show: {
-                opacity: 1,
-                transition: {
-                  staggerChildren: 0.02,
-                },
-              },
-            }}
-            className="divide-y divide-slate-100 dark:divide-slate-800 text-xs"
-          >
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
             {displayedRows.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-12 text-center text-slate-500 dark:text-slate-400">
@@ -524,14 +634,9 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
               </tr>
             ) : (
               displayedRows.map((rec) => {
-                const catColor = CATEGORY_COLORS[rec.category] || '#64748B';
                 return (
-                  <motion.tr
+                  <tr
                     key={rec.id}
-                    variants={{
-                      hidden: { opacity: 0, y: 5 },
-                      show: { opacity: 1, y: 0, transition: { duration: 0.18, ease: [0.16, 1, 0.3, 1] } },
-                    }}
                     className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors"
                   >
                     <td className="py-2.5 px-4 font-mono-tabular text-slate-600 dark:text-slate-400 whitespace-nowrap">
@@ -622,11 +727,11 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
                         )}
                       </div>
                     </td>
-                  </motion.tr>
+                  </tr>
                 );
               })
             )}
-          </motion.tbody>
+          </tbody>
         </table>
       </div>
 

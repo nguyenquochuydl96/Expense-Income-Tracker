@@ -24,6 +24,9 @@ import {
   TrendingDown,
   Wallet,
   ArrowLeftRight,
+  LayoutDashboard,
+  ReceiptText,
+  Scale,
 } from 'lucide-react';
 import { PigIcon, SiameseCatIcon } from './utils/categoryIcons';
 import { AppLockScreen, isDeviceUnlocked, lockDevice } from './components/AppLockScreen';
@@ -131,7 +134,7 @@ const formatTodayDate = (): string => {
 };
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard');
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => (typeof window !== 'undefined' && (window as any).__initialTab) || 'dashboard');
   const [attachedRecords, setAttachedRecords] = useState<TransactionRecord[]>([]);
   const [sheetRecords, setSheetRecords] = useState<TransactionRecord[] | null>(() => {
     try {
@@ -1753,8 +1756,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* Center Navigation Tabs (Kinlo Glass Nav Rail) */}
-          <nav className="flex items-center gap-1 text-xs font-semibold p-1 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] overflow-x-auto max-w-full">
+          {/* Center Navigation Tabs (Kinlo Glass Nav Rail - Hidden on Mobile, shown on Desktop >= md) */}
+          <nav className="hidden md:flex items-center gap-1 text-xs font-semibold p-1 rounded-2xl bg-[var(--card-2)] border border-[var(--line)] overflow-x-auto max-w-full">
             {[
               { id: 'dashboard', label: 'Dashboard' },
               { id: 'ledger', label: `Sổ giao dịch (${periodRecords.length})` },
@@ -1871,10 +1874,11 @@ export default function App() {
                 setAddModalPreset(null);
                 setIsAddModalOpen(true);
               }}
-              className="kinlo-btn-primary px-3.5 sm:px-4 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+              className="kinlo-btn-primary px-3 sm:px-4 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Thêm giao dịch</span>
+              <span className="hidden sm:inline">+ Thêm giao dịch</span>
+              <span className="sm:hidden">+ Thêm</span>
             </button>
           </div>
         </header>
@@ -1901,7 +1905,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Main Content Container */}
-      <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-4 space-y-5">
+      <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-4 space-y-5 pb-24 md:pb-6">
         {/* ═══════ KINLO GREETING HERO BAR (PHEAD) ═══════ */}
         <div className="flex flex-wrap items-end justify-between gap-4 pt-1">
           <div>
@@ -2033,18 +2037,11 @@ export default function App() {
           </div>
         ) : (
           <>
-            {/* VIEW CONTENT WITH FLUID VIEW TRANSITION */}
-            <AnimatePresence mode="wait">
+            {/* VIEW CONTENT */}
+            <div>
               {/* VIEW 1: DASHBOARD */}
               {activeTab === 'dashboard' && (
-                <motion.div
-                  key="dashboard"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                  className="space-y-5"
-                >
+                <div key="dashboard" className="space-y-5 animate-in fade-in duration-200">
                 {/* ═══════ KINLO HERO ASYMMETRIC 7fr / 5fr GRID ═══════ */}
                 {categoryKpiStats ? (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
@@ -2182,92 +2179,74 @@ export default function App() {
                   }}
                   onSelectTransaction={(tx) => setEditingTransaction(tx)}
                 />
-              </motion.div>
-            )}
+                </div>
+              )}
 
-            {/* VIEW 2: FULL TRANSACTION LEDGER */}
-            {activeTab === 'ledger' && (
-              <motion.div
-                key="ledger"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <TransactionLedgerTable
-                  records={periodRecords}
-                  selectedCategory={selectedCategory}
-                  onSelectCategory={handleSelectCategory}
-                  selectedCategories={isAllCategoriesSelected ? [] : selectedCategories}
-                  onSelectCategories={handleSelectCategories}
-                  onOpenAddModal={() => {
-                    setAddModalPreset(null);
-                    setIsAddModalOpen(true);
-                  }}
-                  onEditTransaction={setEditingTransaction}
-                  onDeleteTransaction={setDeletingTransaction}
-                  onPushPendingToSheet={handlePushPendingToSheet}
-                  isSyncing={isSyncing}
-                  periodLabel={selectedMonthsLabel}
-                />
-              </motion.div>
-            )}
+              {/* VIEW 2: FULL TRANSACTION LEDGER */}
+              {activeTab === 'ledger' && (
+                <div key="ledger" className="animate-in fade-in duration-200">
+                  <TransactionLedgerTable
+                    records={periodRecords}
+                    selectedCategory={selectedCategory}
+                    onSelectCategory={handleSelectCategory}
+                    selectedCategories={isAllCategoriesSelected ? [] : selectedCategories}
+                    onSelectCategories={handleSelectCategories}
+                    onOpenAddModal={() => {
+                      setAddModalPreset(null);
+                      setIsAddModalOpen(true);
+                    }}
+                    onEditTransaction={setEditingTransaction}
+                    onDeleteTransaction={setDeletingTransaction}
+                    onPushPendingToSheet={handlePushPendingToSheet}
+                    isSyncing={isSyncing}
+                    periodLabel={selectedMonthsLabel}
+                  />
+                </div>
+              )}
 
-            {/* VIEW 3: CHECK TIỀN & CHU KỲ BE CORP / CREDIT */}
-            {activeTab === 'reconcile' && (
-              <motion.div
-                key="reconcile"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <ReconcileCheckTienView
-                  allRecords={allRecords}
-                  selectedMonth={selectedMonth}
-                  onOpenAddWithPreset={(preset) => {
-                    setAddModalPreset(preset);
-                    setIsAddModalOpen(true);
-                  }}
-                  checkTienData={checkTienData}
-                  onEditTransaction={(tx) => setEditingTransaction(tx)}
-                />
-              </motion.div>
-            )}
+              {/* VIEW 3: CHECK TIỀN & CHU KỲ BE CORP / CREDIT */}
+              {activeTab === 'reconcile' && (
+                <div key="reconcile" className="animate-in fade-in duration-200">
+                  <ReconcileCheckTienView
+                    allRecords={allRecords}
+                    selectedMonth={selectedMonth}
+                    onOpenAddWithPreset={(preset) => {
+                      setAddModalPreset(preset);
+                      setIsAddModalOpen(true);
+                    }}
+                    checkTienData={checkTienData}
+                    onEditTransaction={(tx) => setEditingTransaction(tx)}
+                  />
+                </div>
+              )}
 
-            {/* VIEW 4: GOOGLE SHEET SYNC PANEL */}
-            {activeTab === 'sync' && (
-              <motion.div
-                key="sync"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <SheetSyncPanel
-                  user={user}
-                  accessToken={accessToken}
-                  isLoggingIn={isLoggingIn}
-                  onGoogleLogin={handleGoogleLogin}
-                  onGoogleLogout={handleGoogleLogout}
-                  spreadsheetInput={spreadsheetInput}
-                  onChangeSpreadsheetInput={setSpreadsheetInput}
-                  sheetMeta={sheetMeta}
-                  isSyncing={isSyncing}
-                  syncError={syncError}
-                  lastSyncedAt={lastSyncedAt}
-                  onConnectAndSyncSheet={handleConnectAndSyncSheet}
-                  pendingLocalRecords={localNewRecords.filter((r) => !r.syncedToSheet)}
-                  onPushPendingToSheet={handlePushPendingToSheet}
-                  onExportCsv={handleExportCsv}
-                  totalExpensesCount={totalExpensesCount}
-                  totalIncomeCount={totalIncomeCount}
-                  onSelectIncomeTab={handleSelectIncomeTab}
-                  onSelectExpensesTab={handleSelectExpensesTab}
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+              {/* VIEW 4: GOOGLE SHEET SYNC PANEL */}
+              {activeTab === 'sync' && (
+                <div key="sync" className="animate-in fade-in duration-200">
+                  <SheetSyncPanel
+                    user={user}
+                    accessToken={accessToken}
+                    isLoggingIn={isLoggingIn}
+                    onGoogleLogin={handleGoogleLogin}
+                    onGoogleLogout={handleGoogleLogout}
+                    spreadsheetInput={spreadsheetInput}
+                    onChangeSpreadsheetInput={setSpreadsheetInput}
+                    sheetMeta={sheetMeta}
+                    isSyncing={isSyncing}
+                    syncError={syncError}
+                    lastSyncedAt={lastSyncedAt}
+                    onConnectAndSyncSheet={handleConnectAndSyncSheet}
+                    pendingLocalRecords={localNewRecords.filter((r) => !r.syncedToSheet)}
+                    onPushPendingToSheet={handlePushPendingToSheet}
+                    onExportCsv={handleExportCsv}
+                    totalExpensesCount={totalExpensesCount}
+                    totalIncomeCount={totalIncomeCount}
+                    onSelectIncomeTab={handleSelectIncomeTab}
+                    onSelectExpensesTab={handleSelectExpensesTab}
+                  />
+                </div>
+              )}
+            </div>
         </>
       )}
       </main>
@@ -2413,6 +2392,79 @@ export default function App() {
         selectedMonth={selectedMonth}
         allRecords={allRecords}
       />
+
+      {/* ═══════ KINLO MOBILE BOTTOM NAVIGATION BAR (< md) ═══════ */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--glass)] backdrop-blur-2xl border-t border-[var(--line)] shadow-2xl px-2 py-1.5 flex items-center justify-around text-center">
+        <button
+          type="button"
+          onClick={() => setActiveTab('dashboard')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer ${
+            activeTab === 'dashboard'
+              ? 'text-[var(--accent-text)] font-bold'
+              : 'text-[var(--muted)] font-medium hover:text-[var(--ink)]'
+          }`}
+        >
+          <LayoutDashboard className="w-4 h-4 mb-0.5" />
+          <span className="text-[10px]">Dashboard</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('ledger')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer relative ${
+            activeTab === 'ledger'
+              ? 'text-[var(--accent-text)] font-bold'
+              : 'text-[var(--muted)] font-medium hover:text-[var(--ink)]'
+          }`}
+        >
+          <ReceiptText className="w-4 h-4 mb-0.5" />
+          <span className="text-[10px]">Sổ cái</span>
+          {periodRecords.length > 0 && (
+            <span className="absolute -top-0.5 right-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-[var(--accent)] text-[var(--accent-ink)]">
+              {periodRecords.length}
+            </span>
+          )}
+        </button>
+
+        {/* Central Prominent Quick Add Button */}
+        <button
+          type="button"
+          onClick={() => {
+            setAddModalPreset(null);
+            setIsAddModalOpen(true);
+          }}
+          className="w-10 h-10 -mt-2 rounded-2xl bg-[var(--accent)] text-[var(--accent-ink)] flex items-center justify-center shadow-lg active:scale-95 transition-transform cursor-pointer"
+          title="Thêm giao dịch mới"
+        >
+          <Plus className="w-5 h-5 stroke-[2.5]" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('reconcile')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer ${
+            activeTab === 'reconcile'
+              ? 'text-[var(--accent-text)] font-bold'
+              : 'text-[var(--muted)] font-medium hover:text-[var(--ink)]'
+          }`}
+        >
+          <Scale className="w-4 h-4 mb-0.5" />
+          <span className="text-[10px]">Đối soát</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('sync')}
+          className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer ${
+            activeTab === 'sync'
+              ? 'text-[var(--accent-text)] font-bold'
+              : 'text-[var(--muted)] font-medium hover:text-[var(--ink)]'
+          }`}
+        >
+          <RefreshCw className="w-4 h-4 mb-0.5" />
+          <span className="text-[10px]">Đồng bộ</span>
+        </button>
+      </nav>
     </div>
   );
 }

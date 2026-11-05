@@ -634,11 +634,137 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
             selectedCategory={selectedCategory}
           />
 
-          <div className="overflow-x-auto -mx-5 px-5">
+          {/* ═══════ MOBILE CATEGORY BUDGET CARDS (< 768px) ═══════ */}
+          <div className="block md:hidden space-y-3 mb-5">
+            {displayedItems.map((item) => {
+              const isSelected = activeCategories.includes(item.category);
+              const isOver = item.remaining < 0;
+              const pctUsed = item.effectiveBudget > 0 ? (item.spent / item.effectiveBudget) * 100 : 0;
+
+              return (
+                <div
+                  key={item.category}
+                  onClick={() => {
+                    if (onToggleCategory) {
+                      onToggleCategory(item.category);
+                    } else {
+                      onSelectCategory(isSelected ? 'ALL' : item.category);
+                    }
+                  }}
+                  className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-2.5 ${
+                    isSelected
+                      ? 'bg-sky-50/70 dark:bg-sky-950/40 border-sky-300 dark:border-sky-800'
+                      : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300'
+                  }`}
+                >
+                  {/* Card Header: Category badge + Percentage & Filter tag */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <CategoryBadge category={item.category} compact />
+                      {isSelected && (
+                        <span className="text-[10px] text-sky-700 dark:text-sky-300 font-semibold bg-sky-100 dark:bg-sky-950 px-1.5 py-0.5 rounded">
+                          Đang lọc
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                        {item.percentage.toFixed(1)}%
+                      </span>
+                      <span className="text-[10px] font-mono-tabular text-slate-400">
+                        {item.txCount} gd
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[11px] font-mono-tabular">
+                      <span className="text-slate-500 dark:text-slate-400">Tiến độ chi tiêu:</span>
+                      <span className={`font-bold ${
+                        isOver
+                          ? 'text-rose-600 dark:text-rose-400'
+                          : pctUsed > 85
+                          ? 'text-amber-600 dark:text-amber-400'
+                          : 'text-emerald-600 dark:text-emerald-400'
+                      }`}>
+                        {pctUsed.toFixed(0)}% {isOver ? '(Vượt ngân sách)' : ''}
+                      </span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          isOver
+                            ? 'bg-rose-500'
+                            : pctUsed > 85
+                            ? 'bg-amber-500'
+                            : 'bg-emerald-500'
+                        }`}
+                        style={{ width: `${Math.min(100, Math.max(3, pctUsed))}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 3 Main Numbers Grid */}
+                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs font-mono-tabular">
+                    <div>
+                      <div className="text-[10px] text-slate-400 uppercase">Khả dụng</div>
+                      <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
+                        {formatCurrency(item.effectiveBudget)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] text-slate-400 uppercase">Đã chi</div>
+                      <div className="font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                        {formatCurrency(item.spent)}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] text-slate-400 uppercase">Còn lại</div>
+                      <div className={`font-extrabold mt-0.5 ${
+                        isOver
+                          ? 'text-rose-600 dark:text-rose-400'
+                          : 'text-emerald-600 dark:text-emerald-400'
+                      }`}>
+                        {formatCurrency(item.remaining)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Optional Sub-info: Carryover / Dedicated / Transfers */}
+                  {(item.carryover !== 0 || item.dedicatedIncome > 0 || item.netTransfer !== 0) && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/60">
+                      {item.carryover !== 0 && (
+                        <span className={item.carryover > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
+                          {item.carryover > 0 ? `+${formatCurrency(item.carryover, true)} dư T trước` : `${formatCurrency(item.carryover)} nợ T trước`}
+                        </span>
+                      )}
+                      {item.dedicatedIncome > 0 && (
+                        <span className="text-teal-600 dark:text-teal-400">
+                          +{formatCurrency(item.dedicatedIncome, true)} thu riêng
+                        </span>
+                      )}
+                      {item.netTransfer !== 0 && (
+                        <span className={item.netTransfer > 0 ? 'text-emerald-600' : 'text-amber-600'}>
+                          {item.netTransfer > 0 ? `+${formatCurrency(item.netTransfer, true)} chuyển vào` : `${formatCurrency(item.netTransfer)} chuyển đi`}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ═══════ DESKTOP TABLE VIEW (>= 768px) ═══════ */}
+          <div className="hidden md:block overflow-x-auto -mx-5 px-5">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/90 dark:bg-slate-800/80 text-xs font-bold text-slate-700 dark:text-slate-300">
-                <th className="py-2.5 px-3">Hạng mục tiêu dùng</th>
+                <th className="py-2.5 px-3 sticky left-0 bg-slate-100 dark:bg-slate-800 z-10 whitespace-nowrap shadow-xs">
+                  Hạng mục tiêu dùng
+                </th>
                 <th className="py-2.5 px-3 text-center w-24">Tỷ lệ %</th>
                 <th className="py-2.5 px-3 text-right">Định mức tháng</th>
                 <th className="py-2.5 px-3 text-right">
@@ -656,19 +782,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                 <th className="py-2.5 px-3 text-center">Giao dịch</th>
               </tr>
             </thead>
-            <motion.tbody
-              key={`${selectedMonth}-${activeCategories.join(',')}`}
-              initial="hidden"
-              animate="show"
-              variants={{
-                hidden: { opacity: 0 },
-                show: {
-                  opacity: 1,
-                  transition: {
-                    staggerChildren: 0.035,
-                  },
-                },
-              }}
+            <tbody
               className="divide-y divide-slate-100 dark:divide-slate-800 font-mono-tabular"
             >
               {displayedItems.map((item) => {
@@ -676,12 +790,8 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                 const isOver = item.remaining < 0;
 
                 return (
-                  <motion.tr
+                  <tr
                     key={item.category}
-                    variants={{
-                      hidden: { opacity: 0, y: 6 },
-                      show: { opacity: 1, y: 0, transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] } },
-                    }}
                     onClick={() => {
                       if (onToggleCategory) {
                         onToggleCategory(item.category);
@@ -693,8 +803,8 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                       isSelected ? 'bg-sky-50/60 dark:bg-sky-950/40' : ''
                     }`}
                   >
-                    {/* Category Name & Badge */}
-                    <td className="py-2.5 px-3 font-sans">
+                    {/* Category Name & Badge (Sticky left on horizontal scroll) */}
+                    <td className="py-2.5 px-3 font-sans sticky left-0 bg-white dark:bg-slate-900 z-10 whitespace-nowrap shadow-xs">
                       <div className="flex items-center gap-2">
                         <CategoryBadge category={item.category} compact />
                         {isSelected && (
@@ -832,10 +942,10 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
                         <span className="text-slate-300 dark:text-slate-600">—</span>
                       )}
                     </td>
-                  </motion.tr>
+                  </tr>
                 );
               })}
-            </motion.tbody>
+            </tbody>
 
             {/* Footer Total Row */}
             <tfoot>

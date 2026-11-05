@@ -398,32 +398,32 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
   return (
     <div className="space-y-6">
       {/* ═══════ SUB-TAB NAVIGATION ═══════ */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-        <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 p-2 sm:p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-full pb-1 sm:pb-0">
           <button
             type="button"
             onClick={() => setActiveSubTab('reconcile')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               activeSubTab === 'reconcile'
                 ? 'bg-teal-700 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             <Calculator className="w-4 h-4" />
-            <span>01. Đối Soát Check Tiền</span>
+            <span><span className="hidden sm:inline">01. </span>Đối Soát Check Tiền</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveSubTab('accounts')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               activeSubTab === 'accounts'
                 ? 'bg-teal-700 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             <Users className="w-4 h-4" />
-            <span>02. Ví &amp; Tài Khoản (Heo &amp; Mèo)</span>
+            <span><span className="hidden sm:inline">02. </span>Ví &amp; Quỹ</span>
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
               activeSubTab === 'accounts' ? 'bg-teal-800 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200'
             }`}>
@@ -434,14 +434,14 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
           <button
             type="button"
             onClick={() => setActiveSubTab('becorp')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               activeSubTab === 'becorp'
                 ? 'bg-amber-600 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             <Car className="w-4 h-4" />
-            <span>03. Chu Trình BE Corp</span>
+            <span><span className="hidden sm:inline">03. </span>BE Corp</span>
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
               activeSubTab === 'becorp' ? 'bg-amber-700 text-white' : 'bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-200 border border-transparent dark:border-amber-800/60'
             }`}>
@@ -452,14 +452,14 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
           <button
             type="button"
             onClick={() => setActiveSubTab('credit')}
-            className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
               activeSubTab === 'credit'
                 ? 'bg-indigo-700 text-white shadow-xs'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             <CreditCard className="w-4 h-4" />
-            <span>04. Sao Kê Thẻ Credit</span>
+            <span><span className="hidden sm:inline">04. </span>Thẻ Credit</span>
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
               activeSubTab === 'credit' ? 'bg-indigo-800 text-white' : 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-900 dark:text-indigo-200 border border-transparent dark:border-indigo-800/60'
             }`}>
