@@ -74,6 +74,7 @@ export interface ItemSuggestion {
   count: number;
   typicalBeCorp: boolean;
   typicalCredit: boolean;
+  sheetType?: SheetTabType;
 }
 
 export const EXPENSE_CATEGORIES = [

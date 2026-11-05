@@ -56,6 +56,110 @@ const getTodayIsoDate = (): string => {
   return `${y}-${m}-${d}`;
 };
 
+// Predefined category-specific common transaction suggestions
+const CATEGORY_DEFAULT_SUGGESTIONS: Record<string, { item: string; typicalAmount?: number }[]> = {
+  'Tiết kiệm': [
+    { item: 'Gửi tiết kiệm ngân hàng', typicalAmount: 5000000 },
+    { item: 'Tích lũy tài khoản', typicalAmount: 2000000 },
+    { item: 'Mua vàng tích lũy' },
+    { item: 'Gửi tiết kiệm online', typicalAmount: 3000000 },
+    { item: 'Quỹ dự phòng khẩn cấp', typicalAmount: 1000000 },
+  ],
+  'Ăn uống': [
+    { item: 'Cơm trưa', typicalAmount: 50000 },
+    { item: 'Cà phê / Đồ uống', typicalAmount: 45000 },
+    { item: 'Ăn sáng', typicalAmount: 35000 },
+    { item: 'Đi chợ / Siêu thị', typicalAmount: 200000 },
+    { item: 'Ăn tối gia đình', typicalAmount: 150000 },
+  ],
+  'Thuê nhà': [
+    { item: 'Tiền thuê nhà tháng này' },
+    { item: 'Phí dịch vụ / Chung cư' },
+    { item: 'Tiền gửi xe', typicalAmount: 150000 },
+  ],
+  'Hóa/Mỹ phẩm': [
+    { item: 'Mỹ phẩm chăm sóc da', typicalAmount: 300000 },
+    { item: 'Dầu gội / Sữa tắm', typicalAmount: 150000 },
+    { item: 'Nước giặt / Nước rửa chén', typicalAmount: 120000 },
+  ],
+  'Thú cưng': [
+    { item: 'Hạt thức ăn cho mèo', typicalAmount: 250000 },
+    { item: 'Pate mèo', typicalAmount: 100000 },
+    { item: 'Cát vệ sinh mèo', typicalAmount: 120000 },
+    { item: 'Khám thú y / Thuốc cho mèo' },
+    { item: 'Cỏ mèo / Bánh thưởng', typicalAmount: 50000 },
+  ],
+  'Giải trí Heo': [
+    { item: 'Cafe / Gặp bạn Heo', typicalAmount: 100000 },
+    { item: 'Xem phim rạp', typicalAmount: 150000 },
+    { item: 'Game / Giải trí cá nhân', typicalAmount: 200000 },
+  ],
+  'Giải trí Mèo': [
+    { item: 'Cafe / Đi chơi Mèo', typicalAmount: 100000 },
+    { item: 'Xem phim rạp', typicalAmount: 150000 },
+    { item: 'Mua sắm giải trí Mèo', typicalAmount: 200000 },
+  ],
+  'Điện thoại/Xăng xe': [
+    { item: 'Đổ xăng xe máy / ô tô', typicalAmount: 100000 },
+    { item: 'Nạp tiền điện thoại / 4G', typicalAmount: 100000 },
+    { item: 'Bảo dưỡng / Thay nhớt xe', typicalAmount: 150000 },
+    { item: 'Vé gửi xe', typicalAmount: 20000 },
+  ],
+  'Quà tặng/Cưới hỏi': [
+    { item: 'Mừng cưới / Đám cưới', typicalAmount: 500000 },
+    { item: 'Quà sinh nhật', typicalAmount: 300000 },
+    { item: 'Quà biếu / Thăm hỏi', typicalAmount: 500000 },
+  ],
+  'Shopping': [
+    { item: 'Mua quần áo / Giày dép', typicalAmount: 350000 },
+    { item: 'Đơn hàng Shopee / Lazada', typicalAmount: 200000 },
+    { item: 'Đồ gia dụng gia đình', typicalAmount: 250000 },
+  ],
+  'Sức khỏe': [
+    { item: 'Mua thuốc tây', typicalAmount: 150000 },
+    { item: 'Khám bệnh / Xét nghiệm', typicalAmount: 500000 },
+    { item: 'Vitamin / Thực phẩm chức năng', typicalAmount: 300000 },
+  ],
+  'Du lịch': [
+    { item: 'Vé máy bay / Vé tàu' },
+    { item: 'Tiền phòng khách sạn' },
+    { item: 'Chi phí ăn uống du lịch' },
+  ],
+  'Lương Yes4All': [
+    { item: 'Lương Yes4All chuyển khoản' },
+    { item: 'Thưởng KPI Yes4All' },
+    { item: 'Phụ cấp Yes4All' },
+  ],
+  'Lương BE': [
+    { item: 'Lương BE chuyển khoản' },
+    { item: 'Thưởng dự án BE' },
+  ],
+  'Công đoàn Yes4All': [
+    { item: 'Trợ cấp công đoàn Yes4All' },
+    { item: 'Quà lễ tết công đoàn Yes4All' },
+  ],
+  'Công đoàn BE': [
+    { item: 'Trợ cấp công đoàn BE' },
+    { item: 'Quà lễ tết công đoàn BE' },
+  ],
+  'Chứng khoán': [
+    { item: 'Lợi nhuận cổ phiếu' },
+    { item: 'Cổ tức tiền mặt' },
+  ],
+  'Bán hàng': [
+    { item: 'Doanh thu bán hàng' },
+    { item: 'Thanh lý đồ cũ' },
+  ],
+  'Lương Heo': [
+    { item: 'Lương Heo' },
+    { item: 'Thưởng Heo' },
+  ],
+  'Lương Mèo': [
+    { item: 'Lương Mèo' },
+    { item: 'Thưởng Mèo' },
+  ],
+};
+
 export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   isOpen,
   onClose,
@@ -167,21 +271,59 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   };
 
   const filteredSuggestions = useMemo(() => {
-    if (sheetType !== 'Expenses') return [];
     const q = purchaseItem.trim().toLowerCase();
-    if (!q) return suggestions.slice(0, 6);
-    return suggestions
-      .filter(
-        (s) =>
-          s.item.toLowerCase().includes(q) ||
-          s.category.toLowerCase().includes(q)
-      )
-      .slice(0, 6);
-  }, [purchaseItem, suggestions, sheetType]);
+    const currentCat = category === '__CUSTOM__' ? customCategory.trim() : category;
+
+    // 1. Filter historical suggestions that STRICTLY match sheetType and category
+    const matched = suggestions.filter((s) => {
+      // Must match sheetType (if suggestion has sheetType defined)
+      if (s.sheetType && s.sheetType !== sheetType) return false;
+
+      // Must strictly match current category
+      if (currentCat) {
+        if (s.category.trim().toLowerCase() !== currentCat.trim().toLowerCase()) {
+          return false;
+        }
+      }
+
+      // If user typed a search query, filter by item name
+      if (q) {
+        return s.item.toLowerCase().includes(q);
+      }
+
+      return true;
+    });
+
+    // 2. Supplement with category-specific defaults if needed
+    const defaults = CATEGORY_DEFAULT_SUGGESTIONS[currentCat] || [];
+    const seen = new Set(matched.map((m) => m.item.toLowerCase()));
+    const supplemental: ItemSuggestion[] = [];
+
+    for (const def of defaults) {
+      if (!seen.has(def.item.toLowerCase())) {
+        if (!q || def.item.toLowerCase().includes(q)) {
+          supplemental.push({
+            item: def.item,
+            category: currentCat,
+            sheetType,
+            lastAmount: def.typicalAmount || 0,
+            count: 0,
+            typicalBeCorp: false,
+            typicalCredit: false,
+          });
+          seen.add(def.item.toLowerCase());
+        }
+      }
+    }
+
+    return [...matched, ...supplemental].slice(0, 8);
+  }, [purchaseItem, suggestions, sheetType, category, customCategory]);
 
   const applySuggestion = (s: ItemSuggestion) => {
     setPurchaseItem(s.item);
-    setCategory(s.category);
+    if (s.category && category === '__CUSTOM__') {
+      setCategory(s.category);
+    }
     if (!amountStr && s.lastAmount > 0) {
       setAmountStr(formatNumberForSheet(s.lastAmount, false, true));
       if (s.typicalBeCorp) setBeCorpStr(formatNumberForSheet(s.lastAmount, false, true));
@@ -623,48 +765,69 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           {/* Row 2: Purchase Item with Autocomplete */}
           <div className="relative">
             <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-semibold text-slate-700">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 {sheetType === 'Expenses' ? 'Nội dung chi tiêu' : 'Nội dung khoản thu'}
               </label>
-              {sheetType === 'Expenses' && (
-                <span className="text-[11px] text-slate-400 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-teal-600" />
-                  Gợi ý từ lịch sử
+              {filteredSuggestions.length > 0 && (
+                <span className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-teal-600 dark:text-teal-400" />
+                  <span>
+                    Gợi ý theo mục:{' '}
+                    <strong className="text-teal-600 dark:text-teal-400">
+                      {category === '__CUSTOM__' ? customCategory || 'Khác' : category}
+                    </strong>
+                  </span>
                 </span>
               )}
             </div>
             <input
               type="text"
               placeholder={
-                sheetType === 'Expenses'
-                  ? 'VD: Cafe, Bún nước tương, Cát mèo, Grab...'
-                  : 'VD: Lương tháng 10 Heo, Thưởng dự án Mèo...'
+                category === 'Tiết kiệm'
+                  ? 'VD: Gửi tiết kiệm VPBank, Tích lũy online...'
+                  : sheetType === 'Expenses'
+                    ? `VD: Nhập nội dung chi cho ${category}...`
+                    : `VD: Nhập nội dung khoản thu cho ${category}...`
               }
               value={purchaseItem}
               onFocus={() => setShowSuggestions(true)}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
               onChange={(e) => setPurchaseItem(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+              className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
             />
 
             {showSuggestions && filteredSuggestions.length > 0 && (
-              <div className="absolute z-20 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg py-1 max-h-48 overflow-y-auto">
-                <div className="px-3 py-1 text-[11px] text-slate-400 border-b border-slate-100">
-                  Món thường dùng gần đây:
+              <div className="absolute z-20 left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg py-1 max-h-56 overflow-y-auto">
+                <div className="px-3 py-1.5 text-[11px] text-slate-400 dark:text-slate-400 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                  <span>
+                    Gợi ý cho danh mục{' '}
+                    <strong className="text-teal-600 dark:text-teal-400">
+                      {category === '__CUSTOM__' ? customCategory || 'Khác' : category}
+                    </strong>
+                    :
+                  </span>
+                  <span className="text-[10px] text-slate-400">({filteredSuggestions.length})</span>
                 </div>
                 {filteredSuggestions.map((s) => (
                   <button
                     key={`${s.category}-${s.item}`}
                     type="button"
                     onMouseDown={() => applySuggestion(s)}
-                    className="w-full px-3 py-1.5 text-left text-xs hover:bg-slate-50 flex items-center justify-between gap-2 transition-colors"
+                    className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 dark:hover:bg-slate-700/60 flex items-center justify-between gap-2 transition-colors cursor-pointer"
                   >
-                    <div className="truncate">
-                      <span className="font-semibold text-slate-900">{s.item}</span>
-                      <span className="text-slate-400 mx-1.5">·</span>
-                      <span className="text-teal-700">{s.category}</span>
+                    <div className="truncate flex items-center gap-1.5">
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">{s.item}</span>
+                      {s.count > 0 ? (
+                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400">
+                          {s.count} lần
+                        </span>
+                      ) : (
+                        <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400">
+                          phổ biến
+                        </span>
+                      )}
                     </div>
-                    <span className="font-mono-tabular text-slate-500 shrink-0">
+                    <span className="font-mono-tabular text-slate-500 dark:text-slate-400 shrink-0 text-xs">
                       {s.lastAmount > 0 ? `${formatNumberForSheet(s.lastAmount)} ₫` : ''}
                     </span>
                   </button>

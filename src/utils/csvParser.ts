@@ -1,4 +1,4 @@
-import { ItemSuggestion, TransactionRecord } from '../types/finance';
+import { ItemSuggestion, SheetTabType, TransactionRecord } from '../types/finance';
 import { isPrivacyActive } from './privacyService';
 
 /**
@@ -329,7 +329,8 @@ export function parseAttachedExpenseCsv(csvText: string): TransactionRecord[] {
 
 /**
  * Builds frequency-sorted item suggestions from historical transactions
- * so typing "Cafe", "Cơm", "Bún", "Pate", "Cát mèo", etc. auto-fills category & typical amount.
+ * grouped by sheetType & category so selecting a category only suggests
+ * transactions that actually belong to that category.
  */
 export function buildItemSuggestions(records: TransactionRecord[]): ItemSuggestion[] {
   const map = new Map<
@@ -337,6 +338,7 @@ export function buildItemSuggestions(records: TransactionRecord[]): ItemSuggesti
     {
       item: string;
       category: string;
+      sheetType: SheetTabType;
       lastAmount: number;
       count: number;
       beCorpCount: number;
@@ -346,7 +348,12 @@ export function buildItemSuggestions(records: TransactionRecord[]): ItemSuggesti
 
   for (const rec of records) {
     if (!rec.purchaseItem || rec.purchaseItem.startsWith('(')) continue;
-    const key = rec.purchaseItem.trim().toLowerCase();
+    const itemClean = rec.purchaseItem.trim();
+    if (!itemClean) continue;
+    const catClean = (rec.category || '').trim();
+    const sheetType: SheetTabType = rec.sheetType === 'Income' ? 'Income' : 'Expenses';
+    const key = `${sheetType}:::${catClean.toLowerCase()}:::${itemClean.toLowerCase()}`;
+
     const existing = map.get(key);
     if (existing) {
       existing.count += 1;
@@ -355,8 +362,9 @@ export function buildItemSuggestions(records: TransactionRecord[]): ItemSuggesti
       if (rec.credit > 0) existing.creditCount += 1;
     } else {
       map.set(key, {
-        item: rec.purchaseItem.trim(),
-        category: rec.category,
+        item: itemClean,
+        category: catClean,
+        sheetType,
         lastAmount: rec.amount > 0 ? rec.amount : 0,
         count: 1,
         beCorpCount: rec.beCorp > 0 ? 1 : 0,
@@ -370,6 +378,7 @@ export function buildItemSuggestions(records: TransactionRecord[]): ItemSuggesti
     .map((entry) => ({
       item: entry.item,
       category: entry.category,
+      sheetType: entry.sheetType,
       lastAmount: entry.lastAmount,
       count: entry.count,
       typicalBeCorp: entry.beCorpCount > entry.count / 2,
