@@ -2146,7 +2146,7 @@ export default function App() {
                   <Lock className="w-3.5 h-3.5" />
                 </button>
 
-                {/* Kinlo Primary Action Button (+ Thêm giao dịch) */}
+                {/* Kinlo Primary Action Button (Thêm giao dịch) */}
                 <button
                   type="button"
                   onClick={(e) => {
@@ -2157,8 +2157,8 @@ export default function App() {
                   className="magnetic kinlo-btn-primary px-3 sm:px-4 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-md active:scale-95 transition-transform"
                 >
                   <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">+ Thêm giao dịch</span>
-                  <span className="sm:hidden">+ Thêm</span>
+                  <span className="hidden sm:inline">Thêm giao dịch</span>
+                  <span className="sm:hidden">Thêm</span>
                 </button>
               </div>
             </header>
@@ -2266,8 +2266,8 @@ export default function App() {
                   className="magnetic kinlo-btn-primary px-3 sm:px-4 py-1.5 sm:py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95 transition-transform"
                 >
                   <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">+ Thêm giao dịch</span>
-                  <span className="sm:hidden">+ Thêm</span>
+                  <span className="hidden sm:inline">Thêm giao dịch</span>
+                  <span className="sm:hidden">Thêm</span>
                 </button>
               </div>
             </header>
