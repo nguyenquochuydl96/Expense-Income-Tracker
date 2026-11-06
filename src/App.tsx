@@ -274,9 +274,12 @@ export default function App() {
 
   // Kinlo Animation refs & interactive micro-interactions (magnetic buttons & card lift)
   const dashboardRef = useRef<HTMLDivElement>(null);
-  useKinloInteractions();
+  useKinloInteractions(undefined, [activeTab, preset]);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
     if (activeTab === 'dashboard' && dashboardRef.current) {
       const cards = dashboardRef.current.querySelectorAll('.kinlo-card, .kinlo-card-night, [data-card-entrance]');
       if (cards.length > 0) {
@@ -1115,7 +1118,7 @@ export default function App() {
 
       if (pendingTransactions.length > 0) {
         // Sort chronologically
-        pendingTransactions.sort((a, b) => a.isoDate.localeCompare(b.isoDate));
+        pendingTransactions.sort((a, b) => (a.isoDate || '').localeCompare(b.isoDate || ''));
 
         setLocalNewRecords((prev) =>
           prev.map((r) => (pendingMap.has(r.id) ? { ...r, syncing: true } : r))
@@ -1189,7 +1192,7 @@ export default function App() {
       const pushedBtIds = new Set<string>();
 
       if (pendingTransfers.length > 0) {
-        pendingTransfers.sort((a, b) => a.isoDate.localeCompare(b.isoDate));
+        pendingTransfers.sort((a, b) => (a.isoDate || '').localeCompare(b.isoDate || ''));
         const btTab = meta.budgetTransfersTab || 'Budget Transfers';
         for (const transfer of pendingTransfers) {
           try {

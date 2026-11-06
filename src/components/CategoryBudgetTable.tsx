@@ -344,7 +344,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
     if (activeCategories.length === 0) return [];
     return recordsInPeriod
       .filter((r) => activeCategories.includes(r.category) && r.sheetType === 'Expenses')
-      .sort((a, b) => b.isoDate.localeCompare(a.isoDate));
+      .sort((a, b) => (b.isoDate || '').localeCompare(a.isoDate || ''));
   }, [recordsInPeriod, activeCategories]);
 
   // Relevant budget transfers affecting this category in this month
@@ -357,7 +357,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
         if (selectedMonth === 'ALL') return true;
         return bt.monthKey === selectedMonth;
       })
-      .sort((a, b) => b.isoDate.localeCompare(a.isoDate));
+      .sort((a, b) => (b.isoDate || '').localeCompare(a.isoDate || ''));
   }, [budgetTransfers, activeCategories, selectedMonth]);
 
   // Handlers for editing percentages

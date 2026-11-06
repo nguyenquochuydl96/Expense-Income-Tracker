@@ -312,7 +312,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
           r.isoDate >= beStartDate &&
           r.isoDate <= beEndDate
       )
-      .sort((a, b) => b.isoDate.localeCompare(a.isoDate) || ((b.rowIndex || 0) - (a.rowIndex || 0)));
+      .sort((a, b) => (b.isoDate || '').localeCompare(a.isoDate || '') || ((b.rowIndex || 0) - (a.rowIndex || 0)));
 
     const totalBeCorp = items.reduce((sum, r) => sum + r.beCorp, 0);
     const totalPersonalAmount = items.reduce((sum, r) => sum + r.amount, 0);
@@ -354,7 +354,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = ({
           r.isoDate >= creditStartDate &&
           r.isoDate <= creditEndDate
       )
-      .sort((a, b) => b.isoDate.localeCompare(a.isoDate) || ((b.rowIndex || 0) - (a.rowIndex || 0)));
+      .sort((a, b) => (b.isoDate || '').localeCompare(a.isoDate || '') || ((b.rowIndex || 0) - (a.rowIndex || 0)));
 
     const totalCredit = items.reduce((sum, r) => sum + r.credit, 0);
     const avgPerTransaction = items.length > 0 ? Math.round(totalCredit / items.length) : 0;

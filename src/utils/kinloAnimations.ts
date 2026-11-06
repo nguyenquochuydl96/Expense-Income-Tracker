@@ -29,6 +29,26 @@ export function animateCardsEntrance(
   const list = Array.from(elements).filter(Boolean) as Element[];
   if (!list.length) return;
 
+  const isMobile = !canHover() || (typeof window !== 'undefined' && window.innerWidth < 768);
+
+  if (isMobile) {
+    return gsap.fromTo(
+      list,
+      { opacity: 0, y: 16 },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.35,
+        ease: 'power2.out',
+        stagger: options?.stagger ?? 0.03,
+        delay: options?.delay ?? 0,
+        overwrite: 'auto',
+        clearProps: 'transform,opacity',
+        onComplete: options?.onComplete,
+      }
+    );
+  }
+
   return gsap.fromTo(
     list,
     {

@@ -392,14 +392,25 @@
   transform: translateY(-1px);
 }
 
-/* Kinlo Magnetic & Interactive Elements */
+/* Kinlo Magnetic & Interactive Elements (GPU Layer Optimization) */
 .magnetic {
-  will-change: transform;
   display: inline-flex;
 }
 
-[data-lift] {
-  will-change: transform;
+@media (hover: hover) and (pointer: fine) {
+  .magnetic:hover,
+  [data-lift]:hover {
+    will-change: transform;
+  }
+}
+
+/* Touch & Smooth Scroll Performance */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+.overflow-x-auto,
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Kinlo Floating Delta Tag */

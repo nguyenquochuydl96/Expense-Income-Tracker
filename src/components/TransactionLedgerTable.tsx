@@ -131,7 +131,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
       if (sortOrder === 'amount_desc') {
         return Math.abs(b.amount) - Math.abs(a.amount);
       }
-      const dateCmp = a.isoDate.localeCompare(b.isoDate);
+      const dateCmp = (a.isoDate || '').localeCompare(b.isoDate || '');
       if (dateCmp !== 0) {
         return sortOrder === 'newest' ? -dateCmp : dateCmp;
       }
@@ -499,7 +499,6 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
             return (
               <div
                 key={rec.id}
-                data-lift
                 className="p-3.5 space-y-2 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all rounded-xl"
               >
                 {/* Header: Date, Category badge, Sheet type */}
