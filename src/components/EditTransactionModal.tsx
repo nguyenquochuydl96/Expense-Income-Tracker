@@ -188,16 +188,16 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {errorMsg && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/70 rounded-xl text-xs text-rose-700 dark:text-rose-300 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {/* Row 1: Sheet type selector */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Loại giao dịch</label>
-            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Loại giao dịch</label>
+            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl">
               <button
                 type="button"
                 onClick={() => {
@@ -206,8 +206,8 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 }}
                 className={`py-1.5 text-xs font-semibold rounded-lg transition-all ${
                   sheetType === 'Expenses'
-                    ? 'bg-white text-rose-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-rose-950/70 text-rose-700 dark:text-rose-300 shadow-xs border border-transparent dark:border-rose-800/60'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 Chi tiêu (Expenses)
@@ -222,8 +222,8 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 }}
                 className={`py-1.5 text-xs font-semibold rounded-lg transition-all ${
                   sheetType === 'Income'
-                    ? 'bg-white text-emerald-700 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
+                    ? 'bg-white dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 shadow-xs border border-transparent dark:border-emerald-800/60'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                 }`}
               >
                 Thu nhập (Income)

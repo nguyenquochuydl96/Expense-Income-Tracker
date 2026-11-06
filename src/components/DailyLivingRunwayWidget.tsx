@@ -675,11 +675,11 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
           </div>
           <div className="flex items-center gap-1.5 text-[11px]">
             {summary.isPacingSafe ? (
-              <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-medium">
+              <span className="text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/80 font-medium">
                 🟢 Nhịp độ an toàn
               </span>
             ) : (
-              <span className="text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 font-semibold">
+              <span className="text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-800/80 font-semibold">
                 ⚠️ Cần giảm tốc độ chi
               </span>
             )}

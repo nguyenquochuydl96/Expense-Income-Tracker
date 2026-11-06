@@ -13,6 +13,7 @@ import {
 import { TransactionRecord } from '../types/finance';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { PigIcon, SiameseCatIcon } from '../utils/categoryIcons';
+import { usePrivacyMode } from '../utils/privacyService';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface MonthlyReportCardModalProps {
@@ -28,6 +29,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
   selectedMonth,
   allRecords,
 }) => {
+  const { isPrivate: _isPrivate } = usePrivacyMode();
   const [copied, setCopied] = useState<boolean>(false);
   const [isGeneratingImg, setIsGeneratingImg] = useState<boolean>(false);
   const [mobileTab, setMobileTab] = useState<'cover' | 'insights'>('cover');

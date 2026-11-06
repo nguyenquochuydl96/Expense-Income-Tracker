@@ -535,16 +535,16 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
           {/* Connection Status Banner */}
           {isSheetConnected ? (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-lg text-xs text-emerald-800">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/70 rounded-lg text-xs text-emerald-800 dark:text-emerald-200">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>
                 Đang kết nối Google Sheet · Ghi vào bảng <strong>{modalMode === 'Expenses' ? (expensesTabName || 'Expenses') : modalMode === 'Income' ? (incomeTabName || 'Income') : 'Budget Transfers'}</strong>
               </span>
             </div>
           ) : (
-            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/70 rounded-lg text-xs text-amber-900 dark:text-amber-200">
               <div className="flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
                 <span>Chưa kết nối Google Sheet (Dữ liệu sẽ lưu tạm trên máy).</span>
               </div>
               {onGoogleLogin && (
@@ -745,7 +745,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               )}
 
               {sheetType === 'Income' && EXPENSE_CATEGORIES.includes(category as any) && (
-                <div className="mt-1.5 p-2 bg-teal-50 border border-teal-200 rounded-lg flex items-start gap-1.5 text-[11px] text-teal-900">
+                <div className="mt-1.5 p-2 bg-teal-50 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800/70 rounded-lg flex items-start gap-1.5 text-[11px] text-teal-900 dark:text-teal-200">
                   <span className="shrink-0 text-xs">🎯</span>
                   <span>
                     Khoản này sẽ <strong>cộng thẳng 100%</strong> vào ngân sách của danh mục <strong>{category}</strong>, không chia cho các mục khác.

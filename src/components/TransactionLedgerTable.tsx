@@ -249,7 +249,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
 
         {/* Pending Offline Transactions Alert */}
         {records.some((r) => r.source === 'local_new' && !r.syncedToSheet) && (
-          <div className="p-3 bg-amber-50 border border-amber-200/90 rounded-xl flex flex-wrap items-center justify-between gap-2.5 text-xs text-amber-900 shadow-2xs">
+          <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/90 dark:border-amber-800/70 rounded-xl flex flex-wrap items-center justify-between gap-2.5 text-xs text-amber-900 dark:text-amber-200 shadow-2xs">
             <div className="flex items-center gap-2">
               <span className="flex h-2 w-2 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
