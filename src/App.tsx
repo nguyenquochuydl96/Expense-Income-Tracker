@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, lazy, Suspense } from 'react';
 import {
   Plus,
   RefreshCw,
@@ -21,9 +21,7 @@ import { PigIcon, SiameseCatIcon } from './utils/categoryIcons';
 import { AppLockScreen, isDeviceUnlocked, lockDevice } from './components/AppLockScreen';
 import { usePrivacyMode } from './utils/privacyService';
 import { useThemeMode } from './utils/themeService';
-import { PwaInstallModal } from './components/PwaInstallModal';
 import { CalendarHeatmapView } from './components/CalendarHeatmapView';
-import { MonthlyReportCardModal } from './components/MonthlyReportCardModal';
 import { MultiMonthPickerDropdown, formatSelectedMonthsDisplay } from './components/MultiMonthPickerDropdown';
 import { MultiCategoryPickerDropdown } from './components/MultiCategoryPickerDropdown';
 import { KinloCashflowCard } from './components/KinloCashflowCard';
@@ -79,12 +77,7 @@ import {
   DEFAULT_WEB_APP_URL,
   getStoredWebAppUrl,
 } from './services/appsScriptService';
-import { AnalyticsCharts } from './components/AnalyticsCharts';
-import {
-  AddTransactionModal,
-  NewTransactionPayload,
-} from './components/AddTransactionModal';
-import { EditTransactionModal } from './components/EditTransactionModal';
+import type { NewTransactionPayload } from './components/AddTransactionModal';
 import { TransactionLedgerTable } from './components/TransactionLedgerTable';
 import { MultiMonthSummaryTable } from './components/MultiMonthSummaryTable';
 import {
@@ -95,8 +88,29 @@ import {
   SAVED_ROLLOVER_MODE_KEY,
   RolloverMode,
 } from './components/CategoryBudgetTable';
-import { ReconcileCheckTienView } from './components/ReconcileCheckTienView';
-import { SheetSyncPanel } from './components/SheetSyncPanel';
+
+// Lazy-loaded heavy modals and secondary views for optimal startup speed and minimal memory
+const AddTransactionModal = lazy(() =>
+  import('./components/AddTransactionModal').then((m) => ({ default: m.AddTransactionModal }))
+);
+const EditTransactionModal = lazy(() =>
+  import('./components/EditTransactionModal').then((m) => ({ default: m.EditTransactionModal }))
+);
+const MonthlyReportCardModal = lazy(() =>
+  import('./components/MonthlyReportCardModal').then((m) => ({ default: m.MonthlyReportCardModal }))
+);
+const PwaInstallModal = lazy(() =>
+  import('./components/PwaInstallModal').then((m) => ({ default: m.PwaInstallModal }))
+);
+const ReconcileCheckTienView = lazy(() =>
+  import('./components/ReconcileCheckTienView').then((m) => ({ default: m.ReconcileCheckTienView }))
+);
+const SheetSyncPanel = lazy(() =>
+  import('./components/SheetSyncPanel').then((m) => ({ default: m.SheetSyncPanel }))
+);
+const AnalyticsCharts = lazy(() =>
+  import('./components/AnalyticsCharts').then((m) => ({ default: m.AnalyticsCharts }))
+);
 
 type ActiveTab = 'dashboard' | 'ledger' | 'reconcile' | 'sync';
 
@@ -2481,20 +2495,28 @@ export default function App() {
 
                 {/* ═══════ OPTIONAL: BIỂU ĐỒ BỔ TRỢ (TOP CHI TIÊU & TỶ TRỌNG) KHI BẬT ═══════ */}
                 {showCharts && (
-                  <AnalyticsCharts
-                    expensesInPeriod={periodRecords}
-                    allRecords={allRecords}
-                    selectedMonth={selectedMonth}
-                    selectedMonths={selectedMonths}
-                    onSelectMonth={handleSelectMonth}
-                    onToggleMonth={handleToggleMonth}
-                    selectedCategoryFilter={selectedCategory}
-                    onSelectCategoryFilter={handleSelectCategory}
-                    selectedCategories={isAllCategoriesSelected ? [] : selectedCategories}
-                    onToggleCategoryFilter={handleToggleCategory}
-                    monthlyBaseIncome={monthlyBaseIncome}
-                    isPrivate={isPrivate}
-                  />
+                  <Suspense
+                    fallback={
+                      <div className="p-8 text-center text-xs text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                        Đang tải biểu đồ phân tích...
+                      </div>
+                    }
+                  >
+                    <AnalyticsCharts
+                      expensesInPeriod={periodRecords}
+                      allRecords={allRecords}
+                      selectedMonth={selectedMonth}
+                      selectedMonths={selectedMonths}
+                      onSelectMonth={handleSelectMonth}
+                      onToggleMonth={handleToggleMonth}
+                      selectedCategoryFilter={selectedCategory}
+                      onSelectCategoryFilter={handleSelectCategory}
+                      selectedCategories={isAllCategoriesSelected ? [] : selectedCategories}
+                      onToggleCategoryFilter={handleToggleCategory}
+                      monthlyBaseIncome={monthlyBaseIncome}
+                      isPrivate={isPrivate}
+                    />
+                  </Suspense>
                 )}
 
                 {/* ═══════ LỊCH CHI TIÊU TRỰC QUAN (CALENDAR HEATMAP VIEW) ═══════ */}
@@ -2538,43 +2560,59 @@ export default function App() {
               {/* VIEW 3: CHECK TIỀN & CHU KỲ BE CORP / CREDIT */}
               {activeTab === 'reconcile' && (
                 <div key="reconcile" className="animate-in fade-in duration-200">
-                  <ReconcileCheckTienView
-                    allRecords={allRecords}
-                    selectedMonth={selectedMonth}
-                    onOpenAddWithPreset={(preset) => {
-                      setAddModalPreset(preset);
-                      setIsAddModalOpen(true);
-                    }}
-                    checkTienData={checkTienData}
-                    onEditTransaction={(tx) => setEditingTransaction(tx)}
-                  />
+                  <Suspense
+                    fallback={
+                      <div className="p-12 text-center text-xs text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                        Đang nạp màn hình đối soát ví & thẻ...
+                      </div>
+                    }
+                  >
+                    <ReconcileCheckTienView
+                      allRecords={allRecords}
+                      selectedMonth={selectedMonth}
+                      onOpenAddWithPreset={(preset) => {
+                        setAddModalPreset(preset);
+                        setIsAddModalOpen(true);
+                      }}
+                      checkTienData={checkTienData}
+                      onEditTransaction={(tx) => setEditingTransaction(tx)}
+                    />
+                  </Suspense>
                 </div>
               )}
 
               {/* VIEW 4: GOOGLE SHEET SYNC PANEL */}
               {activeTab === 'sync' && (
                 <div key="sync" className="animate-in fade-in duration-200">
-                  <SheetSyncPanel
-                    user={user}
-                    accessToken={accessToken}
-                    isLoggingIn={isLoggingIn}
-                    onGoogleLogin={handleGoogleLogin}
-                    onGoogleLogout={handleGoogleLogout}
-                    spreadsheetInput={spreadsheetInput}
-                    onChangeSpreadsheetInput={setSpreadsheetInput}
-                    sheetMeta={sheetMeta}
-                    isSyncing={isSyncing}
-                    syncError={syncError}
-                    lastSyncedAt={lastSyncedAt}
-                    onConnectAndSyncSheet={handleConnectAndSyncSheet}
-                    pendingLocalRecords={localNewRecords.filter((r) => !r.syncedToSheet)}
-                    onPushPendingToSheet={handlePushPendingToSheet}
-                    onExportCsv={handleExportCsv}
-                    totalExpensesCount={totalExpensesCount}
-                    totalIncomeCount={totalIncomeCount}
-                    onSelectIncomeTab={handleSelectIncomeTab}
-                    onSelectExpensesTab={handleSelectExpensesTab}
-                  />
+                  <Suspense
+                    fallback={
+                      <div className="p-12 text-center text-xs text-slate-400 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                        Đang nạp bảng đồng bộ Google Sheet...
+                      </div>
+                    }
+                  >
+                    <SheetSyncPanel
+                      user={user}
+                      accessToken={accessToken}
+                      isLoggingIn={isLoggingIn}
+                      onGoogleLogin={handleGoogleLogin}
+                      onGoogleLogout={handleGoogleLogout}
+                      spreadsheetInput={spreadsheetInput}
+                      onChangeSpreadsheetInput={setSpreadsheetInput}
+                      sheetMeta={sheetMeta}
+                      isSyncing={isSyncing}
+                      syncError={syncError}
+                      lastSyncedAt={lastSyncedAt}
+                      onConnectAndSyncSheet={handleConnectAndSyncSheet}
+                      pendingLocalRecords={localNewRecords.filter((r) => !r.syncedToSheet)}
+                      onPushPendingToSheet={handlePushPendingToSheet}
+                      onExportCsv={handleExportCsv}
+                      totalExpensesCount={totalExpensesCount}
+                      totalIncomeCount={totalIncomeCount}
+                      onSelectIncomeTab={handleSelectIncomeTab}
+                      onSelectExpensesTab={handleSelectExpensesTab}
+                    />
+                  </Suspense>
                 </div>
               )}
             </div>
@@ -2583,35 +2621,61 @@ export default function App() {
       </main>
       </div>
 
-      {/* ADD TRANSACTION MODAL */}
-      <AddTransactionModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSave={handleSaveTransaction}
-        onSaveTransfer={handleSaveTransfer}
-        suggestions={itemSuggestions}
-        isSheetConnected={Boolean(
-          (sheetMeta || spreadsheetInput) &&
-          (accessToken || getStoredAccessToken() || isAppsScriptUrl(spreadsheetInput) || isAppsScriptUrl(sheetMeta?.spreadsheetId))
+      <Suspense fallback={null}>
+        {/* ADD TRANSACTION MODAL */}
+        {isAddModalOpen && (
+          <AddTransactionModal
+            isOpen={isAddModalOpen}
+            onClose={() => setIsAddModalOpen(false)}
+            onSave={handleSaveTransaction}
+            onSaveTransfer={handleSaveTransfer}
+            suggestions={itemSuggestions}
+            isSheetConnected={Boolean(
+              (sheetMeta || spreadsheetInput) &&
+              (accessToken || getStoredAccessToken() || isAppsScriptUrl(spreadsheetInput) || isAppsScriptUrl(sheetMeta?.spreadsheetId))
+            )}
+            initialPreset={addModalPreset}
+            allRecords={allRecords}
+            onGoogleLogin={handleGoogleLogin}
+            expensesTabName={sheetMeta?.expensesTab || 'Expenses'}
+            incomeTabName={sheetMeta?.incomeTab || 'Income'}
+          />
         )}
-        initialPreset={addModalPreset}
-        allRecords={allRecords}
-        onGoogleLogin={handleGoogleLogin}
-        expensesTabName={sheetMeta?.expensesTab || 'Expenses'}
-        incomeTabName={sheetMeta?.incomeTab || 'Income'}
-      />
 
-      {/* EDIT TRANSACTION MODAL */}
-      <EditTransactionModal
-        isOpen={Boolean(editingTransaction)}
-        onClose={() => setEditingTransaction(null)}
-        record={editingTransaction}
-        onSave={handleSaveEditedTransaction}
-        onDeleteRequest={(rec) => {
-          setEditingTransaction(null);
-          setDeletingTransaction(rec);
-        }}
-      />
+        {/* EDIT TRANSACTION MODAL */}
+        {editingTransaction && (
+          <EditTransactionModal
+            isOpen={Boolean(editingTransaction)}
+            onClose={() => setEditingTransaction(null)}
+            record={editingTransaction}
+            onSave={handleSaveEditedTransaction}
+            onDeleteRequest={(rec) => {
+              setEditingTransaction(null);
+              setDeletingTransaction(rec);
+            }}
+          />
+        )}
+
+        {/* PWA Install Guide Modal */}
+        {isInstallModalOpen && (
+          <PwaInstallModal
+            isOpen={isInstallModalOpen}
+            onClose={() => setIsInstallModalOpen(false)}
+            deferredPrompt={deferredPrompt}
+            onInstallSuccess={() => showToast('success', 'Đã cài đặt ứng dụng thành công!')}
+          />
+        )}
+
+        {/* Monthly Report Card Modal (Infographic Card & Image Export) */}
+        {isReportModalOpen && (
+          <MonthlyReportCardModal
+            isOpen={isReportModalOpen}
+            onClose={() => setIsReportModalOpen(false)}
+            selectedMonth={selectedMonth}
+            allRecords={allRecords}
+          />
+        )}
+      </Suspense>
 
       {/* DELETE CONFIRMATION MODAL */}
       <AnimatePresence>
@@ -2701,22 +2765,6 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* PWA Install Guide Modal */}
-      <PwaInstallModal
-        isOpen={isInstallModalOpen}
-        onClose={() => setIsInstallModalOpen(false)}
-        deferredPrompt={deferredPrompt}
-        onInstallSuccess={() => showToast('success', 'Đã cài đặt ứng dụng thành công!')}
-      />
-
-      {/* Monthly Report Card Modal (Infographic Card & Image Export) */}
-      <MonthlyReportCardModal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-        selectedMonth={selectedMonth}
-        allRecords={allRecords}
-      />
 
       {/* ═══════ KINLO MOBILE BOTTOM NAVIGATION BAR (< md) ═══════ */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--glass)] backdrop-blur-2xl border-t border-[var(--line)] shadow-2xl px-2 py-1.5 flex items-center justify-around text-center">

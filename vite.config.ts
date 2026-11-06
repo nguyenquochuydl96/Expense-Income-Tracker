@@ -25,10 +25,17 @@ export default defineConfig(() => {
       rollupOptions: {
         output: {
           manualChunks(id) {
+            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+              return 'vendor-react';
+            }
             if (id.includes('node_modules/firebase')) {
               return 'vendor-firebase';
             }
-            if (id.includes('node_modules/gsap') || id.includes('node_modules/motion')) {
+            if (
+              id.includes('node_modules/gsap') ||
+              id.includes('node_modules/motion') ||
+              id.includes('node_modules/@animate-ui')
+            ) {
               return 'vendor-animation';
             }
             if (id.includes('node_modules/lucide-react')) {
