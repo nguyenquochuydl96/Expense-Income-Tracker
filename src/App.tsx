@@ -10,7 +10,6 @@ import {
   LayoutGrid,
   CalendarRange,
   Filter,
-  Bot,
   Trash2,
   Lock,
   KeyRound,
@@ -115,7 +114,6 @@ import {
 } from './components/CategoryBudgetTable';
 import { ReconcileCheckTienView } from './components/ReconcileCheckTienView';
 import { SheetSyncPanel } from './components/SheetSyncPanel';
-import { TelegramBotModal } from './components/TelegramBotModal';
 
 type ActiveTab = 'dashboard' | 'ledger' | 'reconcile' | 'sync';
 
@@ -259,7 +257,6 @@ export default function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [addModalPreset, setAddModalPreset] =
     useState<Partial<NewTransactionPayload> | null>(null);
-  const [isTelegramModalOpen, setIsTelegramModalOpen] = useState<boolean>(false);
 
   // Edit & Delete Transaction modal state
   const [editingTransaction, setEditingTransaction] = useState<TransactionRecord | null>(null);
@@ -319,10 +316,6 @@ export default function App() {
           setIsReportModalOpen(false);
           return;
         }
-        if (isTelegramModalOpen) {
-          setIsTelegramModalOpen(false);
-          return;
-        }
         if (isInstallModalOpen) {
           setIsInstallModalOpen(false);
           return;
@@ -339,7 +332,6 @@ export default function App() {
     editingTransaction,
     isAddModalOpen,
     isReportModalOpen,
-    isTelegramModalOpen,
     isInstallModalOpen,
   ]);
 
@@ -1826,22 +1818,6 @@ export default function App() {
                     </button>
                   );
                 })}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    animateIconBounce(e.currentTarget);
-                    setIsTelegramModalOpen(true);
-                  }}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-[var(--side-muted)] hover:text-[var(--side-ink)] hover:bg-black/5 dark:hover:bg-white/5 transition-all cursor-pointer"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <Bot className="w-4 h-4 text-amber-500 shrink-0" />
-                    <span>Bot Telegram</span>
-                  </div>
-                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400">
-                    Auto
-                  </span>
-                </button>
               </nav>
             </div>
 
@@ -2033,18 +2009,6 @@ export default function App() {
                     </button>
                   );
                 })}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    animateIconBounce(e.currentTarget);
-                    setIsTelegramModalOpen(true);
-                  }}
-                  className="px-2.5 py-1.5 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] transition-colors flex items-center gap-1 text-xs font-semibold cursor-pointer magnetic"
-                  title="Mở hướng dẫn & cú pháp Telegram Bot"
-                >
-                  <Bot className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Bot Telegram</span>
-                </button>
               </nav>
 
               {/* Right Action Controls */}
@@ -2658,13 +2622,6 @@ export default function App() {
         onGoogleLogin={handleGoogleLogin}
         expensesTabName={sheetMeta?.expensesTab || 'Expenses'}
         incomeTabName={sheetMeta?.incomeTab || 'Income'}
-      />
-
-      {/* TELEGRAM BOT QUICK-ADD MODAL */}
-      <TelegramBotModal
-        isOpen={isTelegramModalOpen}
-        onClose={() => setIsTelegramModalOpen(false)}
-        spreadsheetUrl={spreadsheetInput}
       />
 
       {/* EDIT TRANSACTION MODAL */}

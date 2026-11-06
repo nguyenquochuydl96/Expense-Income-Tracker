@@ -125,7 +125,7 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
     - Dao động trong $\pm 5\%$: 🟡 Vàng cam (`text-amber-300`).
 * **Đồng bộ đa kênh:**
   - Hiển thị trực quan trong modal.
-  - Tự động xuất hiện trong nội dung copy tóm tắt nhanh gửi qua Telegram / Zalo (`handleCopySummary`).
+  - Tự động xuất hiện trong nội dung copy tóm tắt nhanh (`handleCopySummary`).
   - Tự động vẽ vào thiệp ảnh PNG chất lượng cao để tải về máy hoặc chia sẻ (`handleDownloadImage`, canvas tự mở rộng chiều cao, text wrapping an toàn).
 
 ### 2.9 Bộ lọc thông minh 1 chạm (Smart Quick Filter Chips) trong Sổ giao dịch
@@ -163,12 +163,11 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
 
 ### 2.13 Khả năng truy cập phím tắt (Universal Escape Listener) & Tối ưu Typography Mobile
 * **Phím tắt `Escape` đóng nhanh:**
-  - Tích hợp `useEffect` lắng nghe sự kiện phím `Escape` ở cấp cao nhất (tuân thủ 100% Rules of Hooks) trên toàn bộ 5 popup modal:
+  - Tích hợp `useEffect` lắng nghe sự kiện phím `Escape` ở cấp cao nhất (tuân thủ 100% Rules of Hooks) trên toàn bộ các popup modal:
     1. [`AddTransactionModal.tsx`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/components/AddTransactionModal.tsx)
     2. [`EditTransactionModal.tsx`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/components/EditTransactionModal.tsx)
     3. [`MonthlyReportCardModal.tsx`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/components/MonthlyReportCardModal.tsx)
-    4. [`TelegramBotModal.tsx`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/components/TelegramBotModal.tsx)
-    5. [`PwaInstallModal.tsx`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/components/PwaInstallModal.tsx)
+    4. [`PwaInstallModal.tsx`](file:///C:/Users/huynq/.gemini/antigravity/scratch/Expense-Income-Tracker/src/components/PwaInstallModal.tsx)
 * **Chống cắt chữ số KPI trên màn hình nhỏ:**
   - Tinh chỉnh cỡ font số tiền tại cả 5 thẻ KPI tổng (`kpiStats`) và 5 thẻ KPI hạng mục (`categoryKpiStats`) từ `text-2xl sm:text-3xl` thành `text-xl sm:text-2xl lg:text-3xl` font-mono-tabular, đảm bảo hiển thị trọn vẹn số tiền lên tới hàng trăm triệu/tỷ trên mọi dòng smartphone < 400px.
 
@@ -203,7 +202,7 @@ Giải quyết nhu cầu xem đồng thời nhiều tháng từ sheet `Summary` 
   - Tự động tương thích với chế độ riêng tư (Privacy Mode): khi che số hiển thị `•••••• ₫` không bị lỗi.
   - Phản hồi xúc giác vi mô: Thẻ KPI hỗ trợ `whileHover={{ y: -3 }}` và `whileTap={{ scale: 0.98 }}`.
 * **Hộp thoại Modal & Dropdown Popover:**
-  - Toàn bộ 5 Modal (`AddTransactionModal`, `EditTransactionModal`, `MonthlyReportCardModal`, `TelegramBotModal`, `PwaInstallModal`) và Hộp thoại xác nhận xóa được nâng cấp lên `<AnimatePresence>` kết hợp hiệu ứng backdrop fade và spring pop-in (`damping: 26, stiffness: 320`), tự động trượt ra nhẹ nhàng khi đóng.
+  - Toàn bộ các Modal (`AddTransactionModal`, `EditTransactionModal`, `MonthlyReportCardModal`, `PwaInstallModal`) và Hộp thoại xác nhận xóa được nâng cấp lên `<AnimatePresence>` kết hợp hiệu ứng backdrop fade và spring pop-in (`damping: 26, stiffness: 320`), tự động trượt ra nhẹ nhàng khi đóng.
   - Cả 2 Dropdown đa chọn (`MultiMonthPickerDropdown` & `MultiCategoryPickerDropdown`) mở ra với scale-in spring và thu lại mượt mà khi đóng.
 * **Banner & Toast Notification:** Toast thông báo và Banner danh mục lọc mở rộng/thu gọn tự nhiên với `<AnimatePresence>`.
 
@@ -301,7 +300,6 @@ src/
 │   ├── AddTransactionModal.tsx          # Modal thêm giao dịch mới (Spring motion)
 │   ├── EditTransactionModal.tsx         # Modal sửa giao dịch (Spring motion)
 │   ├── MonthlyReportCardModal.tsx       # Modal infographic báo cáo tài chính tháng (Spring motion)
-│   ├── TelegramBotModal.tsx             # Modal hướng dẫn bot Telegram (Spring motion)
 │   ├── PwaInstallModal.tsx              # Modal hướng dẫn cài đặt PWA (Spring motion)
 │   ├── ReconcileCheckTienView.tsx       # Màn hình Check tiền & đối soát số dư ví/thẻ
 │   └── SheetSyncPanel.tsx               # Màn hình kết nối & đồng bộ Google Sheets 2 chiều

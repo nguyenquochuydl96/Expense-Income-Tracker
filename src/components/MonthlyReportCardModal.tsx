@@ -292,7 +292,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
     }
   }
 
-  // Copy Summary text for Telegram / Zalo
+  // Copy Summary text to clipboard
   const handleCopySummary = () => {
     const lines = [
       `📊 BÁO CÁO TÀI CHÍNH THÁNG ${monthNum}/${yearNum} — HEO & MÈO 🐷🐱`,

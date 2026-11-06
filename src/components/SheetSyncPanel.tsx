@@ -126,7 +126,7 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = React.memo(({
   // Quick copy instructions / script
   const handleCopyCode = async () => {
     try {
-      const codeText = `// Mở file telegram-bot/Code.gs hoặc apps-script/Code.gs trong thư mục mã nguồn dự án để copy toàn bộ.`;
+      const codeText = `// Mở file apps-script/Code.gs trong thư mục mã nguồn dự án để copy toàn bộ.`;
       await navigator.clipboard.writeText(codeText);
       setCopiedCode(true);
       setTimeout(() => setCopiedCode(false), 3000);
@@ -239,7 +239,7 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = React.memo(({
                       Mở Google Sheet của bạn ➔ chọn menu <strong>Tiện ích mở rộng (Extensions)</strong> ➔ <strong>Apps Script</strong>.
                     </li>
                     <li>
-                      Xóa mã cũ trong <code>Code.gs</code> và dán mã nguồn từ thư mục <code className="font-mono text-emerald-800 dark:text-emerald-300 font-semibold">telegram-bot/Code.gs</code> (hoặc <code className="font-mono text-emerald-800 dark:text-emerald-300 font-semibold">apps-script/Code.gs</code>).
+                      Xóa mã cũ trong <code>Code.gs</code> và dán mã nguồn từ tệp <code className="font-mono text-emerald-800 dark:text-emerald-300 font-semibold">apps-script/Code.gs</code>.
                     </li>
                     <li>
                       Bấm nút xanh <strong>Triển khai (Deploy)</strong> ở góc trên bên phải ➔ chọn <strong>Tùy chọn triển khai mới (New deployment)</strong>.
