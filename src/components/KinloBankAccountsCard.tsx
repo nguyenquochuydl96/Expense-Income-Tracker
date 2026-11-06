@@ -186,7 +186,9 @@ export const KinloBankAccountsCard: React.FC<KinloBankAccountsCardProps> = ({
         {dailySafeSpend > 0 && (
           <div className="flex items-center gap-1 font-mono-tabular text-emerald-300 font-semibold">
             <Sparkles className="w-3 h-3 text-emerald-300" />
-            <span>Hạn mức: {dailySafeSpend.toLocaleString('vi-VN')} ₫/ngày</span>
+            <span>
+              Hạn mức: <AnimatedCurrency value={dailySafeSpend} currencySuffix=" ₫/ngày" />
+            </span>
           </div>
         )}
       </div>

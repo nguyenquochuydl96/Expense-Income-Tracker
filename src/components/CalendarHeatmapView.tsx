@@ -12,6 +12,7 @@ import { TransactionRecord } from '../types/finance';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { CategoryBadge } from '../utils/categoryIcons';
 import { NewTransactionPayload } from './AddTransactionModal';
+import { usePrivacyMode } from '../utils/privacyService';
 
 interface CalendarHeatmapViewProps {
   records: TransactionRecord[];
@@ -19,6 +20,7 @@ interface CalendarHeatmapViewProps {
   selectedMonth: string;
   onOpenAddModalWithPreset?: (preset: Partial<NewTransactionPayload>) => void;
   onSelectTransaction?: (tx: TransactionRecord) => void;
+  isPrivate?: boolean;
 }
 
 interface DayData {
@@ -39,7 +41,10 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.mem
   selectedMonth,
   onOpenAddModalWithPreset,
   onSelectTransaction,
+  isPrivate: propIsPrivate,
 }) => {
+  const { isPrivate: hookIsPrivate } = usePrivacyMode();
+  const _effectiveIsPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(null);
 

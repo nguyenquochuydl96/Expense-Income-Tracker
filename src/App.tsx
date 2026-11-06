@@ -2454,6 +2454,7 @@ export default function App() {
                   beCorpEndDay={beCorpEndDay}
                   creditStartDay={creditStartDay}
                   creditEndDay={creditEndDay}
+                  isPrivate={isPrivate}
                 />
 
                 {/* ═══════ MỚI: NGÂN SÁCH & CHI TIÊU THEO HẠNG MỤC (Budget · Đã chi · Còn lại) ═══════ */}
@@ -2475,6 +2476,7 @@ export default function App() {
                     setIsAddModalOpen(true);
                   }}
                   budgetTransfers={budgetTransfers}
+                  isPrivate={isPrivate}
                 />
 
                 {/* ═══════ OPTIONAL: BIỂU ĐỒ BỔ TRỢ (TOP CHI TIÊU & TỶ TRỌNG) KHI BẬT ═══════ */}
@@ -2491,6 +2493,7 @@ export default function App() {
                     selectedCategories={isAllCategoriesSelected ? [] : selectedCategories}
                     onToggleCategoryFilter={handleToggleCategory}
                     monthlyBaseIncome={monthlyBaseIncome}
+                    isPrivate={isPrivate}
                   />
                 )}
 
@@ -2504,6 +2507,7 @@ export default function App() {
                     setIsAddModalOpen(true);
                   }}
                   onSelectTransaction={(tx) => setEditingTransaction(tx)}
+                  isPrivate={isPrivate}
                 />
                 </div>
               )}
@@ -2526,6 +2530,7 @@ export default function App() {
                     onPushPendingToSheet={handlePushPendingToSheet}
                     isSyncing={isSyncing}
                     periodLabel={selectedMonthsLabel}
+                    isPrivate={isPrivate}
                   />
                 </div>
               )}

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { TransactionRecord } from '../types/finance';
 import { formatCurrency } from '../utils/csvParser';
+import { usePrivacyMode } from '../utils/privacyService';
 
 interface AnalyticsChartsProps {
   expensesInPeriod: TransactionRecord[];
@@ -14,6 +15,7 @@ interface AnalyticsChartsProps {
   selectedCategories?: string[];
   onToggleCategoryFilter?: (category: string) => void;
   monthlyBaseIncome: number;
+  isPrivate?: boolean;
 }
 
 // Coral / Salmon shades matching the reference image donut chart
@@ -40,7 +42,10 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = React.memo(({
   selectedCategories,
   onToggleCategoryFilter,
   monthlyBaseIncome,
+  isPrivate: propIsPrivate,
 }) => {
+  const { isPrivate: hookIsPrivate } = usePrivacyMode();
+  const _effectiveIsPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
   const [excludeSavingsInPie, setExcludeSavingsInPie] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [activeChartTab, setActiveChartTab] = useState<'categories' | 'monthly'>('categories');

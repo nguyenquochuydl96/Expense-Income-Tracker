@@ -20,6 +20,7 @@ import {
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { CategoryBadge } from '../utils/categoryIcons';
 import { MultiCategoryPickerDropdown } from './MultiCategoryPickerDropdown';
+import { usePrivacyMode } from '../utils/privacyService';
 
 interface TransactionLedgerTableProps {
   records: TransactionRecord[];
@@ -33,6 +34,7 @@ interface TransactionLedgerTableProps {
   onPushPendingToSheet?: () => Promise<void>;
   isSyncing?: boolean;
   periodLabel?: string;
+  isPrivate?: boolean;
 }
 
 type QuickLedgerFilter = 'all' | 'expenses' | 'income' | 'becorp' | 'credit' | 'savings';
@@ -49,7 +51,10 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
   onPushPendingToSheet,
   isSyncing,
   periodLabel,
+  isPrivate: propIsPrivate,
 }) => {
+  const { isPrivate: hookIsPrivate } = usePrivacyMode();
+  const _effectiveIsPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [quickFilter, setQuickFilter] = useState<QuickLedgerFilter>('all');
   const [filterBigExpense, setFilterBigExpense] = useState<boolean>(false);

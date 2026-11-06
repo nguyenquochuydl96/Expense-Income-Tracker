@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { TransactionRecord } from '../types/finance';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { getBillingCycleRange } from '../utils/cycleUtils';
+import { usePrivacyMode } from '../utils/privacyService';
 import {
   ChevronLeft,
   ChevronRight,
@@ -25,6 +26,7 @@ interface MultiMonthSummaryTableProps {
   beCorpEndDay?: number;
   creditStartDay?: number;
   creditEndDay?: number;
+  isPrivate?: boolean;
 }
 
 export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = React.memo(({
@@ -39,7 +41,11 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
   beCorpEndDay = 25,
   creditStartDay = 20,
   creditEndDay = 19,
+  isPrivate: propIsPrivate,
 }) => {
+  const { isPrivate: hookIsPrivate } = usePrivacyMode();
+  // Ensure both hook and prop changes trigger re-render
+  const _effectiveIsPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
 
   const isMonthSelected = (mKey: string) => {

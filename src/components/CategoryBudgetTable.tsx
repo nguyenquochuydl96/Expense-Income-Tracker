@@ -3,6 +3,7 @@ import { TransactionRecord, EXPENSE_CATEGORIES, BudgetTransferRecord } from '../
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { CategoryBadge } from '../utils/categoryIcons';
 import { DailyLivingRunwayWidget } from './DailyLivingRunwayWidget';
+import { usePrivacyMode } from '../utils/privacyService';
 import {
   computeMultiMonthRollover,
   SAVED_CATEGORY_PERCENTAGES_KEY,
@@ -48,6 +49,7 @@ interface CategoryBudgetTableProps {
   showChartsButton?: boolean;
   onOpenTransfer?: () => void;
   budgetTransfers?: BudgetTransferRecord[];
+  isPrivate?: boolean;
 }
 
 export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.memo(({
@@ -65,7 +67,10 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
   showChartsButton = false,
   onOpenTransfer,
   budgetTransfers = [],
+  isPrivate: propIsPrivate,
 }) => {
+  const { isPrivate: hookIsPrivate } = usePrivacyMode();
+  const _effectiveIsPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
   // Category percentage allocation map
   const [percentages, setPercentages] = useState<Record<string, number>>(() => {
     try {
@@ -624,6 +629,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
             items={currentViewStats.items}
             onSelectCategory={onSelectCategory}
             selectedCategory={selectedCategory}
+            isPrivate={_effectiveIsPrivate}
           />
 
           {/* ═══════ MOBILE CATEGORY BUDGET CARDS (< 768px) ═══════ */}

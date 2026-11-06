@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '../utils/csvParser';
 import { CategoryBadge } from '../utils/categoryIcons';
+import { usePrivacyMode } from '../utils/privacyService';
 
 export interface DailyCategoryStat {
   category: string;
@@ -30,6 +31,7 @@ export interface DailyLivingRunwayWidgetProps {
   items: DailyCategoryStat[];
   onSelectCategory?: (category: string) => void;
   selectedCategory?: string;
+  isPrivate?: boolean;
 }
 
 const STORAGE_KEY_LIVING_CATS = 'heomeo_daily_living_categories_v1';
@@ -48,7 +50,10 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
   items,
   onSelectCategory,
   selectedCategory = 'ALL',
+  isPrivate: propIsPrivate,
 }) => {
+  const { isPrivate: hookIsPrivate } = usePrivacyMode();
+  const _effectiveIsPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
   // State: Danh sách danh mục được chọn làm "Hằng ngày"
   const [livingCategories, setLivingCategories] = useState<string[]>(() => {
     try {
