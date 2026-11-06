@@ -1933,10 +1933,7 @@ export default function App() {
                 HM
               </div>
               <div className="min-w-0">
-                <span className="text-xs font-bold text-[var(--side-ink)] block truncate">Gia đình Chuối &amp; Đậu</span>
-                <span className="text-[10px] text-[var(--side-muted)] block truncate">
-                  {accessToken ? 'Đã kết nối Sheets' : 'Lưu trữ cục bộ'}
-                </span>
+                <span className="text-xs font-bold text-[var(--side-ink)] block truncate">Heo &amp; Mèo</span>
               </div>
             </div>
             <button
