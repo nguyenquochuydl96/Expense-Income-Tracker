@@ -28,7 +28,7 @@ const DONUT_CORAL_SHADES = [
   '#FEE2E2', // Pale peach
 ];
 
-export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
+export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = React.memo(({
   expensesInPeriod,
   allRecords,
   selectedMonth,
@@ -233,12 +233,12 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
       {/* ═══════ LEFT CHART: HORIZONTAL BAR CHART (Matching Xero Reference) ═══════ */}
-      <section className="lg:col-span-7 bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
+      <section className="lg:col-span-7 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between">
         <div>
           {/* Header */}
-          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
+          <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100 dark:border-slate-800">
             <div className="flex items-baseline gap-2">
-              <h2 className="text-sm font-bold text-slate-800 tracking-tight">
+              <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 tracking-tight">
                 Top chi tiêu theo danh mục
               </h2>
             </div>
@@ -299,8 +299,8 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                         <span
                           className={`text-xs truncate block ${
                             isSelected
-                              ? 'font-bold text-sky-800'
-                              : 'text-slate-700 group-hover:text-slate-900 font-medium'
+                              ? 'font-bold text-sky-800 dark:text-sky-400'
+                              : 'text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white font-medium'
                           }`}
                           title={item.category}
                         >
@@ -309,7 +309,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                       </div>
 
                       {/* Bar Container */}
-                      <div className="flex-1 bg-slate-50 rounded-sm h-7 relative flex items-center overflow-hidden">
+                      <div className="flex-1 bg-slate-50 dark:bg-slate-800 rounded-sm h-7 relative flex items-center overflow-hidden">
                         <div
                           className={`h-full rounded-r-sm transition-all duration-300 flex items-center justify-end pr-2.5 ${
                             isSelected
@@ -334,7 +334,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
 
               {/* X-Axis Ticks */}
               {categoryStats.topItems.length > 0 && (
-                <div className="flex items-center justify-between pl-36 sm:pl-40 pt-2 text-[10px] font-mono-tabular text-slate-400 border-t border-slate-100">
+                <div className="flex items-center justify-between pl-36 sm:pl-40 pt-2 text-[10px] font-mono-tabular text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-800">
                   <span>0</span>
                   <span>{formatCurrency(maxCategoryAmount * 0.25)}</span>
                   <span>{formatCurrency(maxCategoryAmount * 0.5)}</span>
@@ -346,7 +346,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
           ) : (
             /* Monthly Cashflow Bar Chart */
             <div className="pt-2">
-              <div className="grid grid-cols-7 gap-2 items-end h-44 pt-4 px-2 border-b border-slate-100">
+              <div className="grid grid-cols-7 gap-2 items-end h-44 pt-4 px-2 border-b border-slate-100 dark:border-slate-800">
                 {monthlyCashflow.map((m) => {
                   const isSelected =
                     selectedMonths && selectedMonths.length > 0
@@ -367,7 +367,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                         }
                       }}
                       className={`flex flex-col items-center cursor-pointer rounded-t p-1 transition-colors ${
-                        isSelected ? 'bg-sky-50' : 'hover:bg-slate-50'
+                        isSelected ? 'bg-sky-50 dark:bg-sky-950/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
                       }`}
                       title={`Nhấp để chọn / bỏ chọn ${m.label} vào bộ lọc`}
                     >
@@ -383,7 +383,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                           title={`Chi tiêu: ${formatCurrency(m.totalExpense)}`}
                         />
                       </div>
-                      <span className="text-[10px] font-mono-tabular mt-1.5 text-slate-600 font-medium">
+                      <span className="text-[10px] font-mono-tabular mt-1.5 text-slate-600 dark:text-slate-400 font-medium">
                         {m.label}
                       </span>
                     </div>
@@ -396,21 +396,21 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
 
         {/* Selected Category Filter Indicator */}
         {hasCategoryFilter && (
-          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+          <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
             <span>
               Đang lọc:{' '}
-              <strong className="text-sky-800">
+              <strong className="text-sky-800 dark:text-sky-400">
                 {isMultiCategory && selectedCategories
                   ? selectedCategories.length === 1
-                    ? selectedCategories[0]
-                    : `${selectedCategories.length} danh mục (${selectedCategories.join(', ')})`
+                  ? selectedCategories[0]
+                  : `${selectedCategories.length} danh mục (${selectedCategories.join(', ')})`
                   : selectedCategoryFilter}
               </strong>
             </span>
             <button
               type="button"
               onClick={() => onSelectCategoryFilter('ALL')}
-              className="text-sky-600 hover:text-sky-800 font-semibold cursor-pointer"
+              className="text-sky-600 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300 font-semibold cursor-pointer"
             >
               Bỏ lọc danh mục
             </button>
@@ -419,11 +419,11 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
       </section>
 
       {/* ═══════ RIGHT CHART: DONUT CHART (Coral/Salmon Palette like Reference) ═══════ */}
-      <section className="lg:col-span-5 bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
+      <section className="lg:col-span-5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm flex flex-col justify-between">
         <div>
           {/* Header */}
-          <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
-            <h2 className="text-sm font-bold text-slate-800 tracking-tight">
+          <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
+            <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 tracking-tight">
               Tỷ trọng chi tiêu
             </h2>
             <button
@@ -431,8 +431,8 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
               onClick={() => setExcludeSavingsInPie((prev) => !prev)}
               className={`px-2 py-0.5 text-[11px] font-medium rounded border transition-colors ${
                 excludeSavingsInPie
-                  ? 'bg-rose-50 border-rose-200 text-rose-700'
-                  : 'bg-slate-50 border-slate-200 text-slate-600'
+                  ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+                  : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
               }`}
             >
               {excludeSavingsInPie ? 'Ẩn TK' : 'Gồm TK'}
@@ -516,7 +516,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                       onMouseEnter={() => setHoveredCategory(slice.category)}
                       onMouseLeave={() => setHoveredCategory(null)}
                       className={`w-full flex items-center gap-2 text-left text-xs transition-colors py-0.5 rounded ${
-                        isSelected ? 'font-bold text-slate-900' : 'text-slate-600 hover:text-slate-900'
+                        isSelected ? 'font-bold text-slate-900 dark:text-slate-100' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
                       <span
@@ -533,11 +533,13 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
         </div>
 
         {/* Bottom Total Note */}
-        <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-mono-tabular">
+        <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-mono-tabular">
           <span>Tổng chi danh mục:</span>
-          <span className="font-bold text-slate-800">{formatCurrency(categoryStats.grandTotal)}</span>
+          <span className="font-bold text-slate-800 dark:text-slate-100">{formatCurrency(categoryStats.grandTotal)}</span>
         </div>
       </section>
     </div>
   );
-};
+});
+
+AnalyticsCharts.displayName = 'AnalyticsCharts';

@@ -45,7 +45,7 @@ const DEFAULT_LIVING_CATEGORIES = [
   'Hóa/Mỹ phẩm',
 ];
 
-export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = ({
+export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = React.memo(({
   selectedMonth,
   items,
   onSelectCategory,
@@ -691,19 +691,19 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
           onClick={() => setIsSettingsOpen(false)}
         >
           <div
-            className="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150 cursor-default"
+            className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 max-w-md w-full p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150 cursor-default"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-indigo-50 text-indigo-700">
+                <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">
                   <Settings className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900">
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
                     Cấu hình Danh mục Chi Tiêu Hằng Ngày
                   </h4>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
                     Chọn các quỹ bạn muốn chia hạn mức và tính tốc độ tiêu mỗi ngày
                   </p>
                 </div>
@@ -711,7 +711,7 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
               <button
                 type="button"
                 onClick={() => setIsSettingsOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -726,8 +726,8 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
                     key={item.category}
                     className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer select-none transition-colors ${
                       isChecked
-                        ? 'bg-indigo-50/70 border-indigo-200 text-indigo-950 font-semibold'
-                        : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+                        ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-950 dark:text-indigo-200 font-semibold'
+                        : 'bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
@@ -735,11 +735,11 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => toggleCategoryInTemp(item.category)}
-                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
+                        className="rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 w-4 h-4"
                       />
                       <CategoryBadge category={item.category} />
                     </div>
-                    <span className="text-xs font-mono-tabular text-slate-500">
+                    <span className="text-xs font-mono-tabular text-slate-500 dark:text-slate-400">
                       Ngân sách: {formatCurrency(item.effectiveBudget)}
                     </span>
                   </label>
@@ -748,11 +748,11 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
             </div>
 
             {/* Action footer */}
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100 gap-2">
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 gap-2">
               <button
                 type="button"
                 onClick={handleResetDefaultSettings}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Mặc định</span>
@@ -762,7 +762,7 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
                 <button
                   type="button"
                   onClick={() => setIsSettingsOpen(false)}
-                  className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
                 >
                   Hủy
                 </button>
@@ -781,4 +781,6 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = (
       )}
     </div>
   );
-};
+});
+
+DailyLivingRunwayWidget.displayName = 'DailyLivingRunwayWidget';

@@ -238,7 +238,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
           {/* Row 2: Date & Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
                 <span>Ngày giao dịch</span>
               </label>
@@ -247,22 +247,22 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 required
                 value={isoDate}
                 onChange={(e) => setIsoDate(e.target.value)}
-                className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 font-mono-tabular"
+                className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 font-mono-tabular"
               />
-              <span className="text-[10px] text-slate-400 mt-0.5 block">
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 block">
                 Định dạng: {sheetDatePreview}
               </span>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
                 <Tag className="w-3.5 h-3.5 text-slate-400" />
                 <span>Danh mục</span>
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
+                className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
               >
                 {sheetType === 'Expenses' ? (
                   <>
@@ -298,7 +298,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
 
           {category === '__CUSTOM__' && (
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Tên danh mục tùy biến
               </label>
               <input
@@ -306,14 +306,14 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 placeholder="Nhập tên danh mục mới..."
                 value={customCategory}
                 onChange={(e) => setCustomCategory(e.target.value)}
-                className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
+                className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
               />
             </div>
           )}
 
           {/* Row 3: Item description */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
               <FileText className="w-3.5 h-3.5 text-slate-400" />
               <span>Nội dung giao dịch</span>
             </label>
@@ -323,7 +323,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
               placeholder="VD: Grab car, Cơm trưa, Siêu thị..."
               value={purchaseItem}
               onChange={(e) => setPurchaseItem(e.target.value)}
-              className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
+              className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
             />
           </div>
 
@@ -427,7 +427,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
 
           {/* Row 5: Note */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Ghi chú thêm (không bắt buộc)
             </label>
             <input
@@ -435,16 +435,16 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
               placeholder="VD: Mua chung, hoàn tiền..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
+              className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
             />
           </div>
 
           {/* Action buttons */}
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               onClick={() => onDeleteRequest(record)}
-              className="px-3 py-2 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition-colors flex items-center gap-1.5"
+              className="px-3 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors flex items-center gap-1.5"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Xóa giao dịch này</span>
@@ -455,7 +455,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
               >
                 Hủy
               </button>

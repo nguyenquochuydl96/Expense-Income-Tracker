@@ -40,7 +40,7 @@ interface DayData {
   transactions: TransactionRecord[];
 }
 
-export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = ({
+export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.memo(({
   records,
   allRecords,
   selectedMonth,
@@ -505,4 +505,6 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = ({
       )}
     </section>
   );
-};
+});
+
+CalendarHeatmapView.displayName = 'CalendarHeatmapView';

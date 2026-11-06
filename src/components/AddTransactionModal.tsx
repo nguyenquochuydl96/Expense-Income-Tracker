@@ -580,7 +580,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             /* TRANSFER BUDGET FORM */
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Ngày chuyển ngân sách
                 </label>
                 <input
@@ -588,19 +588,19 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   value={isoDate}
                   onChange={(e) => setIsoDate(e.target.value)}
                   required
-                  className="w-full px-3 py-2 text-sm font-mono-tabular border border-slate-300 rounded-lg focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600"
+                  className="w-full px-3 py-2 text-sm font-mono-tabular border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
-                  <label className="block text-xs font-semibold text-amber-900 mb-1">
+                  <label className="block text-xs font-semibold text-amber-900 dark:text-amber-300 mb-1">
                     Trích từ danh mục (Nguồn -)
                   </label>
                   <select
                     value={fromCategory}
                     onChange={(e) => setFromCategory(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-amber-300 rounded-lg bg-amber-50/30 focus:outline-none focus:border-amber-600 font-medium"
+                    className="w-full px-3 py-2 text-sm border border-amber-300 dark:border-amber-700 rounded-lg bg-amber-50/30 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-600 font-medium"
                   >
                     <option value="Thu nhập riêng">✨ Thu nhập riêng / Nạp thêm ngoài</option>
                     <optgroup label="Danh mục chi tiêu">
@@ -614,13 +614,13 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-emerald-900 mb-1">
+                  <label className="block text-xs font-semibold text-emerald-900 dark:text-emerald-300 mb-1">
                     Chuyển sang danh mục (Đích +)
                   </label>
                   <select
                     value={toCategory}
                     onChange={(e) => setToCategory(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-emerald-300 rounded-lg bg-emerald-50/30 focus:outline-none focus:border-emerald-600 font-medium"
+                    className="w-full px-3 py-2 text-sm border border-emerald-300 dark:border-emerald-700 rounded-lg bg-emerald-50/30 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-600 font-medium"
                   >
                     {EXPENSE_CATEGORIES.map((cat) => (
                       <option key={cat} value={cat}>
@@ -632,7 +632,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Số tiền chuyển (₫) <span className="text-purple-600">*</span>
                 </label>
                 <MoneyCalculatorInput
@@ -642,12 +642,12 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   theme="purple"
                   size="lg"
                   required
-                  inputClassName="text-purple-900 font-bold"
+                  inputClassName="text-purple-900 dark:text-purple-200 font-bold"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Lý do / Ghi chú chuyển ngân sách
                 </label>
                 <input
@@ -655,12 +655,12 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   placeholder="VD: Cho Mèo, Nhường đi xem phim, Mượn tạm..."
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-purple-600"
+                  className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-purple-600"
                 />
               </div>
 
               {/* Transfer Preview Card */}
-              <div className="p-3.5 bg-purple-50/70 border border-purple-200 rounded-xl space-y-2 text-xs text-purple-950">
+              <div className="p-3.5 bg-purple-50/70 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-xl space-y-2 text-xs text-purple-950 dark:text-purple-200">
                 <div className="font-semibold flex items-center gap-1.5">
                   <ArrowLeftRight className="w-3.5 h-3.5 text-purple-600" />
                   <span>Tóm tắt điều chuyển ngân sách:</span>
@@ -701,7 +701,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           {/* Row 1: Purchase Date & Category */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Ngày giao dịch
               </label>
               <input
@@ -709,18 +709,18 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 value={isoDate}
                 onChange={(e) => setIsoDate(e.target.value)}
                 required
-                className="w-full px-3 py-2 text-sm font-mono-tabular border border-slate-300 rounded-lg focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-sm font-mono-tabular border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 {sheetType === 'Expenses' ? 'Danh mục chi tiêu' : 'Mục đích thu nhập / Ngân sách'}
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
               >
                 {sheetType === 'Expenses' ? (
                   <>
@@ -757,7 +757,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   placeholder="Nhập tên danh mục..."
                   value={customCategory}
                   onChange={(e) => setCustomCategory(e.target.value)}
-                  className="mt-2 w-full px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-teal-600"
+                  className="mt-2 w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-teal-600"
                 />
               )}
 
@@ -963,7 +963,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
           {/* Row 4: Ghi chú */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Ghi chú thêm (không bắt buộc)
             </label>
             <input
@@ -971,12 +971,12 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               placeholder="VD: Mua chung với bạn, tiền thưởng dự án..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:border-teal-600"
+              className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-teal-600"
             />
           </div>
 
           {errorMsg && (
-            <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-700 font-medium">
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-lg text-xs text-rose-700 dark:text-rose-300 font-medium">
               {errorMsg}
             </div>
           )}
@@ -985,11 +985,11 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           )}
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 border border-slate-200 rounded-lg transition-colors"
+              className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 rounded-lg transition-colors"
             >
               Hủy
             </button>

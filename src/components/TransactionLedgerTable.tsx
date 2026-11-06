@@ -43,7 +43,7 @@ interface TransactionLedgerTableProps {
 
 type QuickLedgerFilter = 'all' | 'expenses' | 'income' | 'becorp' | 'credit' | 'savings';
 
-export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
+export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = React.memo(({
   records,
   selectedCategory,
   onSelectCategory,
@@ -738,7 +738,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
 
       {/* Pagination & Totals Footer */}
       {filteredRecords.length > visibleLimit && (
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
           <span>
             Đang hiển thị {displayedRows.length} / {filteredRecords.length} dòng
           </span>
@@ -753,4 +753,6 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = ({
       )}
     </section>
   );
-};
+});
+
+TransactionLedgerTable.displayName = 'TransactionLedgerTable';

@@ -2425,7 +2425,7 @@ export default function App() {
         </AnimatePresence>
 
         {isLoadingInitial ? (
-          <div className="bg-white border border-slate-200 rounded-xl p-12 text-center text-sm text-slate-500">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-12 text-center text-sm text-slate-500 dark:text-slate-400">
             Đang nạp dữ liệu lịch sử tài chính của bạn...
           </div>
         ) : (
@@ -2700,51 +2700,51 @@ export default function App() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: 16 }}
               transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-              className="bg-white border border-slate-200 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4 cursor-default"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4 cursor-default"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600 shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/60 flex items-center justify-center text-rose-600 dark:text-rose-400 shrink-0">
                   <Trash2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Xác nhận xóa giao dịch</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Xác nhận xóa giao dịch</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Bạn có chắc chắn muốn xóa vĩnh viễn giao dịch này?
                   </p>
                 </div>
               </div>
 
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
+              <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-3.5 space-y-2 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Mục chi tiêu:</span>
-                  <span className="font-semibold text-slate-900">{deletingTransaction.purchaseItem}</span>
+                  <span className="text-slate-500 dark:text-slate-400">Mục chi tiêu:</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{deletingTransaction.purchaseItem}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Ngày:</span>
-                  <span className="font-mono-tabular text-slate-700">{deletingTransaction.purchaseDate}</span>
+                  <span className="text-slate-500 dark:text-slate-400">Ngày:</span>
+                  <span className="font-mono-tabular text-slate-700 dark:text-slate-300">{deletingTransaction.purchaseDate}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Danh mục:</span>
-                  <span className="text-slate-700">{deletingTransaction.category}</span>
+                  <span className="text-slate-500 dark:text-slate-400">Danh mục:</span>
+                  <span className="text-slate-700 dark:text-slate-300">{deletingTransaction.category}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Số tiền:</span>
-                  <span className="font-mono-tabular font-bold text-rose-700">
+                  <span className="text-slate-500 dark:text-slate-400">Số tiền:</span>
+                  <span className="font-mono-tabular font-bold text-rose-700 dark:text-rose-400">
                     {formatCurrency(deletingTransaction.amount, false, true)}
                   </span>
                 </div>
                 {deletingTransaction.rowIndex && (
-                  <div className="flex justify-between border-t border-slate-200/80 pt-1.5 mt-1.5">
-                    <span className="text-slate-500">Mã giao dịch:</span>
-                    <span className="font-mono-tabular text-teal-700 font-medium">
+                  <div className="flex justify-between border-t border-slate-200/80 dark:border-slate-700 pt-1.5 mt-1.5">
+                    <span className="text-slate-500 dark:text-slate-400">Mã giao dịch:</span>
+                    <span className="font-mono-tabular text-teal-700 dark:text-teal-400 font-medium">
                       {deletingTransaction.sheetType === 'Income' ? 'Thu nhập' : 'Chi tiêu'} #{deletingTransaction.rowIndex}
                     </span>
                   </div>
                 )}
               </div>
 
-              <p className="text-xs text-rose-600 bg-rose-50/80 border border-rose-200 rounded-lg p-2.5">
+              <p className="text-xs text-rose-600 dark:text-rose-300 bg-rose-50/80 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-lg p-2.5">
                 ⚠️ Thao tác này sẽ xóa vĩnh viễn giao dịch khỏi hệ thống và cập nhật lại toàn bộ ngân sách. Không thể hoàn tác.
               </p>
 
@@ -2753,7 +2753,7 @@ export default function App() {
                   type="button"
                   disabled={isDeleting}
                   onClick={() => setDeletingTransaction(null)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
                 >
                   Hủy bỏ
                 </button>

@@ -195,7 +195,7 @@ export const TelegramBotModal: React.FC<TelegramBotModalProps> = ({
               </div>
 
               {cheatSheetItems.map((group, gIdx) => (
-                <div key={gIdx} className="border border-slate-100 dark:border-slate-800 rounded-xl p-3.5 bg-white dark:bg-slate-850 shadow-2xs">
+                <div key={gIdx} className="border border-slate-100 dark:border-slate-800 rounded-xl p-3.5 bg-white dark:bg-slate-800/70 shadow-2xs">
                   <div className="flex items-center gap-2 mb-2.5 font-semibold text-xs text-slate-700 dark:text-slate-300">
                     {group.icon}
                     <span>{group.group}</span>
@@ -314,7 +314,7 @@ export const TelegramBotModal: React.FC<TelegramBotModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-850">
+        <div className="px-6 py-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900">
           <div className="text-xs text-slate-500 dark:text-slate-400">
             Mã nguồn lưu tại: <code className="font-mono text-indigo-700 dark:text-indigo-400 font-semibold">telegram-bot/Code.gs</code>
           </div>

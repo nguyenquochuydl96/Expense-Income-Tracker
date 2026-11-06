@@ -351,24 +351,24 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
           onClick={closeCalculator}
         >
           <div
-            className="bg-white border border-slate-200 rounded-2xl w-full max-w-xs sm:max-w-sm shadow-2xl overflow-hidden p-4 space-y-3.5 animate-in zoom-in-95 duration-150"
+            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-xs sm:max-w-sm shadow-2xl overflow-hidden p-4 space-y-3.5 animate-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Calculator Header */}
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
                 <div className={`p-1.5 rounded-lg ${styleTheme.badge}`}>
                   <Calculator className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900">Máy tính cộng trừ tiền</h4>
-                  <p className="text-[10px] text-slate-400">Hỗ trợ phép tính &amp; phím tắt k, tr</p>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">Máy tính cộng trừ tiền</h4>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500">Hỗ trợ phép tính &amp; phím tắt k, tr</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={closeCalculator}
-                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -404,7 +404,7 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
                     key={chip.label}
                     type="button"
                     onClick={() => handleQuickAdd(chip.val)}
-                    className="py-1 px-1.5 text-[11px] font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-lg transition-colors cursor-pointer"
+                    className="py-1 px-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 dark:active:bg-slate-600 rounded-lg transition-colors cursor-pointer"
                   >
                     {chip.label}
                   </button>
@@ -418,28 +418,28 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
               <button
                 type="button"
                 onClick={() => handleCalcAppend('C')}
-                className="py-2.5 rounded-xl bg-rose-100 text-rose-700 hover:bg-rose-200 active:bg-rose-300 transition-colors cursor-pointer"
+                className="py-2.5 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 hover:bg-rose-200 dark:hover:bg-rose-900/60 active:bg-rose-300 transition-colors cursor-pointer"
               >
                 C
               </button>
               <button
                 type="button"
                 onClick={() => handleCalcAppend('DEL')}
-                className="py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 active:bg-slate-300 transition-colors flex items-center justify-center cursor-pointer"
+                className="py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 transition-colors flex items-center justify-center cursor-pointer"
               >
                 <Delete className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={() => handleCalcAppend('(')}
-                className="py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 active:bg-slate-300 transition-colors cursor-pointer"
+                className="py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 transition-colors cursor-pointer"
               >
                 (
               </button>
               <button
                 type="button"
                 onClick={() => handleCalcAppend('/')}
-                className="py-2.5 rounded-xl bg-amber-100 text-amber-800 hover:bg-amber-200 active:bg-amber-300 transition-colors cursor-pointer text-sm"
+                className="py-2.5 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 active:bg-amber-300 transition-colors cursor-pointer text-sm"
               >
                 ÷
               </button>
@@ -448,28 +448,28 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
               <button
                 type="button"
                 onClick={() => handleCalcAppend('7')}
-                className="py-2.5 rounded-xl bg-slate-50 text-slate-800 hover:bg-slate-150 active:bg-slate-200 border border-slate-200/80 transition-colors cursor-pointer"
+                className="py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
               >
                 7
               </button>
               <button
                 type="button"
                 onClick={() => handleCalcAppend('8')}
-                className="py-2.5 rounded-xl bg-slate-50 text-slate-800 hover:bg-slate-150 active:bg-slate-200 border border-slate-200/80 transition-colors cursor-pointer"
+                className="py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
               >
                 8
               </button>
               <button
                 type="button"
                 onClick={() => handleCalcAppend('9')}
-                className="py-2.5 rounded-xl bg-slate-50 text-slate-800 hover:bg-slate-150 active:bg-slate-200 border border-slate-200/80 transition-colors cursor-pointer"
+                className="py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
               >
                 9
               </button>
               <button
                 type="button"
                 onClick={() => handleCalcAppend('*')}
-                className="py-2.5 rounded-xl bg-amber-100 text-amber-800 hover:bg-amber-200 active:bg-amber-300 transition-colors cursor-pointer text-sm"
+                className="py-2.5 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 active:bg-amber-300 transition-colors cursor-pointer text-sm"
               >
                 ×
               </button>
@@ -478,28 +478,28 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
               <button
                 type="button"
                 onClick={() => handleCalcAppend('4')}
-                className="py-2.5 rounded-xl bg-slate-50 text-slate-800 hover:bg-slate-150 active:bg-slate-200 border border-slate-200/80 transition-colors cursor-pointer"
+                className="py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
               >
                 4
               </button>
               <button
                 type="button"
                 onClick={() => handleCalcAppend('5')}
-                className="py-2.5 rounded-xl bg-slate-50 text-slate-800 hover:bg-slate-150 active:bg-slate-200 border border-slate-200/80 transition-colors cursor-pointer"
+                className="py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
               >
                 5
               </button>
               <button
                 type="button"
                 onClick={() => handleCalcAppend('6')}
-                className="py-2.5 rounded-xl bg-slate-50 text-slate-800 hover:bg-slate-150 active:bg-slate-200 border border-slate-200/80 transition-colors cursor-pointer"
+                className="py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
               >
                 6
               </button>
               <button
                 type="button"
                 onClick={() => handleCalcAppend('-')}
-                className="py-2.5 rounded-xl bg-amber-100 text-amber-800 hover:bg-amber-200 active:bg-amber-300 transition-colors cursor-pointer text-sm"
+                className="py-2.5 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 active:bg-amber-300 transition-colors cursor-pointer text-sm"
               >
                 −
               </button>
@@ -508,28 +508,28 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
               <button
                 type="button"
                 onClick={() => handleCalcAppend('1')}
-                className="py-2.5 rounded-xl bg-slate-50 text-slate-800 hover:bg-slate-150 active:bg-slate-200 border border-slate-200/80 transition-colors cursor-pointer"
+                className="py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
               >
                 1
               </button>
               <button
                 type="button"
                 onClick={() => handleCalcAppend('2')}
-                className="py-2.5 rounded-xl bg-slate-50 text-slate-800 hover:bg-slate-150 active:bg-slate-200 border border-slate-200/80 transition-colors cursor-pointer"
+                className="py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
               >
                 2
               </button>
               <button
                 type="button"
                 onClick={() => handleCalcAppend('3')}
-                className="py-2.5 rounded-xl bg-slate-50 text-slate-800 hover:bg-slate-150 active:bg-slate-200 border border-slate-200/80 transition-colors cursor-pointer"
+                className="py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
               >
                 3
               </button>
               <button
                 type="button"
                 onClick={() => handleCalcAppend('+')}
-                className="py-2.5 rounded-xl bg-amber-100 text-amber-800 hover:bg-amber-200 active:bg-amber-300 transition-colors cursor-pointer text-sm"
+                className="py-2.5 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/60 active:bg-amber-300 transition-colors cursor-pointer text-sm"
               >
                 +
               </button>
@@ -538,21 +538,21 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
               <button
                 type="button"
                 onClick={() => handleCalcAppend('0')}
-                className="py-2.5 rounded-xl bg-slate-50 text-slate-800 hover:bg-slate-150 active:bg-slate-200 border border-slate-200/80 transition-colors cursor-pointer"
+                className="py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer"
               >
                 0
               </button>
               <button
                 type="button"
                 onClick={() => handleCalcAppend('000')}
-                className="py-2.5 rounded-xl bg-slate-50 text-slate-800 hover:bg-slate-150 active:bg-slate-200 border border-slate-200/80 transition-colors cursor-pointer text-[11px]"
+                className="py-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 border border-slate-200/80 dark:border-slate-700 transition-colors cursor-pointer text-[11px]"
               >
                 000
               </button>
               <button
                 type="button"
                 onClick={() => handleCalcAppend(')')}
-                className="py-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 active:bg-slate-300 transition-colors cursor-pointer"
+                className="py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 active:bg-slate-300 transition-colors cursor-pointer"
               >
                 )
               </button>
@@ -566,11 +566,11 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
             </div>
 
             {/* Bottom Actions */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               <button
                 type="button"
                 onClick={closeCalculator}
-                className="px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                className="px-3 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
               >
                 Hủy
               </button>

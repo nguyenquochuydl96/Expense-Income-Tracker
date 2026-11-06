@@ -58,7 +58,7 @@ interface CategoryBudgetTableProps {
   budgetTransfers?: BudgetTransferRecord[];
 }
 
-export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
+export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.memo(({
   recordsInPeriod,
   allRecords,
   totalIncome,
@@ -949,7 +949,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
 
             {/* Footer Total Row */}
             <tfoot>
-              <tr className="border-t-2 border-slate-300 dark:border-slate-700 bg-slate-50/90 dark:bg-slate-850 font-bold text-xs font-mono-tabular">
+              <tr className="border-t-2 border-slate-300 dark:border-slate-700 bg-slate-50/90 dark:bg-slate-900 font-bold text-xs font-mono-tabular">
                 <td className="py-3 px-3 font-sans text-slate-900 dark:text-slate-100">
                   Tổng cộng ngân sách
                 </td>
@@ -1214,4 +1214,6 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = ({
       )}
     </section>
   );
-};
+});
+
+CategoryBudgetTable.displayName = 'CategoryBudgetTable';

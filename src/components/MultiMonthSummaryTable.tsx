@@ -27,7 +27,7 @@ interface MultiMonthSummaryTableProps {
   creditEndDay?: number;
 }
 
-export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
+export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = React.memo(({
   allRecords,
   availableMonths,
   selectedMonth,
@@ -500,7 +500,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-300">
-                <th className="py-2.5 px-4 sticky left-0 bg-slate-50 dark:bg-slate-850 text-slate-700 dark:text-slate-300 z-10 w-44 shadow-xs">
+                <th className="py-2.5 px-4 sticky left-0 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 z-10 w-44 shadow-xs">
                   Chỉ số tài chính
                 </th>
                 {visibleMonthlyData.map((m) => {
@@ -554,10 +554,10 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                     {formatNumberForSheet(m.budget)}
                   </td>
                 ))}
-                <td className="py-2.5 px-3 text-right bg-slate-50 dark:bg-slate-850 font-semibold text-slate-800 dark:text-slate-200 border-l border-slate-200 dark:border-slate-800">
+                <td className="py-2.5 px-3 text-right bg-slate-50 dark:bg-slate-800/80 font-semibold text-slate-800 dark:text-slate-200 border-l border-slate-200 dark:border-slate-800">
                   {formatNumberForSheet(totals.avg.budget)}
                 </td>
-                <td className="py-2.5 px-4 text-right bg-slate-50 dark:bg-slate-850 font-bold text-emerald-800 dark:text-emerald-400">
+                <td className="py-2.5 px-4 text-right bg-slate-50 dark:bg-slate-800/80 font-bold text-emerald-800 dark:text-emerald-400">
                   {formatNumberForSheet(totals.total.budget)}
                 </td>
               </tr>
@@ -577,10 +577,10 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                     {formatNumberForSheet(m.livingExpense)}
                   </td>
                 ))}
-                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-850 text-slate-600 dark:text-slate-400 border-l border-slate-200 dark:border-slate-800">
+                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-l border-slate-200 dark:border-slate-800">
                   {formatNumberForSheet(totals.avg.living)}
                 </td>
-                <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-850 text-slate-700 dark:text-slate-300">
+                <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300">
                   {formatNumberForSheet(totals.total.living)}
                 </td>
               </tr>
@@ -600,17 +600,17 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                     {m.savingsExpense > 0 ? formatNumberForSheet(m.savingsExpense) : '—'}
                   </td>
                 ))}
-                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-850 text-blue-700 dark:text-blue-400 border-l border-slate-200 dark:border-slate-800">
+                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-800/80 text-blue-700 dark:text-blue-400 border-l border-slate-200 dark:border-slate-800">
                   {formatNumberForSheet(totals.avg.savings)}
                 </td>
-                <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-850 text-blue-800 dark:text-blue-300 font-medium">
+                <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-800/80 text-blue-800 dark:text-blue-300 font-medium">
                   {formatNumberForSheet(totals.total.savings)}
                 </td>
               </tr>
 
               {/* Row 4: Tổng chi tiêu */}
               <tr className="bg-slate-50/40 dark:bg-slate-800/30 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors font-semibold">
-                <td className="py-2.5 px-4 font-sans font-bold text-slate-900 dark:text-slate-100 sticky left-0 bg-slate-50/80 dark:bg-slate-850 z-10 whitespace-nowrap shadow-xs">
+                <td className="py-2.5 px-4 font-sans font-bold text-slate-900 dark:text-slate-100 sticky left-0 bg-slate-50/80 dark:bg-slate-900 z-10 whitespace-nowrap shadow-xs">
                   Tổng chi tiêu
                 </td>
                 {visibleMonthlyData.map((m) => (
@@ -657,7 +657,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                     </td>
                   );
                 })}
-                <td className="py-2.5 px-3 text-right bg-slate-50 dark:bg-slate-850 border-l border-slate-200 dark:border-slate-800">
+                <td className="py-2.5 px-3 text-right bg-slate-50 dark:bg-slate-800/80 border-l border-slate-200 dark:border-slate-800">
                   <span
                     className={`inline-block px-1.5 py-0.5 rounded text-[11px] font-bold ${
                       totals.avg.remaining >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'
@@ -666,7 +666,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                     {formatCurrency(totals.avg.remaining, true)}
                   </span>
                 </td>
-                <td className="py-2.5 px-4 text-right bg-slate-50 dark:bg-slate-850">
+                <td className="py-2.5 px-4 text-right bg-slate-50 dark:bg-slate-800/80">
                   <span
                     className={`inline-block px-2 py-0.5 rounded text-xs font-extrabold ${
                       totals.total.remaining >= 0
@@ -702,7 +702,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                     </span>
                   </td>
                 ))}
-                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-850 font-mono-tabular text-slate-400 dark:text-slate-500 border-l border-slate-200 dark:border-slate-800">
+                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-800/80 font-mono-tabular text-slate-400 dark:text-slate-500 border-l border-slate-200 dark:border-slate-800">
                   —
                 </td>
                 <td className="py-2 px-4 text-right bg-indigo-100/60 dark:bg-indigo-950/50 font-mono-tabular font-extrabold text-indigo-950 dark:text-indigo-200">
@@ -735,10 +735,10 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                     </span>
                   </td>
                 ))}
-                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-850 font-semibold text-slate-700 dark:text-slate-300 border-l border-slate-200 dark:border-slate-800">
+                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-800/80 font-semibold text-slate-700 dark:text-slate-300 border-l border-slate-200 dark:border-slate-800">
                   {totals.avg.budget > 0 ? `${((totals.avg.expense / totals.avg.budget) * 100).toFixed(0)}%` : '—'}
                 </td>
-                <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-850 font-bold text-slate-800 dark:text-slate-200">
+                <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-800/80 font-bold text-slate-800 dark:text-slate-200">
                   {totals.total.budget > 0 ? `${((totals.total.expense / totals.total.budget) * 100).toFixed(0)}%` : '—'}
                 </td>
               </tr>
@@ -765,10 +765,10 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                     )}
                   </td>
                 ))}
-                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-850 text-amber-800 dark:text-amber-400 font-semibold border-l border-slate-200 dark:border-slate-800">
+                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-800/80 text-amber-800 dark:text-amber-400 font-semibold border-l border-slate-200 dark:border-slate-800">
                   {formatNumberForSheet(totals.avg.beCorp)}
                 </td>
-                <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-850 text-amber-900 dark:text-amber-300 font-bold">
+                <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-800/80 text-amber-900 dark:text-amber-300 font-bold">
                   {formatNumberForSheet(totals.total.beCorp)}
                 </td>
               </tr>
@@ -795,10 +795,10 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
                     )}
                   </td>
                 ))}
-                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-850 text-indigo-800 dark:text-indigo-400 font-semibold border-l border-slate-200 dark:border-slate-800">
+                <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-800/80 text-indigo-800 dark:text-indigo-400 font-semibold border-l border-slate-200 dark:border-slate-800">
                   {formatNumberForSheet(totals.avg.credit)}
                 </td>
-                <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-850 text-indigo-900 dark:text-indigo-300 font-bold">
+                <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-800/80 text-indigo-900 dark:text-indigo-300 font-bold">
                   {formatNumberForSheet(totals.total.credit)}
                 </td>
               </tr>
@@ -808,4 +808,6 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = ({
       )}
     </section>
   );
-};
+});
+
+MultiMonthSummaryTable.displayName = 'MultiMonthSummaryTable';
