@@ -1,5 +1,5 @@
 import gsap from 'gsap';
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 // Expose gsap globally for debugging and inspection
 if (typeof window !== 'undefined') {

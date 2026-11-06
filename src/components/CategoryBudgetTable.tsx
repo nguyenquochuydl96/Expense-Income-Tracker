@@ -1,7 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { motion } from 'motion/react';
 import { TransactionRecord, EXPENSE_CATEGORIES, BudgetTransferRecord } from '../types/finance';
-import { isBudgetTransferRecord } from '../utils/cycleUtils';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { CategoryBadge } from '../utils/categoryIcons';
 import { DailyLivingRunwayWidget } from './DailyLivingRunwayWidget';
@@ -19,17 +17,11 @@ import {
   SlidersHorizontal,
   TrendingDown,
   TrendingUp,
-  AlertCircle,
-  CheckCircle2,
   Edit3,
   RotateCcw,
   BarChart3,
-  Table as TableIcon,
   Check,
-  Percent,
-  ArrowRight,
   History,
-  Layers,
 } from 'lucide-react';
 
 export {

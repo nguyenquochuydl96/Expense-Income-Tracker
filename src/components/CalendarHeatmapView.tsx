@@ -1,17 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Calendar as CalendarIcon,
-  ChevronLeft,
-  ChevronRight,
   Flame,
   Leaf,
-  Sparkles,
-  TrendingUp,
   X,
   Plus,
-  CreditCard,
-  Building2,
-  Clock,
   Eye,
   EyeOff,
 } from 'lucide-react';

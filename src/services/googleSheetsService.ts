@@ -1,5 +1,5 @@
 import { BudgetTransferRecord, CheckTienSheetData, SheetTabType, TransactionRecord } from '../types/finance';
-import { formatNumberForSheet, parseDateString, parseSheetNumber } from '../utils/csvParser';
+import { parseDateString, parseSheetNumber } from '../utils/csvParser';
 import {
   isAppsScriptUrl,
   appsScriptSyncAll,

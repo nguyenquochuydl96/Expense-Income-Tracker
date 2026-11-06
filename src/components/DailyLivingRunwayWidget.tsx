@@ -5,7 +5,6 @@ import {
   Calendar,
   AlertTriangle,
   CheckCircle2,
-  AlertCircle,
   Settings,
   ChevronDown,
   ChevronUp,
@@ -13,7 +12,6 @@ import {
   Wallet,
   Check,
   X,
-  Sparkles,
 } from 'lucide-react';
 import { formatCurrency } from '../utils/csvParser';
 import { CategoryBadge } from '../utils/categoryIcons';

@@ -1,17 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
-  Share2,
   Download,
   Copy,
   Check,
   Award,
   Sparkles,
   TrendingUp,
-  TrendingDown,
   CreditCard,
   Building2,
-  Calendar,
 } from 'lucide-react';
 import { TransactionRecord } from '../types/finance';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
@@ -34,7 +31,6 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
   const [copied, setCopied] = useState<boolean>(false);
   const [isGeneratingImg, setIsGeneratingImg] = useState<boolean>(false);
   const [mobileTab, setMobileTab] = useState<'cover' | 'insights'>('cover');
-  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;

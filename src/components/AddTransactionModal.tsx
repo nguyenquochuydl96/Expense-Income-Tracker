@@ -247,12 +247,6 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     }
   }, [isOpen, initialPreset]);
 
-  const categoriesList = useMemo(() => {
-    return sheetType === 'Expenses'
-      ? [...EXPENSE_CATEGORIES]
-      : [...INCOME_CATEGORIES];
-  }, [sheetType]);
-
   const handleModeChange = (mode: ModalMode) => {
     setModalMode(mode);
     if (mode === 'Transfer') {
@@ -346,17 +340,6 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   const handleCreditChange = (val: string) => {
     setCreditStr(val);
     setAmountStr(val);
-  };
-
-  const formatNumericInput = (val: string): string => {
-    const trimmed = val.trim();
-    if (trimmed === '-') return '-';
-    const isNegative = trimmed.startsWith('-');
-    const digits = trimmed.replace(/[^0-9]/g, '');
-    if (!digits) return isNegative ? '-' : '';
-    const num = parseInt(digits, 10);
-    if (!Number.isFinite(num)) return '';
-    return (isNegative ? '-' : '') + num.toLocaleString('en-US');
   };
 
   const parsedAmount = parseSheetNumber(amountStr);

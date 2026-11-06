@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import {
   Calculator,
-  CalendarRange,
   CheckCircle2,
   AlertTriangle,
   ArrowUpRight,
@@ -16,7 +15,6 @@ import {
   ChevronRight,
   TrendingDown,
   TrendingUp,
-  RefreshCw,
 } from 'lucide-react';
 import { CheckTienSheetData, TransactionRecord } from '../types/finance';
 import {

@@ -1,24 +1,18 @@
 import React, { useMemo, useState } from 'react';
-import { motion } from 'motion/react';
-import { animateIconBounce } from '../utils/kinloAnimations';
 import {
   Search,
   Plus,
   ArrowUpDown,
   FilterX,
-  RefreshCw,
-  CheckCircle2,
   Edit3,
   Trash2,
   UploadCloud,
-  AlertCircle,
   X,
   Zap,
   Calendar,
   Sparkles,
 } from 'lucide-react';
 import {
-  CATEGORY_COLORS,
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
   TransactionRecord,

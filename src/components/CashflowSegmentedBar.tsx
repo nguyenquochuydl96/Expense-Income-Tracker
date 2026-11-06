@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { PieChart, TrendingUp, Sparkles, ShieldCheck, AlertCircle, Wallet } from 'lucide-react';
+import { motion } from 'motion/react';
+import { PieChart, ShieldCheck, AlertCircle } from 'lucide-react';
 import { AnimatedCurrency } from './AnimatedCurrency';
 
 export interface CashflowSegmentedBarProps {
@@ -101,7 +101,6 @@ export const CashflowSegmentedBar: React.FC<CashflowSegmentedBarProps> = ({
     }));
 
   const spentRatio = income > 0 ? Math.round((totalExpense / income) * 100) : 0;
-  const isHealthy = spentRatio <= 80;
   const isWarning = spentRatio > 80 && spentRatio <= 100;
   const isDeficit = spentRatio > 100;
 

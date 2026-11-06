@@ -4,11 +4,6 @@ import {
   ChevronDown,
   X,
   Search,
-  CheckSquare,
-  Square,
-  Sparkles,
-  Layers,
-  Utensils,
 } from 'lucide-react';
 import { CategoryBadge } from '../utils/categoryIcons';
 import { CATEGORY_COLORS } from '../types/finance';
@@ -301,7 +296,6 @@ export const MultiCategoryPickerDropdown: React.FC<MultiCategoryPickerDropdownPr
                 const isChecked = isAllSelected || selectedCategories.includes(cat);
                 const count = categoryRecordCounts[cat];
                 const spent = categorySpentTotals[cat];
-                const catColor = CATEGORY_COLORS[cat] || '#64748B';
 
                 return (
                   <div

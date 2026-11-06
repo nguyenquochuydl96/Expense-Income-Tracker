@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Calculator, Check, X, Delete, ArrowRight, CornerDownLeft } from 'lucide-react';
+import { Calculator, Check, X, Delete, CornerDownLeft } from 'lucide-react';
 import {
   evaluateMoneyExpression,
   isExpression,

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Calendar, ChevronDown, Check, RotateCcw, Sparkles, CheckSquare, Square, X } from 'lucide-react';
+import { Calendar, ChevronDown, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export interface MultiMonthPickerDropdownProps {

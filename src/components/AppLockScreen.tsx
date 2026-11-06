@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Lock, Delete, ShieldCheck, KeyRound, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Lock, Delete, ShieldCheck, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { PigIcon, SiameseCatIcon } from '../utils/categoryIcons';
 import { saveStoredWebAppKey } from '../services/appsScriptService';
 

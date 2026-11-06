@@ -1,28 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Plus,
   RefreshCw,
   CheckCircle2,
   AlertCircle,
-  Calendar,
-  Layers,
-  ChevronDown,
-  LayoutGrid,
-  CalendarRange,
-  Filter,
   Trash2,
   Lock,
-  KeyRound,
   Eye,
   EyeOff,
-  Smartphone,
   Moon,
   Sun,
   Palette,
   Share2,
-  TrendingUp,
-  TrendingDown,
-  Wallet,
   ArrowLeftRight,
   LayoutDashboard,
   ReceiptText,
@@ -37,10 +26,6 @@ import { CalendarHeatmapView } from './components/CalendarHeatmapView';
 import { MonthlyReportCardModal } from './components/MonthlyReportCardModal';
 import { MultiMonthPickerDropdown, formatSelectedMonthsDisplay } from './components/MultiMonthPickerDropdown';
 import { MultiCategoryPickerDropdown } from './components/MultiCategoryPickerDropdown';
-import { AnimatedCurrency } from './components/AnimatedCurrency';
-import { TiltCard } from './components/TiltCard';
-import { RealisticBankCard } from './components/RealisticBankCard';
-import { CashflowSegmentedBar } from './components/CashflowSegmentedBar';
 import { KinloCashflowCard } from './components/KinloCashflowCard';
 import { KinloBankAccountsCard } from './components/KinloBankAccountsCard';
 import {
@@ -60,7 +45,6 @@ import {
 import {
   buildItemSuggestions,
   formatCurrency,
-  formatMonthLabel,
   formatNumberForSheet,
   parseAttachedExpenseCsv,
   parseDateString,
@@ -106,7 +90,6 @@ import { MultiMonthSummaryTable } from './components/MultiMonthSummaryTable';
 import {
   CategoryBudgetTable,
   DEFAULT_CATEGORY_PERCENTAGES,
-  DEFAULT_CATEGORY_PERCENTAGES_T4_T7,
   computeMultiMonthRollover,
   SAVED_CATEGORY_PERCENTAGES_KEY,
   SAVED_ROLLOVER_MODE_KEY,
@@ -224,13 +207,6 @@ export default function App() {
   // PWA Install state
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState<boolean>(false);
-  const [isStandalone, setIsStandalone] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return (
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as any).standalone === true
-    );
-  });
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -1720,10 +1696,6 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  const pendingUnsyncedCount = useMemo(
-    () => localNewRecords.filter((r) => !r.syncedToSheet).length,
-    [localNewRecords]
-  );
   const totalExpensesCount = useMemo(
     () => allRecords.filter((r) => r.sheetType === 'Expenses').length,
     [allRecords]
@@ -2730,7 +2702,7 @@ export default function App() {
         isOpen={isInstallModalOpen}
         onClose={() => setIsInstallModalOpen(false)}
         deferredPrompt={deferredPrompt}
-        onInstallSuccess={() => setIsStandalone(true)}
+        onInstallSuccess={() => showToast('success', 'Đã cài đặt ứng dụng thành công!')}
       />
 
       {/* Monthly Report Card Modal (Infographic Card & Image Export) */}

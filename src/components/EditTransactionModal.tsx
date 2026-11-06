@@ -79,10 +79,6 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
     }
   }, [isOpen, record]);
 
-  const categoriesList = useMemo(() => {
-    return sheetType === 'Expenses' ? [...EXPENSE_CATEGORIES] : [...INCOME_CATEGORIES];
-  }, [sheetType]);
-
   if (!record) return null;
 
   const parsedAmount = parseSheetNumber(amountStr);

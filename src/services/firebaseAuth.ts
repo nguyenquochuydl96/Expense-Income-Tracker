@@ -94,6 +94,7 @@ export const initAuth = (
 };
 
 export const googleSignIn = async (): Promise<{ user: User; accessToken: string } | null> => {
+  if (isSigningIn) return null;
   try {
     isSigningIn = true;
     const result = await signInWithPopup(auth, provider);
