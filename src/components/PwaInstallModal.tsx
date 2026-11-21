@@ -54,25 +54,29 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 cursor-pointer"
+          className="fixed inset-0 z-[9999] bg-slate-950/70 backdrop-blur-xs flex items-start sm:items-center justify-center p-3 sm:p-4 py-4 sm:py-8 overflow-y-auto cursor-pointer"
           onClick={onClose}
         >
           <motion.div
             key="pwa-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pwa-install-title"
             initial={{ opacity: 0, scale: 0.95, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 16 }}
             transition={{ type: 'spring', damping: 26, stiffness: 360 }}
-            className="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative cursor-default"
+            className="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative cursor-default my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          className="absolute top-3 right-3 min-h-[44px] min-w-[44px] p-2 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center justify-center"
+          aria-label="Đóng cửa sổ cài đặt"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
 
         {/* Brand Icon */}
@@ -85,7 +89,7 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
               <SiameseCatIcon className="w-7 h-7" />
             </div>
           </div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+          <h3 id="pwa-install-title" className="text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">
             Cài đặt Heo &amp; Mèo vào điện thoại
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">

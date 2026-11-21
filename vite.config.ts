@@ -31,11 +31,7 @@ export default defineConfig(() => {
             if (id.includes('node_modules/firebase')) {
               return 'vendor-firebase';
             }
-            if (
-              id.includes('node_modules/gsap') ||
-              id.includes('node_modules/motion') ||
-              id.includes('node_modules/@animate-ui')
-            ) {
+            if (id.includes('node_modules/motion')) {
               return 'vendor-animation';
             }
             if (id.includes('node_modules/lucide-react')) {

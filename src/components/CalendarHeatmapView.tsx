@@ -13,6 +13,7 @@ import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { CategoryBadge } from '../utils/categoryIcons';
 import { NewTransactionPayload } from './AddTransactionModal';
 import { usePrivacyMode } from '../utils/privacyService';
+import { isBudgetTransferRecord } from '../utils/cycleUtils';
 
 interface CalendarHeatmapViewProps {
   records: TransactionRecord[];
@@ -114,6 +115,7 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.mem
 
       for (const t of txs) {
         if (t.sheetType === 'Expenses') {
+          if (isBudgetTransferRecord(t)) continue;
           spent += t.amount;
         } else {
           income += t.amount;
@@ -299,8 +301,17 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.mem
               return (
                 <div
                   key={d.dateStr}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedDateStr(d.dateStr)}
-                  className={`h-16 sm:h-20 rounded-xl p-1.5 sm:p-2 border transition-all cursor-pointer flex flex-col justify-between relative group ${getDayHeatStyle(
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedDateStr(d.dateStr);
+                    }
+                  }}
+                  aria-label={`Ngày ${d.dayNum} tháng ${activeMonthKey}: chi ${d.totalSpent > 0 ? formatCurrency(d.totalSpent) : '0 ₫'}${d.totalIncome > 0 ? `, thu ${formatCurrency(d.totalIncome)}` : ''}`}
+                  className={`h-16 sm:h-20 rounded-xl p-1.5 sm:p-2 border transition-all cursor-pointer flex flex-col justify-between relative group focus:outline-none focus:ring-2 focus:ring-indigo-500 ${getDayHeatStyle(
                     d
                   )} ${isSelected ? 'ring-2 ring-indigo-600 ring-offset-1 scale-[1.02] z-10' : ''} ${
                     d.isToday ? 'ring-2 ring-teal-500' : ''
@@ -418,7 +429,8 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.mem
               <button
                 type="button"
                 onClick={() => setSelectedDateStr(null)}
-                className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                className="min-h-[36px] min-w-[36px] p-2 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center justify-center"
+                aria-label="Đóng chi tiết ngày"
               >
                 <X className="w-4 h-4" />
               </button>

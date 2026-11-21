@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { TransactionRecord } from '../types/finance';
 import { formatCurrency } from '../utils/csvParser';
 import { usePrivacyMode } from '../utils/privacyService';
+import { isBudgetTransferRecord } from '../utils/cycleUtils';
 
 interface AnalyticsChartsProps {
   expensesInPeriod: TransactionRecord[];
@@ -46,6 +47,8 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = React.memo(({
 }) => {
   const { isPrivate: hookIsPrivate } = usePrivacyMode();
   const _effectiveIsPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
+  const renderCurrency = (val: number, showSign = false) =>
+    formatCurrency(val, showSign, !_effectiveIsPrivate);
   const [excludeSavingsInPie, setExcludeSavingsInPie] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [activeChartTab, setActiveChartTab] = useState<'categories' | 'monthly'>('categories');
@@ -66,6 +69,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = React.memo(({
 
     for (const rec of expensesInPeriod) {
       if (rec.sheetType !== 'Expenses') continue;
+      if (isBudgetTransferRecord(rec)) continue;
       if (excludeSavingsInPie && rec.category === 'Tiết kiệm') continue;
 
       const cur = totals.get(rec.category) || { amount: 0, count: 0, beCorp: 0, credit: 0 };
@@ -147,6 +151,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = React.memo(({
       if (rec.sheetType === 'Income') {
         existing.income += rec.amount;
       } else {
+        if (isBudgetTransferRecord(rec)) continue;
         existing.totalExpense += rec.amount;
         if (rec.category === 'Tiết kiệm') {
           existing.savingsExpense += rec.amount;
@@ -328,7 +333,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = React.memo(({
                         >
                           {/* Value on Bar */}
                           <span className="text-[11px] font-bold font-mono-tabular text-slate-800 whitespace-nowrap">
-                            {formatCurrency(item.amount)}
+                            {renderCurrency(item.amount)}
                           </span>
                         </div>
                       </div>
@@ -341,10 +346,10 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = React.memo(({
               {categoryStats.topItems.length > 0 && (
                 <div className="flex items-center justify-between pl-36 sm:pl-40 pt-2 text-[10px] font-mono-tabular text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-800">
                   <span>0</span>
-                  <span>{formatCurrency(maxCategoryAmount * 0.25)}</span>
-                  <span>{formatCurrency(maxCategoryAmount * 0.5)}</span>
-                  <span>{formatCurrency(maxCategoryAmount * 0.75)}</span>
-                  <span>{formatCurrency(maxCategoryAmount)}</span>
+                  <span>{renderCurrency(maxCategoryAmount * 0.25)}</span>
+                  <span>{renderCurrency(maxCategoryAmount * 0.5)}</span>
+                  <span>{renderCurrency(maxCategoryAmount * 0.75)}</span>
+                  <span>{renderCurrency(maxCategoryAmount)}</span>
                 </div>
               )}
             </div>
@@ -380,12 +385,12 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = React.memo(({
                         <div
                           className="w-3 bg-emerald-500 rounded-t-xs"
                           style={{ height: `${incomeH}px` }}
-                          title={`Thu nhập: ${formatCurrency(m.effectiveIncome)}`}
+                          title={`Thu nhập: ${renderCurrency(m.effectiveIncome)}`}
                         />
                         <div
                           className="w-3 bg-rose-500 rounded-t-xs"
                           style={{ height: `${expenseH}px` }}
-                          title={`Chi tiêu: ${formatCurrency(m.totalExpense)}`}
+                          title={`Chi tiêu: ${renderCurrency(m.totalExpense)}`}
                         />
                       </div>
                       <span className="text-[10px] font-mono-tabular mt-1.5 text-slate-600 dark:text-slate-400 font-medium">
@@ -466,9 +471,9 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = React.memo(({
                         <path
                           d={describeArc(110, 110, outerRadius, innerRadius, slice.startAngle, slice.endAngle)}
                           fill={slice.color}
-                          stroke="#FFFFFF"
+                          stroke="var(--card, #FFFFFF)"
                           strokeWidth={2}
-                          className="cursor-pointer transition-all duration-200"
+                          className="cursor-pointer transition-all duration-200 stroke-[var(--card)]"
                           style={{
                             opacity:
                               (hasCategoryFilter && !isSelected) ||
@@ -540,7 +545,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = React.memo(({
         {/* Bottom Total Note */}
         <div className="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-mono-tabular">
           <span>Tổng chi danh mục:</span>
-          <span className="font-bold text-slate-800 dark:text-slate-100">{formatCurrency(categoryStats.grandTotal)}</span>
+          <span className="font-bold text-slate-800 dark:text-slate-100">{renderCurrency(categoryStats.grandTotal)}</span>
         </div>
       </section>
     </div>

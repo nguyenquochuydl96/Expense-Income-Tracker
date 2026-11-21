@@ -39,6 +39,237 @@ interface TransactionLedgerTableProps {
 
 type QuickLedgerFilter = 'all' | 'expenses' | 'income' | 'becorp' | 'credit' | 'savings';
 
+interface TransactionRowProps {
+  rec: TransactionRecord;
+  selectedCategory: string;
+  onSelectCategory: (cat: string) => void;
+  onEditTransaction?: (record: TransactionRecord) => void;
+  onDeleteTransaction?: (record: TransactionRecord) => void;
+}
+
+export const TransactionMobileCard: React.FC<TransactionRowProps> = React.memo(({
+  rec,
+  selectedCategory,
+  onSelectCategory,
+  onEditTransaction,
+  onDeleteTransaction,
+}) => {
+  const isIncome = rec.sheetType === 'Income';
+  return (
+    <div className="p-3.5 space-y-2 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all rounded-xl">
+      {/* Header: Date, Category badge, Sheet type */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <CategoryBadge
+            category={rec.category}
+            onClick={() =>
+              onSelectCategory(
+                selectedCategory === rec.category ? 'ALL' : rec.category
+              )
+            }
+            compact
+          />
+          <span className="text-[11px] font-mono-tabular text-slate-500 dark:text-slate-400 shrink-0">
+            {rec.purchaseDate}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          {isIncome && (
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300">
+              Thu nhập
+            </span>
+          )}
+          {rec.source === 'local_new' && (
+            rec.syncedToSheet ? (
+              <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                ✓ Đã đồng bộ
+              </span>
+            ) : (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300">
+                Chờ đồng bộ
+              </span>
+            )
+          )}
+        </div>
+      </div>
+
+      {/* Main: Item name & prominent Amount */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 break-words flex-1">
+          {rec.purchaseItem?.trim() || rec.category || '(Không ghi nội dung)'}
+        </div>
+        <div
+          className={`text-sm font-extrabold font-mono-tabular text-right shrink-0 ${
+            isIncome
+              ? 'text-emerald-700 dark:text-emerald-400'
+              : rec.amount < 0
+              ? 'text-teal-700 dark:text-teal-400'
+              : 'text-slate-900 dark:text-slate-100'
+          }`}
+        >
+          {formatNumberForSheet(rec.amount, true, false, isIncome)}
+        </div>
+      </div>
+
+      {/* Sub-row: BE Corp & Credit & Note */}
+      {(rec.beCorp !== 0 || rec.credit !== 0 || rec.note) && (
+        <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
+          {rec.beCorp !== 0 && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[11px] font-mono-tabular font-semibold border border-amber-200/60 dark:border-amber-900/60">
+              Ví BE: {formatNumberForSheet(rec.beCorp, true)}
+            </span>
+          )}
+          {rec.credit !== 0 && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 text-[11px] font-mono-tabular font-semibold border border-indigo-200/60 dark:border-indigo-900/60">
+              Credit: {formatNumberForSheet(rec.credit, true)}
+            </span>
+          )}
+          {rec.note && (
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 italic">
+              {rec.note}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Footer: Row index & Tap Actions */}
+      <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400">
+        <span className="font-mono-tabular">
+          {rec.rowIndex ? `#${rec.rowIndex}` : 'Giao dịch mới'}
+        </span>
+        <div className="flex items-center gap-3">
+          {onEditTransaction && (
+            <button
+              type="button"
+              onClick={() => onEditTransaction(rec)}
+              aria-label={`Chỉnh sửa giao dịch: ${rec.purchaseItem}`}
+              className="min-h-[38px] px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-sky-100 dark:bg-slate-800 dark:hover:bg-sky-950/60 hover:text-sky-700 dark:hover:text-sky-300 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+              <span>Sửa</span>
+            </button>
+          )}
+          {onDeleteTransaction && (
+            <button
+              type="button"
+              onClick={() => onDeleteTransaction(rec)}
+              aria-label={`Xóa giao dịch: ${rec.purchaseItem}`}
+              className="min-h-[38px] px-3.5 py-1.5 text-xs font-semibold text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95 ml-1"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
+              <span>Xóa</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+export const TransactionRow: React.FC<TransactionRowProps> = React.memo(({
+  rec,
+  selectedCategory,
+  onSelectCategory,
+  onEditTransaction,
+  onDeleteTransaction,
+}) => {
+  return (
+    <tr className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors">
+      <td className="py-2.5 px-4 font-mono-tabular text-slate-600 dark:text-slate-400 whitespace-nowrap">
+        {rec.purchaseDate}
+      </td>
+      <td className="py-2.5 px-4 whitespace-nowrap">
+        <CategoryBadge
+          category={rec.category}
+          onClick={() =>
+            onSelectCategory(
+              selectedCategory === rec.category ? 'ALL' : rec.category
+            )
+          }
+          compact
+        />
+      </td>
+      <td className="py-2.5 px-4 text-slate-900 dark:text-slate-100 font-medium">
+        {rec.purchaseItem?.trim() || rec.category || '(Không ghi nội dung)'}
+      </td>
+      <td
+        className={`py-2.5 px-4 text-right font-mono-tabular font-semibold whitespace-nowrap ${
+          rec.sheetType === 'Income'
+            ? 'text-emerald-700 dark:text-emerald-400'
+            : rec.amount < 0
+            ? 'text-teal-700 dark:text-teal-400'
+            : 'text-slate-900 dark:text-slate-100'
+        }`}
+      >
+        {formatNumberForSheet(rec.amount, true, false, rec.sheetType === 'Income')}
+      </td>
+      <td className="py-2.5 px-4 text-right font-mono-tabular text-amber-700 dark:text-amber-400 whitespace-nowrap">
+        {rec.beCorp !== 0 ? formatNumberForSheet(rec.beCorp, true) : ''}
+      </td>
+      <td className="py-2.5 px-4 text-right font-mono-tabular text-indigo-700 dark:text-indigo-400 whitespace-nowrap">
+        {rec.credit !== 0 ? formatNumberForSheet(rec.credit, true) : ''}
+      </td>
+      <td className="py-2.5 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
+        <span>{rec.sheetType}</span>
+        {rec.rowIndex && (
+          <>
+            <span className="mx-1">·</span>
+            <span className="font-mono-tabular">#{rec.rowIndex}</span>
+          </>
+        )}
+        {rec.note && (
+          <>
+            <span className="mx-1">·</span>
+            <span className="text-slate-700 dark:text-slate-300">{rec.note}</span>
+          </>
+        )}
+        {rec.source === 'local_new' && (
+          <>
+            <span className="mx-1">·</span>
+            {rec.syncing ? (
+              <span className="text-teal-700 dark:text-teal-400 font-medium inline-flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-ping"></span>
+                Đang đồng bộ...
+              </span>
+            ) : rec.syncedToSheet ? (
+              <span className="text-emerald-700 dark:text-emerald-400 font-medium">✓ Đã đồng bộ</span>
+            ) : (
+              <span className="text-amber-700 dark:text-amber-400 font-medium">Chờ đồng bộ</span>
+            )}
+          </>
+        )}
+      </td>
+      <td className="py-2.5 px-3 text-center whitespace-nowrap">
+        <div className="flex items-center justify-center gap-1">
+          {onEditTransaction && (
+            <button
+              type="button"
+              title="Chỉnh sửa giao dịch này"
+              aria-label={`Chỉnh sửa giao dịch: ${rec.purchaseItem}`}
+              onClick={() => onEditTransaction(rec)}
+              className="min-h-[36px] min-w-[36px] p-2 text-slate-500 hover:text-sky-700 hover:bg-sky-50 dark:text-slate-400 dark:hover:text-sky-400 dark:hover:bg-sky-950/40 rounded-lg transition-colors cursor-pointer flex items-center justify-center"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {onDeleteTransaction && (
+            <button
+              type="button"
+              title="Xóa giao dịch này"
+              aria-label={`Xóa giao dịch: ${rec.purchaseItem}`}
+              onClick={() => onDeleteTransaction(rec)}
+              className="min-h-[36px] min-w-[36px] p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer flex items-center justify-center"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+});
+
 export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = React.memo(({
   records,
   selectedCategory,
@@ -493,120 +724,16 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
             Không tìm thấy dòng giao dịch nào khớp với bộ lọc hiện tại.
           </div>
         ) : (
-          displayedRows.map((rec) => {
-            const isIncome = rec.sheetType === 'Income';
-            return (
-              <div
-                key={rec.id}
-                className="p-3.5 space-y-2 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all rounded-xl"
-              >
-                {/* Header: Date, Category badge, Sheet type */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <CategoryBadge
-                      category={rec.category}
-                      onClick={() =>
-                        onSelectCategory(
-                          selectedCategory === rec.category ? 'ALL' : rec.category
-                        )
-                      }
-                      compact
-                    />
-                    <span className="text-[11px] font-mono-tabular text-slate-500 dark:text-slate-400 shrink-0">
-                      {rec.purchaseDate}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {isIncome && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300">
-                        Thu nhập
-                      </span>
-                    )}
-                    {rec.source === 'local_new' && (
-                      rec.syncedToSheet ? (
-                        <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
-                          ✓ Đã đồng bộ
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300">
-                          Chờ đồng bộ
-                        </span>
-                      )
-                    )}
-                  </div>
-                </div>
-
-                {/* Main: Item name & prominent Amount */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 break-words flex-1">
-                    {rec.purchaseItem}
-                  </div>
-                  <div
-                    className={`text-sm font-extrabold font-mono-tabular text-right shrink-0 ${
-                      isIncome
-                        ? 'text-emerald-700 dark:text-emerald-400'
-                        : rec.amount < 0
-                        ? 'text-teal-700 dark:text-teal-400'
-                        : 'text-slate-900 dark:text-slate-100'
-                    }`}
-                  >
-                    {formatNumberForSheet(rec.amount, true, false, isIncome)}
-                  </div>
-                </div>
-
-                {/* Sub-row: BE Corp & Credit & Note */}
-                {(rec.beCorp !== 0 || rec.credit !== 0 || rec.note) && (
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
-                    {rec.beCorp !== 0 && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[11px] font-mono-tabular font-semibold border border-amber-200/60 dark:border-amber-900/60">
-                        Ví BE: {formatNumberForSheet(rec.beCorp, true)}
-                      </span>
-                    )}
-                    {rec.credit !== 0 && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 text-[11px] font-mono-tabular font-semibold border border-indigo-200/60 dark:border-indigo-900/60">
-                        Credit: {formatNumberForSheet(rec.credit, true)}
-                      </span>
-                    )}
-                    {rec.note && (
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 italic">
-                        {rec.note}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {/* Footer: Row index & Tap Actions */}
-                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800/80 text-[11px] text-slate-400">
-                  <span className="font-mono-tabular">
-                    {rec.rowIndex ? `#${rec.rowIndex}` : 'Giao dịch mới'}
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    {onEditTransaction && (
-                      <button
-                        type="button"
-                        onClick={() => onEditTransaction(rec)}
-                        className="px-2.5 py-1 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-sky-100 dark:bg-slate-800 dark:hover:bg-sky-950/60 hover:text-sky-700 dark:hover:text-sky-300 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
-                      >
-                        <Edit3 className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-                        <span>Sửa</span>
-                      </button>
-                    )}
-                    {onDeleteTransaction && (
-                      <button
-                        type="button"
-                        onClick={() => onDeleteTransaction(rec)}
-                        className="px-2.5 py-1 text-xs font-semibold text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Xóa</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })
+          displayedRows.map((rec) => (
+            <TransactionMobileCard
+              key={rec.id}
+              rec={rec}
+              selectedCategory={selectedCategory}
+              onSelectCategory={onSelectCategory}
+              onEditTransaction={onEditTransaction}
+              onDeleteTransaction={onDeleteTransaction}
+            />
+          ))
         )}
       </div>
 
@@ -633,103 +760,16 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
                 </td>
               </tr>
             ) : (
-              displayedRows.map((rec) => {
-                return (
-                  <tr
-                    key={rec.id}
-                    className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors"
-                  >
-                    <td className="py-2.5 px-4 font-mono-tabular text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                      {rec.purchaseDate}
-                    </td>
-                    <td className="py-2.5 px-4 whitespace-nowrap">
-                      <CategoryBadge
-                        category={rec.category}
-                        onClick={() =>
-                          onSelectCategory(
-                            selectedCategory === rec.category ? 'ALL' : rec.category
-                          )
-                        }
-                        compact
-                      />
-                    </td>
-                    <td className="py-2.5 px-4 text-slate-900 dark:text-slate-100 font-medium">
-                      {rec.purchaseItem}
-                    </td>
-                    <td
-                      className={`py-2.5 px-4 text-right font-mono-tabular font-semibold whitespace-nowrap ${
-                        rec.sheetType === 'Income'
-                          ? 'text-emerald-700 dark:text-emerald-400'
-                          : rec.amount < 0
-                          ? 'text-teal-700 dark:text-teal-400'
-                          : 'text-slate-900 dark:text-slate-100'
-                      }`}
-                    >
-                      {formatNumberForSheet(rec.amount, true, false, rec.sheetType === 'Income')}
-                    </td>
-                    <td className="py-2.5 px-4 text-right font-mono-tabular text-amber-700 dark:text-amber-400 whitespace-nowrap">
-                      {rec.beCorp !== 0 ? formatNumberForSheet(rec.beCorp, true) : ''}
-                    </td>
-                    <td className="py-2.5 px-4 text-right font-mono-tabular text-indigo-700 dark:text-indigo-400 whitespace-nowrap">
-                      {rec.credit !== 0 ? formatNumberForSheet(rec.credit, true) : ''}
-                    </td>
-                    <td className="py-2.5 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      <span>{rec.sheetType}</span>
-                      {rec.rowIndex && (
-                        <>
-                          <span className="mx-1">·</span>
-                          <span className="font-mono-tabular">#{rec.rowIndex}</span>
-                        </>
-                      )}
-                      {rec.note && (
-                        <>
-                          <span className="mx-1">·</span>
-                          <span className="text-slate-700 dark:text-slate-300">{rec.note}</span>
-                        </>
-                      )}
-                      {rec.source === 'local_new' && (
-                        <>
-                          <span className="mx-1">·</span>
-                          {rec.syncing ? (
-                            <span className="text-teal-700 dark:text-teal-400 font-medium inline-flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-ping"></span>
-                              Đang đồng bộ...
-                            </span>
-                          ) : rec.syncedToSheet ? (
-                            <span className="text-emerald-700 dark:text-emerald-400 font-medium">✓ Đã đồng bộ</span>
-                          ) : (
-                            <span className="text-amber-700 dark:text-amber-400 font-medium">Chờ đồng bộ</span>
-                          )}
-                        </>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3 text-center whitespace-nowrap">
-                      <div className="flex items-center justify-center gap-1">
-                        {onEditTransaction && (
-                          <button
-                            type="button"
-                            title="Chỉnh sửa giao dịch này"
-                            onClick={() => onEditTransaction(rec)}
-                            className="p-1.5 text-slate-500 hover:text-sky-700 hover:bg-sky-50 dark:text-slate-400 dark:hover:text-sky-400 dark:hover:bg-sky-950/40 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                        {onDeleteTransaction && (
-                          <button
-                            type="button"
-                            title="Xóa giao dịch này"
-                            onClick={() => onDeleteTransaction(rec)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-400 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
+              displayedRows.map((rec) => (
+                <TransactionRow
+                  key={rec.id}
+                  rec={rec}
+                  selectedCategory={selectedCategory}
+                  onSelectCategory={onSelectCategory}
+                  onEditTransaction={onEditTransaction}
+                  onDeleteTransaction={onDeleteTransaction}
+                />
+              ))
             )}
           </tbody>
         </table>

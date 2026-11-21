@@ -1,35 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 
 export type ThemeMode = 'light' | 'dark';
-export type ThemePreset = 'kinlo' | 'cofra';
-
-export interface ThemeConfig {
-  id: ThemePreset;
-  name: string;
-  tagline: string;
-  icon: string;
-  accentColor: string;
-}
-
-export const THEME_PRESETS: Record<ThemePreset, ThemeConfig> = {
-  kinlo: {
-    id: 'kinlo',
-    name: 'Kinlo (Ocean)',
-    tagline: 'Xanh mòng két, hào quang atmospheric ấm áp',
-    icon: '🌿',
-    accentColor: '#0e6c84',
-  },
-  cofra: {
-    id: 'cofra',
-    name: 'Cofra (Mono Luxe)',
-    tagline: 'Tối giản đơn sắc đen trắng, tinh tế & tĩnh lặng',
-    icon: '🏛️',
-    accentColor: '#111111',
-  },
-};
 
 export const STORAGE_KEY_THEME = 'heomeo_theme_mode_v1';
-export const STORAGE_KEY_THEME_PRESET = 'heomeo_theme_preset_v1';
 
 // Initial state resolution from URL params or localStorage
 let currentMode: ThemeMode = 'light';
@@ -56,29 +29,7 @@ try {
   currentMode = 'light';
 }
 
-let currentPreset: ThemePreset = 'kinlo';
-try {
-  let paramPreset: string | null = null;
-  if (typeof window !== 'undefined' && window.location.search) {
-    const params = new URLSearchParams(window.location.search);
-    paramPreset = params.get('theme_preset') || params.get('preset');
-  }
-
-  if (paramPreset === 'cofra' || paramPreset === 'kinlo') {
-    currentPreset = paramPreset;
-  } else {
-    const savedPreset = localStorage.getItem(STORAGE_KEY_THEME_PRESET);
-    if (savedPreset === 'cofra' || savedPreset === 'kinlo') {
-      currentPreset = savedPreset;
-    } else {
-      currentPreset = 'kinlo';
-    }
-  }
-} catch {
-  currentPreset = 'kinlo';
-}
-
-// Clean up legacy multi-theme palette key if present
+// Clean up legacy multi-theme palette if present
 try {
   if (typeof localStorage !== 'undefined') {
     localStorage.removeItem('heomeo_theme_palette_v1');
@@ -87,11 +38,10 @@ try {
   // ignore
 }
 
-// Apply class and attribute to HTML tag immediately
-export function applyThemeToDom(mode: ThemeMode, preset: ThemePreset) {
+// Apply class to HTML tag immediately
+export function applyThemeToDom(mode: ThemeMode) {
   if (typeof document !== 'undefined') {
     const root = document.documentElement;
-    root.setAttribute('data-theme-preset', preset);
     root.removeAttribute('data-theme');
     if (mode === 'dark') {
       root.classList.add('dark');
@@ -100,42 +50,67 @@ export function applyThemeToDom(mode: ThemeMode, preset: ThemePreset) {
       root.classList.remove('dark');
       root.classList.add('light');
     }
+
+    // Dynamically synchronize meta theme-color with active background (Kinlo Light #ffffff, Kinlo Dark #0f172a)
+    try {
+      const themeColor = mode === 'dark' ? '#0f172a' : '#ffffff';
+
+      const metaTags = document.querySelectorAll('meta[name="theme-color"]');
+      if (metaTags.length > 0) {
+        metaTags.forEach((meta) => {
+          meta.setAttribute('content', themeColor);
+        });
+      } else {
+        const meta = document.createElement('meta');
+        meta.name = 'theme-color';
+        meta.content = themeColor;
+        document.head.appendChild(meta);
+      }
+    } catch {
+      // Ignore during SSR or tests
+    }
   }
 }
 
 // Initial application on bundle load
-applyThemeToDom(currentMode, currentPreset);
+applyThemeToDom(currentMode);
 
-const themeListeners = new Set<(state: { mode: ThemeMode; preset: ThemePreset }) => void>();
+interface ThemeStateSnapshot {
+  mode: ThemeMode;
+}
+
+let themeSnapshot: ThemeStateSnapshot = {
+  mode: currentMode,
+};
+
+const themeListeners = new Set<() => void>();
+
+function subscribeTheme(callback: () => void): () => void {
+  themeListeners.add(callback);
+  return () => {
+    themeListeners.delete(callback);
+  };
+}
+
+function getThemeSnapshot(): ThemeStateSnapshot {
+  return themeSnapshot;
+}
 
 export function getThemeMode(): ThemeMode {
   return currentMode;
 }
 
-export function getThemePreset(): ThemePreset {
-  return currentPreset;
-}
-
 export function setThemeMode(mode: ThemeMode) {
+  if (currentMode === mode) return;
   currentMode = mode;
-  applyThemeToDom(currentMode, currentPreset);
+  themeSnapshot = { mode: currentMode };
+  applyThemeToDom(currentMode);
   try {
     localStorage.setItem(STORAGE_KEY_THEME, mode);
   } catch {
     // ignore
   }
-  themeListeners.forEach((fn) => fn({ mode: currentMode, preset: currentPreset }));
-}
-
-export function setThemePreset(preset: ThemePreset) {
-  currentPreset = preset;
-  applyThemeToDom(currentMode, currentPreset);
-  try {
-    localStorage.setItem(STORAGE_KEY_THEME_PRESET, preset);
-  } catch {
-    // ignore
-  }
-  themeListeners.forEach((fn) => fn({ mode: currentMode, preset: currentPreset }));
+  themeListeners.forEach((fn) => fn());
 }
 
 export function toggleThemeMode(): ThemeMode {
@@ -144,58 +119,21 @@ export function toggleThemeMode(): ThemeMode {
   return next;
 }
 
-export function toggleThemePreset(): ThemePreset {
-  const next = currentPreset === 'kinlo' ? 'cofra' : 'kinlo';
-  setThemePreset(next);
-  return next;
-}
-
 /**
- * Main theme hook: light / dark mode + theme preset (kinlo / cofra)
+ * Main theme hook: light / dark mode
  */
 export function useThemeMode() {
-  const [mode, setModeState] = useState<ThemeMode>(currentMode);
-  const [preset, setPresetState] = useState<ThemePreset>(currentPreset);
-
-  useEffect(() => {
-    const handler = (state: { mode: ThemeMode; preset: ThemePreset }) => {
-      setModeState(state.mode);
-      setPresetState(state.preset);
-    };
-    themeListeners.add(handler);
-    return () => {
-      themeListeners.delete(handler);
-    };
-  }, []);
+  const { mode } = useSyncExternalStore(
+    subscribeTheme,
+    getThemeSnapshot,
+    () => ({ mode: 'light' as ThemeMode })
+  );
 
   return {
     mode,
-    preset,
     theme: mode,
     isDark: mode === 'dark',
     toggleTheme: toggleThemeMode,
     setTheme: setThemeMode,
-    togglePreset: toggleThemePreset,
-    setPreset: setThemePreset,
-    activeConfig: THEME_PRESETS[preset],
-    availablePresets: [THEME_PRESETS.kinlo, THEME_PRESETS.cofra],
-  };
-}
-
-/**
- * Backward compatibility hook for useThemeSystem
- */
-export function useThemeSystem() {
-  const { mode, preset, isDark, toggleTheme, setTheme, togglePreset, setPreset, activeConfig, availablePresets } = useThemeMode();
-  return {
-    palette: preset,
-    setPalette: setPreset,
-    togglePalette: togglePreset,
-    mode,
-    isDark,
-    toggleMode: toggleTheme,
-    setMode: setTheme,
-    activeThemeConfig: activeConfig,
-    availablePalettes: availablePresets,
   };
 }

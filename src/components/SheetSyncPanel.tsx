@@ -18,7 +18,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
-import { User } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 import { SpreadsheetMetadata } from '../services/googleSheetsService';
 import { TransactionRecord } from '../types/finance';
 import {

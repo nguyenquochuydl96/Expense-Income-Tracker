@@ -387,10 +387,10 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
   };
 
   const WALLET_FIELDS: { key: keyof WalletCategory; label: string; icon: any; color: string; desc: string }[] = [
-    { key: 'cash', label: 'Tiền mặt', icon: Coins, color: 'text-emerald-700 bg-emerald-50 border-emerald-200', desc: 'Tiền mặt trong ví, túi' },
-    { key: 'bank', label: 'Thẻ / Ngân hàng', icon: Building2, color: 'text-sky-700 bg-sky-50 border-sky-200', desc: 'Tài khoản Techcombank, Vietin, VCB...' },
-    { key: 'ewallet', label: 'Ví điện tử', icon: Smartphone, color: 'text-purple-700 bg-purple-50 border-purple-200', desc: 'Momo, ZaloPay, ShopeePay...' },
-    { key: 'receivable', label: 'Đang cho vay', icon: HandCoins, color: 'text-amber-700 bg-amber-50 border-amber-200', desc: 'Đồng nghiệp, bạn bè nợ chờ trả' },
+    { key: 'cash', label: 'Tiền mặt', icon: Coins, color: 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60', desc: 'Tiền mặt trong ví, túi' },
+    { key: 'bank', label: 'Thẻ / Ngân hàng', icon: Building2, color: 'text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800/60', desc: 'Tài khoản Techcombank, Vietin, VCB...' },
+    { key: 'ewallet', label: 'Ví điện tử', icon: Smartphone, color: 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/60', desc: 'Momo, ZaloPay, ShopeePay...' },
+    { key: 'receivable', label: 'Đang cho vay', icon: HandCoins, color: 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60', desc: 'Đồng nghiệp, bạn bè nợ chờ trả' },
   ];
 
   return (

@@ -5,6 +5,9 @@ import {
   isExpression,
   formatMoneyString,
   parseMoneyNumber,
+  hasExplicitUnit,
+  hasThousandSeparator,
+  computeEffectiveMoneyValue,
 } from '../utils/mathExpression';
 
 export interface MoneyCalculatorInputProps {
@@ -20,58 +23,59 @@ export interface MoneyCalculatorInputProps {
   title?: string;
   autoFocus?: boolean;
   allowNegative?: boolean;
+  autoThousands?: boolean;
   id?: string;
   name?: string;
 }
 
 const THEME_STYLES = {
   slate: {
-    border: 'border-slate-300 focus:border-slate-600 focus:ring-slate-500/20',
-    btn: 'text-slate-500 hover:text-slate-800 hover:bg-slate-100',
+    border: 'border-slate-300 dark:border-slate-700 focus:border-slate-600 focus:ring-slate-500/20',
+    btn: 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800',
     primary: 'bg-slate-800 hover:bg-slate-900 text-white',
-    badge: 'bg-slate-100 text-slate-800 border-slate-200',
+    badge: 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700',
   },
   rose: {
-    border: 'border-rose-300 focus:border-rose-500 focus:ring-rose-500/20',
-    btn: 'text-rose-500 hover:text-rose-700 hover:bg-rose-50',
+    border: 'border-rose-300 dark:border-rose-800 focus:border-rose-500 focus:ring-rose-500/20',
+    btn: 'text-rose-500 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/60',
     primary: 'bg-rose-600 hover:bg-rose-700 text-white',
-    badge: 'bg-rose-50 text-rose-800 border-rose-200',
+    badge: 'bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800',
   },
   sky: {
-    border: 'border-sky-300 focus:border-sky-500 focus:ring-sky-500/20',
-    btn: 'text-sky-500 hover:text-sky-700 hover:bg-sky-50',
+    border: 'border-sky-300 dark:border-sky-800 focus:border-sky-500 focus:ring-sky-500/20',
+    btn: 'text-sky-500 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/60',
     primary: 'bg-sky-600 hover:bg-sky-700 text-white',
-    badge: 'bg-sky-50 text-sky-800 border-sky-200',
+    badge: 'bg-sky-50 dark:bg-sky-950/60 text-sky-800 dark:text-sky-300 border-sky-200 dark:border-sky-800',
   },
   teal: {
-    border: 'border-teal-300 focus:border-teal-500 focus:ring-teal-500/20',
-    btn: 'text-teal-600 hover:text-teal-800 hover:bg-teal-50',
+    border: 'border-teal-300 dark:border-teal-800 focus:border-teal-500 focus:ring-teal-500/20',
+    btn: 'text-teal-600 hover:text-teal-800 dark:hover:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/60',
     primary: 'bg-teal-700 hover:bg-teal-800 text-white',
-    badge: 'bg-teal-50 text-teal-800 border-teal-200',
+    badge: 'bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-300 border-teal-200 dark:border-teal-800',
   },
   emerald: {
-    border: 'border-emerald-300 focus:border-emerald-500 focus:ring-emerald-500/20',
-    btn: 'text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50',
+    border: 'border-emerald-300 dark:border-emerald-800 focus:border-emerald-500 focus:ring-emerald-500/20',
+    btn: 'text-emerald-600 hover:text-emerald-800 dark:hover:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/60',
     primary: 'bg-emerald-600 hover:bg-emerald-700 text-white',
-    badge: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    badge: 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
   },
   purple: {
-    border: 'border-purple-300 focus:border-purple-500 focus:ring-purple-500/20',
-    btn: 'text-purple-600 hover:text-purple-800 hover:bg-purple-50',
+    border: 'border-purple-300 dark:border-purple-800 focus:border-purple-500 focus:ring-purple-500/20',
+    btn: 'text-purple-600 hover:text-purple-800 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/60',
     primary: 'bg-purple-600 hover:bg-purple-700 text-white',
-    badge: 'bg-purple-50 text-purple-800 border-purple-200',
+    badge: 'bg-purple-50 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800',
   },
   amber: {
-    border: 'border-amber-300 focus:border-amber-500 focus:ring-amber-500/20',
-    btn: 'text-amber-600 hover:text-amber-800 hover:bg-amber-50',
+    border: 'border-amber-300 dark:border-amber-800 focus:border-amber-500 focus:ring-amber-500/20',
+    btn: 'text-amber-600 hover:text-amber-800 dark:hover:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/60',
     primary: 'bg-amber-600 hover:bg-amber-700 text-white',
-    badge: 'bg-amber-50 text-amber-800 border-amber-200',
+    badge: 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800',
   },
   indigo: {
-    border: 'border-indigo-300 focus:border-indigo-500 focus:ring-indigo-500/20',
-    btn: 'text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50',
+    border: 'border-indigo-300 dark:border-indigo-800 focus:border-indigo-500 focus:ring-indigo-500/20',
+    btn: 'text-indigo-600 hover:text-indigo-800 dark:hover:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/60',
     primary: 'bg-indigo-600 hover:bg-indigo-700 text-white',
-    badge: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+    badge: 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
   },
 };
 
@@ -88,105 +92,131 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
   title,
   autoFocus = false,
   allowNegative = false,
+  autoThousands = true,
   id,
   name,
 }) => {
+  // Determine if x1k mode should be active
+  const [isAutoThousands, setIsAutoThousands] = useState<boolean>(() => {
+    if (!autoThousands) return false;
+    const num = parseMoneyNumber(value);
+    if (num === 0) return true;
+    return Math.abs(num) % 100 === 0;
+  });
+
+  // Display text in the input
   const [text, setText] = useState<string>(() => {
-    if (typeof value === 'number') {
-      return value === 0 ? '' : formatMoneyString(value);
+    const num = parseMoneyNumber(value);
+    if (num === 0) return typeof value === 'string' ? value : '';
+    if (autoThousands && Math.abs(num) % 100 === 0) {
+      return String(num / 1000);
     }
-    return value || '';
+    return formatMoneyString(num);
   });
 
   const [isCalcOpen, setIsCalcOpen] = useState<boolean>(false);
   const [calcExpr, setCalcExpr] = useState<string>('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastEmittedNumRef = useRef<number | null>(null);
 
-  // Sync external value changes if not actively typing an expression
+  // Sync external value changes if not actively emitted by this component
   useEffect(() => {
-    const formatted = typeof value === 'number' ? (value === 0 ? '' : formatMoneyString(value)) : value || '';
-    if (!isExpression(text) || text === '') {
-      setText(formatted);
+    const num = parseMoneyNumber(value);
+    if (lastEmittedNumRef.current !== null && lastEmittedNumRef.current === num) {
+      return;
     }
-  }, [value]);
+    if (autoThousands) {
+      if (num === 0) {
+        setIsAutoThousands(true);
+        setText(typeof value === 'string' ? value : '');
+      } else if (Math.abs(num) % 100 === 0) {
+        setIsAutoThousands(true);
+        setText(String(num / 1000));
+      } else {
+        setIsAutoThousands(false);
+        setText(formatMoneyString(num));
+      }
+    } else {
+      setIsAutoThousands(false);
+      setText(num === 0 ? (typeof value === 'string' ? value : '') : formatMoneyString(num));
+    }
+  }, [value, autoThousands]);
 
   const styleTheme = THEME_STYLES[theme] || THEME_STYLES.slate;
 
+  // Toggle x1k mode
+  const toggleAutoThousands = () => {
+    const nextAuto = !isAutoThousands;
+    setIsAutoThousands(nextAuto);
+    const effective = computeEffectiveMoneyValue(text, nextAuto, allowNegative);
+    if (effective !== null) {
+      lastEmittedNumRef.current = effective.num;
+      onChange(effective.formatted, effective.num);
+    }
+  };
+
   // Live evaluation of the current input text
-  const liveResult = useMemo(() => {
-    if (!isExpression(text)) return null;
-    return evaluateMoneyExpression(text);
-  }, [text]);
+  const liveEffective = useMemo(() => {
+    if (!text.trim() || text.trim() === '-') return null;
+    return computeEffectiveMoneyValue(text, isAutoThousands, allowNegative);
+  }, [text, isAutoThousands, allowNegative]);
 
   // Handle typing inside input
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
     setText(raw);
 
-    if (!isExpression(raw)) {
-      // Just normal number entry
-      const num = parseMoneyNumber(raw);
+    const effective = computeEffectiveMoneyValue(raw, isAutoThousands, allowNegative);
+    if (effective !== null) {
+      lastEmittedNumRef.current = effective.num;
+      onChange(effective.formatted, effective.num);
+    } else {
       if (raw.trim() === '' || raw.trim() === '-') {
+        lastEmittedNumRef.current = 0;
         onChange(raw, 0);
-      } else {
-        const formatted = (allowNegative && raw.trim().startsWith('-') ? '-' : '') + (num !== 0 ? formatMoneyString(Math.abs(num)) : '0');
-        onChange(formatted, num);
       }
     }
   };
 
-  // Evaluate on Enter or '=' or blur
+  // Commit on Enter, '=', or blur
+  const handleCommit = () => {
+    const effective = computeEffectiveMoneyValue(text, isAutoThousands, allowNegative);
+    if (effective !== null) {
+      // If user typed an expression, commit evaluated text into the field
+      if (isAutoThousands && !hasExplicitUnit(text) && !hasThousandSeparator(text)) {
+        setText(String(effective.num / 1000));
+      } else {
+        setText(effective.formatted);
+      }
+      lastEmittedNumRef.current = effective.num;
+      onChange(effective.formatted, effective.num);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === '=') {
       e.preventDefault();
-      const evaluated = evaluateMoneyExpression(text);
-      if (evaluated !== null) {
-        const formatted = formatMoneyString(evaluated);
-        setText(formatted);
-        onChange(formatted, evaluated);
-      }
+      handleCommit();
       return;
     }
 
     if (e.key === 'Enter') {
       if (isExpression(text)) {
         e.preventDefault();
-        const evaluated = evaluateMoneyExpression(text);
-        if (evaluated !== null) {
-          const formatted = formatMoneyString(evaluated);
-          setText(formatted);
-          onChange(formatted, evaluated);
-        }
       }
+      handleCommit();
     }
   };
 
   const handleBlur = () => {
-    if (isExpression(text)) {
-      const evaluated = evaluateMoneyExpression(text);
-      if (evaluated !== null) {
-        const formatted = formatMoneyString(evaluated);
-        setText(formatted);
-        onChange(formatted, evaluated);
-      } else {
-        const num = parseMoneyNumber(text);
-        const formatted = num !== 0 ? formatMoneyString(num) : '';
-        setText(formatted);
-        onChange(formatted, num);
-      }
-    } else {
-      const num = parseMoneyNumber(text);
-      const isNeg = allowNegative && text.trim().startsWith('-');
-      const formatted = (isNeg ? '-' : '') + (num !== 0 ? formatMoneyString(Math.abs(num)) : '');
-      setText(formatted);
-      onChange(formatted, num);
-    }
+    handleCommit();
   };
 
   // Calculator Popover Methods
   const openCalculator = () => {
     if (disabled) return;
-    const initial = text.trim() || (typeof value === 'number' && value !== 0 ? formatMoneyString(value) : '');
+    const effective = computeEffectiveMoneyValue(text, isAutoThousands, allowNegative);
+    const initial = effective !== null && effective.num !== 0 ? formatMoneyString(effective.num) : '';
     setCalcExpr(initial);
     setIsCalcOpen(true);
   };
@@ -195,12 +225,16 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
     setIsCalcOpen(false);
   };
 
-  // Calc live preview
+  // Calc live preview inside modal
   const calcResult = useMemo(() => {
     if (!calcExpr.trim()) return 0;
     const res = evaluateMoneyExpression(calcExpr);
-    return res !== null ? res : parseMoneyNumber(calcExpr);
-  }, [calcExpr]);
+    let n = res !== null ? res : parseMoneyNumber(calcExpr);
+    if (!allowNegative && n < 0) {
+      n = 0;
+    }
+    return n;
+  }, [calcExpr, allowNegative]);
 
   const handleCalcAppend = (token: string) => {
     setCalcExpr((prev) => {
@@ -208,9 +242,10 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
       if (token === 'DEL') return prev.slice(0, -1);
       if (token === '=') {
         const evaluated = evaluateMoneyExpression(prev);
-        return evaluated !== null ? formatMoneyString(evaluated) : prev;
+        let n = evaluated !== null ? evaluated : parseMoneyNumber(prev);
+        if (!allowNegative && n < 0) n = 0;
+        return formatMoneyString(n);
       }
-      // If adding an operator to empty expression
       if (['+', '-', '*', '/'].includes(token) && !prev.trim()) {
         const currentVal = parseMoneyNumber(text) || 0;
         return `${formatMoneyString(currentVal)} ${token} `;
@@ -225,16 +260,25 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
   const handleQuickAdd = (amount: number) => {
     setCalcExpr((prev) => {
       const evaluated = evaluateMoneyExpression(prev);
-      const current = evaluated !== null ? evaluated : (parseMoneyNumber(prev) || 0);
-      const next = current + amount;
+      const current = evaluated !== null ? evaluated : parseMoneyNumber(prev) || 0;
+      let next = current + amount;
+      if (!allowNegative && next < 0) next = 0;
       return formatMoneyString(next);
     });
   };
 
   const handleApplyCalc = () => {
-    const finalNum = calcResult;
+    let finalNum = calcResult;
+    if (!allowNegative && finalNum < 0) {
+      finalNum = 0;
+    }
     const formatted = formatMoneyString(finalNum);
-    setText(formatted);
+    if (isAutoThousands && Math.abs(finalNum) % 100 === 0) {
+      setText(String(finalNum / 1000));
+    } else {
+      setText(formatted);
+    }
+    lastEmittedNumRef.current = finalNum;
     onChange(formatted, finalNum);
     setIsCalcOpen(false);
   };
@@ -296,7 +340,7 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
 
   return (
     <div className={`relative inline-block w-full ${className}`}>
-      {/* Input Box with Calculator Button */}
+      {/* Input Box with x1k Toggle and Calculator Button */}
       <div className="relative flex items-center">
         <input
           ref={inputRef}
@@ -312,34 +356,64 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
           required={required}
           title={title}
           autoFocus={autoFocus}
-          className={`w-full pr-8 rounded-lg border bg-white text-slate-900 transition-colors focus:outline-none focus:ring-1 ${styleTheme.border} ${sizeClasses} ${inputClassName}`}
+          className={`w-full pr-24 rounded-lg border bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700 transition-colors focus:outline-none focus:ring-1 ${styleTheme.border} ${sizeClasses} ${inputClassName}`}
         />
 
-        {/* Small Calculator Icon Button */}
-        <button
-          type="button"
-          tabIndex={-1}
-          disabled={disabled}
-          onClick={openCalculator}
-          title="Mở máy tính cộng trừ tiền (Calculator)"
-          className={`absolute right-1 rounded-md transition-colors ${styleTheme.btn} ${calcBtnSize} cursor-pointer`}
-        >
-          <Calculator className={calcIconSize} />
-        </button>
+        {/* Right-aligned action buttons and x1k suffix */}
+        <div className="absolute right-1.5 flex items-center gap-1">
+          {/* Faint ,000 d suffix */}
+          {isAutoThousands &&
+            !hasExplicitUnit(text) &&
+            !hasThousandSeparator(text) &&
+            text.trim() !== '' &&
+            text.trim() !== '-' && (
+              <span className="text-[11px] font-mono-tabular font-medium text-slate-400 dark:text-slate-500 select-none pointer-events-none pr-0.5">
+                ,000 ₫
+              </span>
+            )}
+
+          {/* Quick toggle x1k button */}
+          <button
+            type="button"
+            tabIndex={-1}
+            disabled={disabled}
+            onClick={toggleAutoThousands}
+            title={
+              isAutoThousands
+                ? 'Đang bật nhân nghìn (×1k). Bấm để tắt.'
+                : 'Đang tắt nhân nghìn (×1k). Bấm để bật.'
+            }
+            className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md transition-colors cursor-pointer select-none ${
+              isAutoThousands
+                ? 'bg-teal-100 dark:bg-teal-900/60 text-teal-700 dark:text-teal-300 border border-teal-300 dark:border-teal-700'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 border border-slate-200 dark:border-slate-700'
+            }`}
+          >
+            ×1k
+          </button>
+
+          {/* Small Calculator Icon Button */}
+          <button
+            type="button"
+            tabIndex={-1}
+            disabled={disabled}
+            onClick={openCalculator}
+            title="Mở máy tính cộng trừ tiền (Calculator)"
+            className={`rounded-md transition-colors ${styleTheme.btn} ${calcBtnSize} cursor-pointer`}
+          >
+            <Calculator className={calcIconSize} />
+          </button>
+        </div>
       </div>
 
       {/* Floating Live Expression Preview Badge */}
-      {liveResult !== null && (
+      {liveEffective !== null && isExpression(text) && (
         <div
-          onClick={() => {
-            const formatted = formatMoneyString(liveResult);
-            setText(formatted);
-            onChange(formatted, liveResult);
-          }}
+          onClick={handleCommit}
           className={`absolute left-0 -bottom-6 z-20 flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-mono-tabular font-semibold rounded-md border shadow-xs cursor-pointer animate-in fade-in zoom-in-95 duration-100 ${styleTheme.badge}`}
           title="Bấm vào đây hoặc nhấn Enter để áp dụng kết quả"
         >
-          <span>🧮 = {formatMoneyString(liveResult)} ₫</span>
+          <span>🧮 = {liveEffective.formatted} ₫</span>
           <CornerDownLeft className="w-2.5 h-2.5 opacity-60" />
         </div>
       )}

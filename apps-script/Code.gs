@@ -94,6 +94,27 @@ function jsonResponse(obj) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+/**
+ * Tìm số thứ tự hàng (1-based rowIndex) theo txId (cột H=8 cho Expenses, F=6 cho Income, G=7 cho Transfers),
+ * nếu không thấy hoặc không có txId thì fallback về rowIndex truyền vào.
+ */
+function findRowByTxIdOrIndex(sheet, txId, rowIndex, txIdCol) {
+  if (txId && typeof txId === 'string' && txId.trim() !== '') {
+    const cleanId = txId.trim();
+    const lastRow = sheet.getLastRow();
+    if (lastRow >= 2) {
+      const idValues = sheet.getRange(2, txIdCol, lastRow - 1, 1).getValues();
+      for (let i = 0; i < idValues.length; i++) {
+        if (String(idValues[i][0]).trim() === cleanId) {
+          return i + 2;
+        }
+      }
+    }
+  }
+  const idx = parseInt(rowIndex, 10);
+  return (idx && idx >= 2) ? idx : null;
+}
+
 // ==================== XỬ LÝ REST API CHO WEB & MOBILE APP ====================
 function handleApiRequest(params) {
   try {
@@ -155,27 +176,34 @@ function handleApiRequest(params) {
         summaryTab: summaryTab
       };
 
-      // Đọc Expenses
+      // Đọc Expenses: đọc song song getDisplayValues() và getValues() để lấy đúng giá trị số nguyên bản
       const expenses = [];
       const expSheet = ss.getSheetByName(expensesTab);
       if (expSheet) {
         const lastRow = expSheet.getLastRow();
         if (lastRow >= 2) {
-          const values = expSheet.getRange(2, 1, lastRow - 1, 7).getDisplayValues();
-          for (let i = 0; i < values.length; i++) {
-            const row = values[i];
-            const dateStr = (row[0] || '').trim();
-            const cat = (row[1] || '').trim();
-            const item = (row[2] || '').trim();
-            const amtStr = (row[3] || '').replace(/[^0-9.-]/g, '');
-            const amount = parseFloat(amtStr) || 0;
-            const beCorp = parseFloat((row[4] || '').replace(/[^0-9.-]/g, '')) || 0;
-            const credit = parseFloat((row[5] || '').replace(/[^0-9.-]/g, '')) || 0;
-            const note = (row[6] || '').trim();
+          const maxCols = Math.max(expSheet.getLastColumn(), 8);
+          const dispValues = expSheet.getRange(2, 1, lastRow - 1, maxCols).getDisplayValues();
+          const rawValues = expSheet.getRange(2, 1, lastRow - 1, maxCols).getValues();
 
-            if (dateStr || cat || item || amount > 0) {
+          for (let i = 0; i < dispValues.length; i++) {
+            const dRow = dispValues[i];
+            const rRow = rawValues[i];
+            const dateStr = (dRow[0] || '').trim();
+            const cat = (dRow[1] || '').trim();
+            const item = (dRow[2] || '').trim();
+
+            // Ưu tiên giá trị số trực tiếp từ getValues() để tránh lỗi parse dấu âm / dấu chấm phân cách
+            const amount = typeof rRow[3] === 'number' ? rRow[3] : (parseFloat((dRow[3] || '').replace(/[^0-9.-]/g, '')) || 0);
+            const beCorp = typeof rRow[4] === 'number' ? rRow[4] : (parseFloat((dRow[4] || '').replace(/[^0-9.-]/g, '')) || 0);
+            const credit = typeof rRow[5] === 'number' ? rRow[5] : (parseFloat((dRow[5] || '').replace(/[^0-9.-]/g, '')) || 0);
+            const note = (dRow[6] || '').trim();
+            const txId = (dRow[7] || '').trim() || ('exp-' + (i + 2) + '-' + dateStr);
+
+            if (dateStr || cat || item || amount !== 0 || beCorp !== 0 || credit !== 0) {
               expenses.push({
-                id: 'exp-' + (i + 2) + '-' + dateStr,
+                id: txId,
+                txId: txId,
                 rowIndex: i + 2,
                 purchaseDate: dateStr,
                 category: cat,
@@ -191,25 +219,31 @@ function handleApiRequest(params) {
         }
       }
 
-      // Đọc Income
+      // Đọc Income: đọc song song getDisplayValues() và getValues()
       const income = [];
       const incSheet = ss.getSheetByName(incomeTab);
       if (incSheet) {
         const lastRow = incSheet.getLastRow();
         if (lastRow >= 2) {
-          const values = incSheet.getRange(2, 1, lastRow - 1, 5).getDisplayValues();
-          for (let i = 0; i < values.length; i++) {
-            const row = values[i];
-            const dateStr = (row[0] || '').trim();
-            const cat = (row[1] || '').trim();
-            const item = (row[2] || '').trim();
-            const amtStr = (row[3] || '').replace(/[^0-9.-]/g, '');
-            const amount = parseFloat(amtStr) || 0;
-            const monthStr = (row[4] || '').trim();
+          const maxCols = Math.max(incSheet.getLastColumn(), 6);
+          const dispValues = incSheet.getRange(2, 1, lastRow - 1, maxCols).getDisplayValues();
+          const rawValues = incSheet.getRange(2, 1, lastRow - 1, maxCols).getValues();
 
-            if (dateStr || cat || item || amount > 0) {
+          for (let i = 0; i < dispValues.length; i++) {
+            const dRow = dispValues[i];
+            const rRow = rawValues[i];
+            const dateStr = (dRow[0] || '').trim();
+            const cat = (dRow[1] || '').trim();
+            const item = (dRow[2] || '').trim();
+
+            const amount = typeof rRow[3] === 'number' ? rRow[3] : (parseFloat((dRow[3] || '').replace(/[^0-9.-]/g, '')) || 0);
+            const monthStr = (dRow[4] || '').trim();
+            const txId = (dRow[5] || '').trim() || ('inc-' + (i + 2) + '-' + dateStr);
+
+            if (dateStr || cat || item || amount !== 0) {
               income.push({
-                id: 'inc-' + (i + 2) + '-' + dateStr,
+                id: txId,
+                txId: txId,
                 rowIndex: i + 2,
                 purchaseDate: dateStr,
                 category: cat,
@@ -223,26 +257,32 @@ function handleApiRequest(params) {
         }
       }
 
-      // Đọc Budget Transfers
+      // Đọc Budget Transfers: đọc song song getDisplayValues() và getValues()
       const budgetTransfers = [];
       const btSheet = ss.getSheetByName(btTab);
       if (btSheet) {
         const lastRow = btSheet.getLastRow();
         if (lastRow >= 2) {
-          const values = btSheet.getRange(2, 1, lastRow - 1, 6).getDisplayValues();
-          for (let i = 0; i < values.length; i++) {
-            const row = values[i];
-            const dateStr = (row[0] || '').trim();
-            const fromCat = (row[1] || '').trim();
-            const toCat = (row[2] || '').trim();
-            const amtStr = (row[3] || '').replace(/[^0-9.-]/g, '');
-            const amount = parseFloat(amtStr) || 0;
-            const desc = (row[4] || '').trim();
-            const monthStr = (row[5] || '').trim();
+          const maxCols = Math.max(btSheet.getLastColumn(), 7);
+          const dispValues = btSheet.getRange(2, 1, lastRow - 1, maxCols).getDisplayValues();
+          const rawValues = btSheet.getRange(2, 1, lastRow - 1, maxCols).getValues();
 
-            if (dateStr || fromCat || toCat || amount > 0) {
+          for (let i = 0; i < dispValues.length; i++) {
+            const dRow = dispValues[i];
+            const rRow = rawValues[i];
+            const dateStr = (dRow[0] || '').trim();
+            const fromCat = (dRow[1] || '').trim();
+            const toCat = (dRow[2] || '').trim();
+
+            const amount = typeof rRow[3] === 'number' ? rRow[3] : (parseFloat((dRow[3] || '').replace(/[^0-9.-]/g, '')) || 0);
+            const desc = (dRow[4] || '').trim();
+            const monthStr = (dRow[5] || '').trim();
+            const txId = (dRow[6] || '').trim() || ('bt-' + (i + 2) + '-' + dateStr);
+
+            if (dateStr || fromCat || toCat || amount !== 0) {
               budgetTransfers.push({
-                id: 'bt-' + (i + 2) + '-' + dateStr,
+                id: txId,
+                txId: txId,
                 rowIndex: i + 2,
                 date: dateStr,
                 fromCategory: fromCat,
@@ -268,143 +308,188 @@ function handleApiRequest(params) {
       });
     }
 
-    // 4. THÊM GIAO DỊCH MỚI (EXPENSES HOẶC INCOME)
-    if (action === 'appendTransaction') {
-      const tabName = params.tabName || 'Expenses';
-      const sheet = ss.getSheetByName(tabName) || ss.insertSheet(tabName);
-      const rec = params.record || {};
-      const isIncome = tabName.toLowerCase().includes('income') || rec.sheetType === 'Income';
-
-      // Quét cột A để tìm dòng trống đầu tiên
-      const colAValues = sheet.getRange("A:A").getValues();
-      let targetRow = 1;
-      for (let i = colAValues.length - 1; i >= 0; i--) {
-        if (colAValues[i][0] !== "" && colAValues[i][0] !== null && colAValues[i][0] !== undefined) {
-          targetRow = i + 2;
-          break;
-        }
-      }
-      if (targetRow < 2) targetRow = 2;
-
-      if (isIncome) {
-        const monthFormula = '=DATE(YEAR(INDIRECT("A"&ROW())), MONTH(INDIRECT("A"&ROW())), 1)';
-        sheet.getRange(targetRow, 1, 1, 5).setValues([[
-          rec.purchaseDate || '',
-          rec.category || '',
-          rec.purchaseItem || '',
-          rec.amount || 0,
-          monthFormula
-        ]]);
-      } else {
-        sheet.getRange(targetRow, 1, 1, 7).setValues([[
-          rec.purchaseDate || '',
-          rec.category || '',
-          rec.purchaseItem || '',
-          rec.amount || 0,
-          rec.beCorp ? rec.beCorp : '',
-          rec.credit ? rec.credit : '',
-          rec.note ? rec.note : ''
-        ]]);
+    // Các thao tác ghi: Bọc LockService để tránh ghi đè đồng thời
+    const writeActions = ['appendTransaction', 'appendBudgetTransfer', 'updateTransaction', 'deleteTransaction'];
+    if (writeActions.indexOf(action) !== -1) {
+      const lock = LockService.getScriptLock();
+      try {
+        lock.waitLock(15000);
+      } catch (lockErr) {
+        return jsonResponse({ success: false, error: 'Hệ thống đang bận do có thao tác ghi khác. Vui lòng thử lại sau giây lát.' });
       }
 
-      return jsonResponse({
-        success: true,
-        rowIndex: targetRow,
-        tabName: tabName,
-        message: 'Đã thêm dòng mới vào hàng ' + targetRow
-      });
-    }
-
-    // 5. THÊM ĐIỀU CHUYỂN NGÂN SÁCH (BUDGET TRANSFERS)
-    if (action === 'appendBudgetTransfer') {
-      const tabName = params.tabName || 'Budget Transfers';
-      const sheet = ss.getSheetByName(tabName) || ss.insertSheet(tabName);
-      const t = params.transfer || {};
-
-      const colAValues = sheet.getRange("A:A").getValues();
-      let targetRow = 1;
-      for (let i = colAValues.length - 1; i >= 0; i--) {
-        if (colAValues[i][0] !== "" && colAValues[i][0] !== null && colAValues[i][0] !== undefined) {
-          targetRow = i + 2;
-          break;
-        }
+      try {
+        return executeWriteAction(ss, action, params);
+      } finally {
+        lock.releaseLock();
       }
-      if (targetRow < 2) targetRow = 2;
-
-      const monthFormula = '=DATE(YEAR(INDIRECT("A"&ROW())), MONTH(INDIRECT("A"&ROW())), 1)';
-      sheet.getRange(targetRow, 1, 1, 6).setValues([[
-        t.date || '',
-        t.fromCategory || '',
-        t.toCategory || '',
-        t.amount || 0,
-        t.description || '',
-        monthFormula
-      ]]);
-
-      return jsonResponse({
-        success: true,
-        rowIndex: targetRow,
-        message: 'Đã thêm điều chuyển vào hàng ' + targetRow
-      });
-    }
-
-    // 6. CẬP NHẬT GIAO DỊCH
-    if (action === 'updateTransaction') {
-      const tabName = params.tabName || 'Expenses';
-      const sheet = ss.getSheetByName(tabName);
-      if (!sheet) return jsonResponse({ success: false, error: 'Không tìm thấy tab: ' + tabName });
-
-      const rowIndex = parseInt(params.rowIndex, 10);
-      if (!rowIndex || rowIndex < 2) return jsonResponse({ success: false, error: 'Dòng không hợp lệ' });
-
-      const rec = params.record || {};
-      const isIncome = tabName.toLowerCase().includes('income') || rec.sheetType === 'Income';
-
-      if (isIncome) {
-        sheet.getRange(rowIndex, 1, 1, 4).setValues([[
-          rec.purchaseDate || '',
-          rec.category || '',
-          rec.purchaseItem || '',
-          rec.amount || 0
-        ]]);
-      } else {
-        sheet.getRange(rowIndex, 1, 1, 7).setValues([[
-          rec.purchaseDate || '',
-          rec.category || '',
-          rec.purchaseItem || '',
-          rec.amount || 0,
-          rec.beCorp ? rec.beCorp : '',
-          rec.credit ? rec.credit : '',
-          rec.note ? rec.note : ''
-        ]]);
-      }
-
-      return jsonResponse({
-        success: true,
-        rowIndex: rowIndex,
-        message: 'Đã cập nhật dòng #' + rowIndex
-      });
-    }
-
-    // 7. XÓA GIAO DỊCH
-    if (action === 'deleteTransaction') {
-      const tabName = params.tabName || 'Expenses';
-      const sheet = ss.getSheetByName(tabName);
-      if (!sheet) return jsonResponse({ success: false, error: 'Không tìm thấy tab: ' + tabName });
-
-      const rowIndex = parseInt(params.rowIndex, 10);
-      if (!rowIndex || rowIndex < 2) return jsonResponse({ success: false, error: 'Dòng không hợp lệ' });
-
-      sheet.deleteRow(rowIndex);
-      return jsonResponse({
-        success: true,
-        rowIndex: rowIndex,
-        message: 'Đã xóa dòng #' + rowIndex
-      });
     }
 
     return jsonResponse({ success: false, error: 'Yêu cầu không được hỗ trợ: ' + action });
   } catch (err) {
     return jsonResponse({ success: false, error: err.toString() });
   }
+}
+
+/**
+ * Thực thi các thao tác ghi dữ liệu có bảo vệ LockService
+ */
+function executeWriteAction(ss, action, params) {
+  // 4. THÊM GIAO DỊCH MỚI (EXPENSES HOẶC INCOME)
+  if (action === 'appendTransaction') {
+    const tabName = params.tabName || 'Expenses';
+    const sheet = ss.getSheetByName(tabName) || ss.insertSheet(tabName);
+    const rec = params.record || {};
+    const isIncome = tabName.toLowerCase().includes('income') || rec.sheetType === 'Income';
+
+    // Quét cột A để tìm dòng trống đầu tiên
+    const colAValues = sheet.getRange("A:A").getValues();
+    let targetRow = 1;
+    for (let i = colAValues.length - 1; i >= 0; i--) {
+      if (colAValues[i][0] !== "" && colAValues[i][0] !== null && colAValues[i][0] !== undefined) {
+        targetRow = i + 2;
+        break;
+      }
+    }
+    if (targetRow < 2) targetRow = 2;
+
+    const txId = rec.txId || ('tx-' + Date.now() + '-' + Math.floor(Math.random() * 100000));
+
+    if (isIncome) {
+      const monthFormula = '=DATE(YEAR(INDIRECT("A"&ROW())), MONTH(INDIRECT("A"&ROW())), 1)';
+      sheet.getRange(targetRow, 1, 1, 6).setValues([[
+        rec.purchaseDate || '',
+        rec.category || '',
+        rec.purchaseItem || '',
+        rec.amount || 0,
+        monthFormula,
+        txId
+      ]]);
+    } else {
+      sheet.getRange(targetRow, 1, 1, 8).setValues([[
+        rec.purchaseDate || '',
+        rec.category || '',
+        rec.purchaseItem || '',
+        rec.amount || 0,
+        rec.beCorp !== undefined && rec.beCorp !== '' && !isNaN(rec.beCorp) && Number(rec.beCorp) !== 0 ? rec.beCorp : '',
+        rec.credit !== undefined && rec.credit !== '' && !isNaN(rec.credit) && Number(rec.credit) !== 0 ? rec.credit : '',
+        rec.note ? rec.note : '',
+        txId
+      ]]);
+    }
+
+    return jsonResponse({
+      success: true,
+      rowIndex: targetRow,
+      txId: txId,
+      tabName: tabName,
+      message: 'Đã thêm dòng mới vào hàng ' + targetRow
+    });
+  }
+
+  // 5. THÊM ĐIỀU CHUYỂN NGÂN SÁCH (BUDGET TRANSFERS)
+  if (action === 'appendBudgetTransfer') {
+    const tabName = params.tabName || 'Budget Transfers';
+    const sheet = ss.getSheetByName(tabName) || ss.insertSheet(tabName);
+    const t = params.transfer || {};
+
+    const colAValues = sheet.getRange("A:A").getValues();
+    let targetRow = 1;
+    for (let i = colAValues.length - 1; i >= 0; i--) {
+      if (colAValues[i][0] !== "" && colAValues[i][0] !== null && colAValues[i][0] !== undefined) {
+        targetRow = i + 2;
+        break;
+      }
+    }
+    if (targetRow < 2) targetRow = 2;
+
+    const txId = t.txId || ('bt-' + Date.now() + '-' + Math.floor(Math.random() * 100000));
+    const monthFormula = '=DATE(YEAR(INDIRECT("A"&ROW())), MONTH(INDIRECT("A"&ROW())), 1)';
+    sheet.getRange(targetRow, 1, 1, 7).setValues([[
+      t.date || '',
+      t.fromCategory || '',
+      t.toCategory || '',
+      t.amount || 0,
+      t.description || '',
+      monthFormula,
+      txId
+    ]]);
+
+    return jsonResponse({
+      success: true,
+      rowIndex: targetRow,
+      txId: txId,
+      message: 'Đã thêm điều chuyển vào hàng ' + targetRow
+    });
+  }
+
+  // 6. CẬP NHẬT GIAO DỊCH
+  if (action === 'updateTransaction') {
+    const tabName = params.tabName || 'Expenses';
+    const sheet = ss.getSheetByName(tabName);
+    if (!sheet) return jsonResponse({ success: false, error: 'Không tìm thấy tab: ' + tabName });
+
+    const rec = params.record || {};
+    const isIncome = tabName.toLowerCase().includes('income') || rec.sheetType === 'Income';
+    const txIdCol = isIncome ? 6 : 8;
+
+    // Ưu tiên quét tìm theo txId, fallback về rowIndex
+    const rowIndex = findRowByTxIdOrIndex(sheet, params.txId || rec.txId, params.rowIndex, txIdCol);
+    if (!rowIndex || rowIndex < 2) return jsonResponse({ success: false, error: 'Không tìm thấy dòng hợp lệ để cập nhật' });
+
+    const txId = params.txId || rec.txId || '';
+
+    if (isIncome) {
+      const monthFormula = '=DATE(YEAR(INDIRECT("A"&ROW())), MONTH(INDIRECT("A"&ROW())), 1)';
+      sheet.getRange(rowIndex, 1, 1, 6).setValues([[
+        rec.purchaseDate || '',
+        rec.category || '',
+        rec.purchaseItem || '',
+        rec.amount || 0,
+        monthFormula,
+        txId
+      ]]);
+    } else {
+      sheet.getRange(rowIndex, 1, 1, 8).setValues([[
+        rec.purchaseDate || '',
+        rec.category || '',
+        rec.purchaseItem || '',
+        rec.amount || 0,
+        rec.beCorp !== undefined && rec.beCorp !== '' && !isNaN(rec.beCorp) && Number(rec.beCorp) !== 0 ? rec.beCorp : '',
+        rec.credit !== undefined && rec.credit !== '' && !isNaN(rec.credit) && Number(rec.credit) !== 0 ? rec.credit : '',
+        rec.note ? rec.note : '',
+        txId
+      ]]);
+    }
+
+    return jsonResponse({
+      success: true,
+      rowIndex: rowIndex,
+      txId: txId,
+      message: 'Đã cập nhật dòng #' + rowIndex
+    });
+  }
+
+  // 7. XÓA GIAO DỊCH
+  if (action === 'deleteTransaction') {
+    const tabName = params.tabName || 'Expenses';
+    const sheet = ss.getSheetByName(tabName);
+    if (!sheet) return jsonResponse({ success: false, error: 'Không tìm thấy tab: ' + tabName });
+
+    const isIncome = tabName.toLowerCase().includes('income');
+    const txIdCol = isIncome ? 6 : 8;
+
+    // Ưu tiên quét tìm theo txId, fallback về rowIndex
+    const rowIndex = findRowByTxIdOrIndex(sheet, params.txId, params.rowIndex, txIdCol);
+    if (!rowIndex || rowIndex < 2) return jsonResponse({ success: false, error: 'Không tìm thấy dòng hợp lệ để xóa' });
+
+    sheet.deleteRow(rowIndex);
+    return jsonResponse({
+      success: true,
+      rowIndex: rowIndex,
+      message: 'Đã xóa dòng #' + rowIndex
+    });
+  }
+
+  return jsonResponse({ success: false, error: 'Thao tác không được hỗ trợ: ' + action });
 }

@@ -19,10 +19,16 @@ export function getBillingCycleRange(
   endDay: number = 25
 ): CycleRange {
   if (!monthKey || !monthKey.includes('-')) {
+    const now = new Date();
+    const curYear = now.getFullYear();
+    const curMonth = now.getMonth() + 1;
+    const curMm = String(curMonth).padStart(2, '0');
+    const maxDays = new Date(curYear, curMonth, 0).getDate();
+    const maxDd = String(maxDays).padStart(2, '0');
     return {
-      startDate: '2026-10-01',
-      endDate: '2026-10-31',
-      displayLabel: '01/10 – 31/10',
+      startDate: `${curYear}-${curMm}-01`,
+      endDate: `${curYear}-${curMm}-${maxDd}`,
+      displayLabel: `01/${curMm} – ${maxDd}/${curMm}`,
     };
   }
 
@@ -32,8 +38,9 @@ export function getBillingCycleRange(
 
   // If startDay <= endDay, it's within the same month (e.g. 1st to end of month)
   if (startDay <= endDay) {
-    const sD = String(Math.max(1, Math.min(31, startDay))).padStart(2, '0');
-    const eD = String(Math.max(1, Math.min(31, endDay))).padStart(2, '0');
+    const maxDaysInMonth = new Date(year, month, 0).getDate();
+    const sD = String(Math.max(1, Math.min(maxDaysInMonth, startDay))).padStart(2, '0');
+    const eD = String(Math.max(1, Math.min(maxDaysInMonth, endDay))).padStart(2, '0');
     const mm = String(month).padStart(2, '0');
     return {
       startDate: `${year}-${mm}-${sD}`,
@@ -50,8 +57,11 @@ export function getBillingCycleRange(
     prevYear -= 1;
   }
 
-  const sD = String(Math.max(1, Math.min(31, startDay))).padStart(2, '0');
-  const eD = String(Math.max(1, Math.min(31, endDay))).padStart(2, '0');
+  const maxDaysInPrevMonth = new Date(prevYear, prevMonth, 0).getDate();
+  const maxDaysInCurrentMonth = new Date(year, month, 0).getDate();
+
+  const sD = String(Math.max(1, Math.min(maxDaysInPrevMonth, startDay))).padStart(2, '0');
+  const eD = String(Math.max(1, Math.min(maxDaysInCurrentMonth, endDay))).padStart(2, '0');
   const pMm = String(prevMonth).padStart(2, '0');
   const cMm = String(month).padStart(2, '0');
 

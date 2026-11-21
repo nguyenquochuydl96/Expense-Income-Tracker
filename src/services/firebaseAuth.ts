@@ -4,80 +4,55 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   onAuthStateChanged,
-  User,
+  type User,
 } from 'firebase/auth';
 import firebaseConfig from '../../firebase-applet-config.json';
+import {
+  saveAccessToken,
+  clearStoredAccessToken,
+  getStoredAccessToken,
+  isStoredTokenExpired,
+} from './authStorage';
+
+export {
+  saveAccessToken,
+  clearStoredAccessToken,
+  getStoredAccessToken,
+  isStoredTokenExpired,
+};
+
+export type { User };
 
 export const SCOPES = [
   'https://www.googleapis.com/auth/spreadsheets',
 ];
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app);
+let authInstance: ReturnType<typeof getAuth> | null = null;
+let providerInstance: GoogleAuthProvider | null = null;
 
-const provider = new GoogleAuthProvider();
-SCOPES.forEach((scope) => provider.addScope(scope));
+function getFirebaseAuth() {
+  if (!authInstance) {
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+    authInstance = getAuth(app);
+  }
+  return authInstance;
+}
 
-const TOKEN_KEY = 'heomeo_google_access_token_v1';
-const TOKEN_EXPIRY_KEY = 'heomeo_google_token_expiry_v1';
+function getGoogleProvider() {
+  if (!providerInstance) {
+    providerInstance = new GoogleAuthProvider();
+    SCOPES.forEach((scope) => providerInstance!.addScope(scope));
+  }
+  return providerInstance;
+}
 
 let isSigningIn = false;
-let cachedAccessToken: string | null = null;
-
-export const saveAccessToken = (token: string, expiresInSecs = 3500) => {
-  cachedAccessToken = token;
-  const expiresAt = Date.now() + expiresInSecs * 1000;
-  try {
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(TOKEN_EXPIRY_KEY, String(expiresAt));
-  } catch (e) {
-    console.warn('Cannot persist access token to localStorage', e);
-  }
-};
-
-export const clearStoredAccessToken = () => {
-  cachedAccessToken = null;
-  try {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(TOKEN_EXPIRY_KEY);
-  } catch {
-    // ignore
-  }
-};
-
-export const getStoredAccessToken = (): string | null => {
-  if (cachedAccessToken) return cachedAccessToken;
-  try {
-    const token = localStorage.getItem(TOKEN_KEY);
-    const expiryStr = localStorage.getItem(TOKEN_EXPIRY_KEY);
-    if (!token || !expiryStr) return null;
-    const expiry = Number(expiryStr);
-    // If token hasn't expired (leave 2 min safety buffer)
-    if (Date.now() < expiry - 120000) {
-      cachedAccessToken = token;
-      return token;
-    }
-    clearStoredAccessToken();
-    return null;
-  } catch {
-    return null;
-  }
-};
-
-export const isStoredTokenExpired = (): boolean => {
-  try {
-    const expiryStr = localStorage.getItem(TOKEN_EXPIRY_KEY);
-    if (!expiryStr) return true;
-    return Date.now() >= Number(expiryStr);
-  } catch {
-    return true;
-  }
-};
 
 export const initAuth = (
   onAuthSuccess?: (user: User, token: string) => void,
   onAuthFailure?: (user: User | null) => void
 ) => {
+  const auth = getFirebaseAuth();
   return onAuthStateChanged(auth, async (user: User | null) => {
     if (user) {
       const token = getStoredAccessToken();
@@ -97,6 +72,8 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
   if (isSigningIn) return null;
   try {
     isSigningIn = true;
+    const auth = getFirebaseAuth();
+    const provider = getGoogleProvider();
     const result = await signInWithPopup(auth, provider);
     const credential = GoogleAuthProvider.credentialFromResult(result);
     if (!credential?.accessToken) {
@@ -118,6 +95,7 @@ export const getAccessToken = async (): Promise<string | null> => {
 };
 
 export const logout = async () => {
+  const auth = getFirebaseAuth();
   await auth.signOut();
   clearStoredAccessToken();
 };

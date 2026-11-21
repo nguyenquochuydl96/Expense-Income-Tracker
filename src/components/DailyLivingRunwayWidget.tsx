@@ -127,8 +127,8 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
       isFuture = true;
     }
 
-    const elapsedDays = isPast ? daysInMonth : Math.max(1, currentDay);
-    const remainingDays = isPast ? 0 : Math.max(1, daysInMonth - currentDay + 1);
+    const elapsedDays = isPast ? daysInMonth : isFuture ? 0 : Math.max(1, currentDay);
+    const remainingDays = isPast ? 0 : isFuture ? daysInMonth : Math.max(1, daysInMonth - currentDay + 1);
 
     return {
       year,
@@ -171,14 +171,14 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
     const totalRemaining = totalBudget - totalSpent;
     const pctUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
 
-    const { elapsedDays, remainingDays, isPast } = dateMetrics;
+    const { elapsedDays, remainingDays } = dateMetrics;
 
     const burnRateDaily = elapsedDays > 0 ? Math.round(totalSpent / elapsedDays) : 0;
     const safeDailyAllowance =
       remainingDays > 0 ? Math.max(0, Math.round(totalRemaining / remainingDays)) : 0;
 
     const diff = safeDailyAllowance - burnRateDaily;
-    const isPacingSafe = diff >= 0 || isPast;
+    const isPacingSafe = diff >= 0;
 
     return {
       totalBudget,
@@ -356,12 +356,18 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
                   <span>Hạn mức an toàn hôm nay:</span>
                 </span>
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-950 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
-                  {dateMetrics.remainingDays > 0 ? `${dateMetrics.remainingDays} ngày tới` : 'Hết kỳ'}
+                  {dateMetrics.isPast ? 'Đã kết thúc' : dateMetrics.remainingDays > 0 ? `${dateMetrics.remainingDays} ngày tới` : 'Hết kỳ'}
                 </span>
               </div>
               <div className="text-xl sm:text-2xl font-black text-teal-700 dark:text-teal-300 font-mono-tabular tracking-tight my-0.5">
-                {formatCurrency(summary.safeDailyAllowance)}
-                <span className="text-xs font-semibold text-teal-600 dark:text-teal-400"> /ngày</span>
+                {dateMetrics.isPast ? (
+                  <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">Đã chốt sổ kỳ này</span>
+                ) : (
+                  <>
+                    {formatCurrency(summary.safeDailyAllowance)}
+                    <span className="text-xs font-semibold text-teal-600 dark:text-teal-400"> /ngày</span>
+                  </>
+                )}
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between pt-1 border-t border-slate-200 dark:border-slate-700">
                 <span>Ngân sách còn: {formatCurrency(summary.totalRemaining)}</span>
@@ -385,7 +391,19 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
                 <span className="text-xs font-semibold text-slate-500 dark:text-slate-400"> /ngày</span>
               </div>
               <div className="text-[11px] pt-1 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                {summary.isPacingSafe ? (
+                {dateMetrics.isPast ? (
+                  summary.totalRemaining >= 0 ? (
+                    <span className="text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                      <span>Trong định mức ngân sách (+{formatCurrency(summary.totalRemaining)})</span>
+                    </span>
+                  ) : (
+                    <span className="text-rose-700 dark:text-rose-400 font-semibold flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 text-rose-600 dark:text-rose-400" />
+                      <span>Vượt ngân sách kỳ ({formatCurrency(Math.abs(summary.totalRemaining))})</span>
+                    </span>
+                  )
+                ) : summary.isPacingSafe ? (
                   <span className="text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1">
                     <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                     <span>Dưới hạn mức an toàn ({formatCurrency(Math.abs(summary.diff))})</span>
@@ -496,7 +514,7 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
 
           {/* Grid of Individual Daily Living Categories */}
           <div>
-            <div className="text-xs font-bold text-slate-700 mb-2 flex items-center justify-between">
+            <div className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center justify-between">
               <span>Chi tiết từng quỹ sinh hoạt hằng ngày:</span>
               <span className="text-[10px] text-slate-400 font-normal">
                 Bấm vào thẻ để lọc danh sách chi tiêu bên dưới
@@ -522,6 +540,18 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
                     type: 'danger',
                     label: 'Đã bội chi',
                     runwayText: `Âm ${formatCurrency(Math.abs(item.remaining))}`,
+                  };
+                } else if (dateMetrics.isPast) {
+                  statusBadge = {
+                    type: 'safe',
+                    label: 'Tháng đã kết thúc',
+                    runwayText: `Còn dư: +${formatCurrency(item.remaining)}`,
+                  };
+                } else if (dateMetrics.isFuture) {
+                  statusBadge = {
+                    type: 'unspent',
+                    label: 'Chưa bắt đầu',
+                    runwayText: `Ngân sách: ${formatCurrency(item.effectiveBudget)}`,
                   };
                 } else if (burnRate <= 0) {
                   statusBadge = {
@@ -555,8 +585,8 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
                     onClick={() => onSelectCategory && onSelectCategory(isSelected ? 'ALL' : item.category)}
                     className={`p-3 rounded-xl border transition-all cursor-pointer select-none flex flex-col justify-between ${
                       isSelected
-                        ? 'bg-teal-50/80 border-teal-500 shadow-sm ring-2 ring-teal-400/30'
-                        : 'bg-white hover:bg-slate-50 border-slate-200/80 hover:border-slate-300 shadow-2xs'
+                        ? 'bg-teal-50/80 dark:bg-teal-950/40 border-teal-500 shadow-sm ring-2 ring-teal-400/30'
+                        : 'bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700/80 border-slate-200/80 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 shadow-2xs text-slate-900 dark:text-slate-100'
                     }`}
                   >
                     <div>
@@ -566,12 +596,12 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
                         <span
                           className={`text-[10px] font-bold px-1.5 py-0.5 rounded border whitespace-nowrap ${
                             statusBadge.type === 'danger'
-                              ? 'bg-rose-100 text-rose-800 border-rose-200'
+                              ? 'bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800'
                               : statusBadge.type === 'warning'
-                              ? 'bg-amber-100 text-amber-800 border-amber-200'
+                              ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800'
                               : statusBadge.type === 'safe'
-                              ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                              : 'bg-slate-100 text-slate-600 border-slate-200'
+                              ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                           }`}
                         >
                           {statusBadge.label}
@@ -581,23 +611,25 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
                       {/* Remaining vs Safe daily */}
                       <div className="space-y-1 font-mono-tabular">
                         <div className="flex items-baseline justify-between">
-                          <span className="text-[11px] text-slate-500">Còn lại:</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">Còn lại:</span>
                           <span
                             className={`text-sm font-bold ${
-                              item.remaining < 0 ? 'text-rose-600' : 'text-slate-800'
+                              item.remaining < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-100'
                             }`}
                           >
                             {formatCurrency(item.remaining)}
                           </span>
                         </div>
-                        <div className="flex items-baseline justify-between">
-                          <span className="text-[11px] text-teal-700 font-medium">Tiêu tối đa:</span>
-                          <span className="text-xs font-bold text-teal-700">
-                            {formatCurrency(safeDaily)}
-                            <span className="text-[10px] font-normal">/ngày</span>
-                          </span>
-                        </div>
-                        <div className="flex items-baseline justify-between text-slate-400 text-[10px]">
+                        {!dateMetrics.isPast && (
+                          <div className="flex items-baseline justify-between">
+                            <span className="text-[11px] text-teal-700 dark:text-teal-300 font-medium">Tiêu tối đa:</span>
+                            <span className="text-xs font-bold text-teal-700 dark:text-teal-300">
+                              {formatCurrency(safeDaily)}
+                              <span className="text-[10px] font-normal">/ngày</span>
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-baseline justify-between text-slate-400 dark:text-slate-500 text-[10px]">
                           <span>Tốc độ đã qua:</span>
                           <span>{formatCurrency(burnRate)}/ngày</span>
                         </div>
@@ -626,9 +658,9 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
 
           {/* Non-daily Categories Strip (Khoản Định kỳ & Sự kiện đột xuất) */}
           {periodicItems.length > 0 && (
-            <div className="pt-2 border-t border-indigo-100/60">
-              <div className="flex items-center gap-1.5 text-xs text-slate-600 mb-2 font-medium">
-                <Wallet className="w-3.5 h-3.5 text-slate-400" />
+            <div className="pt-2 border-t border-indigo-100/60 dark:border-slate-700/60">
+              <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 mb-2 font-medium">
+                <Wallet className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
                 <span>Các khoản Định kỳ &amp; Sự kiện đột xuất (không chia theo ngày):</span>
               </div>
               <div className="flex flex-wrap gap-2 text-xs">
@@ -640,17 +672,17 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
                       key={item.category}
                       type="button"
                       onClick={() => onSelectCategory && onSelectCategory(isSelected ? 'ALL' : item.category)}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono-tabular border transition-all ${
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-mono-tabular border transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-indigo-100 text-indigo-900 border-indigo-300 font-bold'
-                          : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200 shadow-2xs'
+                          ? 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-900 dark:text-indigo-200 border-indigo-300 dark:border-indigo-700 font-bold'
+                          : 'bg-white dark:bg-slate-800/80 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 shadow-2xs'
                       }`}
                     >
-                      <span className="font-sans font-medium text-slate-800">{item.category}:</span>
+                      <span className="font-sans font-medium text-slate-800 dark:text-slate-200">{item.category}:</span>
                       {isFinished ? (
-                        <span className="text-emerald-700 font-bold">Đã chi trả</span>
+                        <span className="text-emerald-700 dark:text-emerald-400 font-bold">Đã chi trả</span>
                       ) : (
-                        <span className={item.remaining < 0 ? 'text-rose-600 font-bold' : 'text-slate-600'}>
+                        <span className={item.remaining < 0 ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-slate-600 dark:text-slate-300'}>
                           Còn {formatCurrency(item.remaining)}
                         </span>
                       )}
@@ -664,17 +696,41 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
       ) : (
         /* Collapsed compact view: just 1 line summary */
         <div className="pt-2 flex flex-wrap items-center justify-between gap-2 text-xs font-mono-tabular">
-          <div className="flex items-center gap-2">
-            <span className="text-teal-800 font-semibold">⚡ Hạn mức hôm nay:</span>
-            <span className="font-black text-teal-700 text-sm">
-              {formatCurrency(summary.safeDailyAllowance)} / ngày
-            </span>
-            <span className="text-slate-500 font-sans text-[11px]">
-              (Còn lại {formatCurrency(summary.totalRemaining)} cho {dailyItems.length} quỹ thường nhật)
-            </span>
-          </div>
+          {dateMetrics.isPast ? (
+            <div className="flex items-center gap-2">
+              <span className="text-teal-800 dark:text-teal-200 font-semibold">🏁 Kết quả kỳ:</span>
+              <span className="font-bold text-slate-700 dark:text-slate-200 text-sm">
+                {summary.totalRemaining >= 0
+                  ? `Dư ${formatCurrency(summary.totalRemaining)}`
+                  : `Bội chi ${formatCurrency(Math.abs(summary.totalRemaining))}`}
+              </span>
+              <span className="text-slate-500 dark:text-slate-400 font-sans text-[11px]">
+                (Đã chi {formatCurrency(summary.totalSpent)} / {formatCurrency(summary.totalBudget)})
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <span className="text-teal-800 dark:text-teal-200 font-semibold">⚡ Hạn mức hôm nay:</span>
+              <span className="font-black text-teal-700 dark:text-teal-300 text-sm">
+                {formatCurrency(summary.safeDailyAllowance)} / ngày
+              </span>
+              <span className="text-slate-500 dark:text-slate-400 font-sans text-[11px]">
+                (Còn lại {formatCurrency(summary.totalRemaining)} cho {dailyItems.length} quỹ thường nhật)
+              </span>
+            </div>
+          )}
           <div className="flex items-center gap-1.5 text-[11px]">
-            {summary.isPacingSafe ? (
+            {dateMetrics.isPast ? (
+              summary.totalRemaining >= 0 ? (
+                <span className="text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/80 font-medium">
+                  ✓ Hoàn thành trong ngân sách
+                </span>
+              ) : (
+                <span className="text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-800/80 font-semibold">
+                  ⚠️ Vượt ngân sách
+                </span>
+              )
+            ) : summary.isPacingSafe ? (
               <span className="text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/80 font-medium">
                 🟢 Nhịp độ an toàn
               </span>

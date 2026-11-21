@@ -73,7 +73,8 @@ export function setConnectionMode(mode: 'webapp' | 'oauth') {
 
 /**
  * Universal caller for Google Apps Script Web App
- * Uses text/plain body to prevent CORS preflight OPTIONS issues in browsers
+ * All requests containing apiKey (including ping, syncAll, getMetadata) are sent via POST body
+ * to prevent leaking secrets in GET query strings. Uses text/plain body to prevent CORS preflight OPTIONS issues in browsers.
  */
 async function callAppsScriptApi(webAppUrl: string, payload: any): Promise<any> {
   const cleanUrl = webAppUrl.trim();
@@ -82,33 +83,7 @@ async function callAppsScriptApi(webAppUrl: string, payload: any): Promise<any> 
     payload.apiKey = storedKey;
   }
 
-  // First try GET if it's a read action for fastest caching & simplicity
-  if (payload.action === 'ping' || payload.action === 'syncAll' || payload.action === 'getMetadata') {
-    const params = new URLSearchParams();
-    Object.keys(payload).forEach((k) => {
-      if (payload[k] !== undefined && payload[k] !== null) {
-        params.append(k, String(payload[k]));
-      }
-    });
-    // Add cache buster
-    params.append('_t', String(Date.now()));
-
-    try {
-      const getUrl = `${cleanUrl}${cleanUrl.includes('?') ? '&' : '?'}${params.toString()}`;
-      const res = await fetch(getUrl, {
-        method: 'GET',
-        redirect: 'follow',
-      });
-      if (res.ok) {
-        const data = await res.json();
-        return data;
-      }
-    } catch {
-      // Fallback to POST below
-    }
-  }
-
-  // POST with text/plain to avoid preflight OPTIONS block
+  // POST with text/plain to avoid preflight OPTIONS block and keep secrets out of URLs
   const res = await fetch(cleanUrl, {
     method: 'POST',
     redirect: 'follow',
@@ -168,8 +143,10 @@ export async function appsScriptSyncAll(webAppUrl: string, apiKey?: string): Pro
     })
     .map((r: any, idx: number) => {
     const parsedDate = parseDateString(r.purchaseDate);
+    const txId = r.txId || r.id || `exp-${r.rowIndex || idx + 2}-${r.purchaseDate}`;
     return {
-      id: r.id || `exp-${r.rowIndex || idx + 2}-${r.purchaseDate}`,
+      id: txId,
+      txId,
       rowIndex: r.rowIndex || idx + 2,
       sheetType: 'Expenses' as SheetTabType,
       purchaseDate: r.purchaseDate || '',
@@ -196,8 +173,10 @@ export async function appsScriptSyncAll(webAppUrl: string, apiKey?: string): Pro
     })
     .map((r: any, idx: number) => {
     const parsedDate = parseDateString(r.purchaseDate);
+    const txId = r.txId || r.id || `inc-${r.rowIndex || idx + 2}-${r.purchaseDate}`;
     return {
-      id: r.id || `inc-${r.rowIndex || idx + 2}-${r.purchaseDate}`,
+      id: txId,
+      txId,
       rowIndex: r.rowIndex || idx + 2,
       sheetType: 'Income' as SheetTabType,
       purchaseDate: r.purchaseDate || '',
@@ -216,8 +195,10 @@ export async function appsScriptSyncAll(webAppUrl: string, apiKey?: string): Pro
 
   const budgetTransfers: BudgetTransferRecord[] = (res.budgetTransfers || []).map((t: any, idx: number) => {
     const parsedDate = parseDateString(t.date);
+    const txId = t.txId || t.id || `bt-${t.rowIndex || idx + 2}-${t.date}`;
     return {
-      id: t.id || `bt-${t.rowIndex || idx + 2}-${t.date}`,
+      id: txId,
+      txId,
       rowIndex: t.rowIndex || idx + 2,
       date: t.date || '',
       isoDate: parsedDate.isoDate,
@@ -246,9 +227,10 @@ export async function appsScriptAppendTransaction(
     beCorp: number;
     credit: number;
     note?: string;
+    txId?: string;
   },
   apiKey?: string
-): Promise<{ success: boolean; rowIndex?: number }> {
+): Promise<{ success: boolean; rowIndex?: number; txId?: string }> {
   return await callAppsScriptApi(webAppUrl, {
     action: 'appendTransaction',
     tabName,
@@ -269,8 +251,10 @@ export async function appsScriptUpdateTransaction(
     beCorp: number;
     credit: number;
     note?: string;
+    txId?: string;
   },
-  apiKey?: string
+  apiKey?: string,
+  txId?: string
 ): Promise<{ success: boolean }> {
   return await callAppsScriptApi(webAppUrl, {
     action: 'updateTransaction',
@@ -278,6 +262,7 @@ export async function appsScriptUpdateTransaction(
     rowIndex,
     record,
     apiKey,
+    txId: txId || record.txId,
   });
 }
 
@@ -285,13 +270,15 @@ export async function appsScriptDeleteTransaction(
   webAppUrl: string,
   tabName: string,
   rowIndex: number,
-  apiKey?: string
+  apiKey?: string,
+  txId?: string
 ): Promise<{ success: boolean }> {
   return await callAppsScriptApi(webAppUrl, {
     action: 'deleteTransaction',
     tabName,
     rowIndex,
     apiKey,
+    txId,
   });
 }
 
@@ -303,9 +290,10 @@ export async function appsScriptAppendTransfer(
     toCategory: string;
     amount: number;
     description: string;
+    txId?: string;
   },
   apiKey?: string
-): Promise<{ success: boolean; rowIndex?: number }> {
+): Promise<{ success: boolean; rowIndex?: number; txId?: string }> {
   return await callAppsScriptApi(webAppUrl, {
     action: 'appendBudgetTransfer',
     tabName: 'Budget Transfers',

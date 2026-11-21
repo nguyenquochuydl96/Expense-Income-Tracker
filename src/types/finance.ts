@@ -2,6 +2,7 @@ export type SheetTabType = 'Expenses' | 'Income';
 
 export interface TransactionRecord {
   id: string;
+  txId?: string;
   rowIndex?: number;
   sheetType: SheetTabType;
   purchaseDate: string; // M/D/YYYY format as in Google Sheet, e.g. "10/25/2026"
@@ -21,6 +22,7 @@ export interface TransactionRecord {
 
 export interface BudgetTransferRecord {
   id: string;
+  txId?: string;
   rowIndex?: number;
   date: string; // M/D/YYYY format
   isoDate: string; // YYYY-MM-DD

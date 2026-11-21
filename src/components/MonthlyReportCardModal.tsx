@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { TransactionRecord } from '../types/finance';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
+import { getBillingCycleRange, isBudgetTransferRecord } from '../utils/cycleUtils';
 import { PigIcon, SiameseCatIcon } from '../utils/categoryIcons';
 import { usePrivacyMode } from '../utils/privacyService';
 import { motion, AnimatePresence } from 'motion/react';
@@ -76,7 +77,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
   // Compute month stats
   const monthRecords = allRecords.filter((r) => r.monthKey === targetMonth);
   const incomeRecords = monthRecords.filter((r) => r.sheetType === 'Income');
-  const expenseRecords = monthRecords.filter((r) => r.sheetType === 'Expenses');
+  const expenseRecords = monthRecords.filter((r) => r.sheetType === 'Expenses' && !isBudgetTransferRecord(r));
 
   const totalIncome = incomeRecords.reduce((sum, r) => sum + r.amount, 0);
   const totalExpense = expenseRecords.reduce((sum, r) => sum + r.amount, 0);
@@ -115,9 +116,59 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
   const sortedLivingExpenses = [...livingExpenseRecords].sort((a, b) => b.amount - a.amount);
   const biggestExpense = sortedLivingExpenses[0] || null;
 
-  // Credit & BE totals
-  const totalCredit = expenseRecords.reduce((sum, r) => sum + r.credit, 0);
-  const totalBeCorp = expenseRecords.reduce((sum, r) => sum + r.beCorp, 0);
+  // Helper to format the biggest expense title cleanly with fallback to category or note
+  const getBiggestExpenseLabel = (exp: TransactionRecord | null): string => {
+    if (!exp) return '';
+    const item = (exp.purchaseItem || '').trim();
+    const cat = (exp.category || '').trim();
+    const note = (exp.note || '').trim();
+
+    const hasValidItem = item !== '' && item !== '(Không ghi nội dung)';
+    const hasValidCat = cat !== '';
+
+    if (hasValidItem && hasValidCat) {
+      if (item.toLowerCase() === cat.toLowerCase()) {
+        return item;
+      }
+      return `${item} (${cat})`;
+    }
+    if (hasValidItem) {
+      return item;
+    }
+    if (hasValidCat) {
+      return cat;
+    }
+    if (note) {
+      return note;
+    }
+    return 'Khoản chi lớn';
+  };
+
+  const biggestExpenseLabel = getBiggestExpenseLabel(biggestExpense);
+
+  // Credit & BE totals using billing cycle ranges (BE: 26–25, Credit: 20–19)
+  const beRange = getBillingCycleRange(targetMonth, 26, 25);
+  const creditRange = getBillingCycleRange(targetMonth, 20, 19);
+
+  const totalBeCorp = allRecords
+    .filter(
+      (r) =>
+        r.sheetType === 'Expenses' &&
+        r.isoDate &&
+        r.isoDate >= beRange.startDate &&
+        r.isoDate <= beRange.endDate
+    )
+    .reduce((sum, r) => sum + r.beCorp, 0);
+
+  const totalCredit = allRecords
+    .filter(
+      (r) =>
+        r.sheetType === 'Expenses' &&
+        r.isoDate &&
+        r.isoDate >= creditRange.startDate &&
+        r.isoDate <= creditRange.endDate
+    )
+    .reduce((sum, r) => sum + r.credit, 0);
 
   // Previous month calculation
   const prevDate = new Date(yearNum, monthNum - 2, 1);
@@ -131,10 +182,12 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
     if (pRecords.length === 0) return null;
 
     const pIncome = pRecords.filter((r) => r.sheetType === 'Income').reduce((s, r) => s + r.amount, 0);
-    const pExpenses = pRecords.filter((r) => r.sheetType === 'Expenses').reduce((s, r) => s + r.amount, 0);
+    const pExpenses = pRecords
+      .filter((r) => r.sheetType === 'Expenses' && !isBudgetTransferRecord(r))
+      .reduce((s, r) => s + r.amount, 0);
 
     const pSavings = pRecords
-      .filter((r) => r.sheetType === 'Expenses' && isSavingsRecord(r))
+      .filter((r) => r.sheetType === 'Expenses' && !isBudgetTransferRecord(r) && isSavingsRecord(r))
       .reduce((s, r) => s + r.amount, 0);
     const pLiving = pExpenses - pSavings;
 
@@ -149,7 +202,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
 
     // Category shifts: which categories increased or decreased the most (excluding rent and savings)
     const pCatMap = new Map<string, number>();
-    for (const r of pRecords.filter((r) => r.sheetType === 'Expenses')) {
+    for (const r of pRecords.filter((r) => r.sheetType === 'Expenses' && !isBudgetTransferRecord(r))) {
       pCatMap.set(r.category, (pCatMap.get(r.category) || 0) + r.amount);
     }
 
@@ -257,12 +310,20 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       healthTitle = 'Chi tiêu sinh hoạt vượt thu nhập';
       healthDesc = `Chi tiêu sinh hoạt (${formatCurrency(livingExpense)}) đã vượt thu nhập ${formatCurrency(Math.abs(livingRemaining))} (chưa tính khoản tiết kiệm ${formatCurrency(savingsAmount)}). Cần rà soát cắt giảm chi tiêu tháng tới!`;
       healthBadge = 'bg-rose-500/20 text-rose-300 border-rose-500/30';
-      healthBadgeText = `Thâm hụt sinh hoạt: ${((Math.abs(livingRemaining) / totalIncome) * 100).toFixed(1)}%`;
+      healthBadgeText = totalIncome > 0
+        ? `Thâm hụt sinh hoạt: ${((Math.abs(livingRemaining) / totalIncome) * 100).toFixed(1)}%`
+        : 'Thâm hụt sinh hoạt';
     }
   } else {
     // No savings recorded
     if (cashRemaining >= 0) {
-      if (cashSavingsRate >= 30) {
+      if (totalIncome <= 0) {
+        healthStars = '⭐';
+        healthTitle = 'Chưa ghi nhận thu nhập';
+        healthDesc = 'Tháng này chưa phát sinh bản ghi thu nhập nào.';
+        healthBadge = 'bg-slate-500/20 text-slate-300 border-slate-500/30';
+        healthBadgeText = 'Chưa có thu nhập';
+      } else if (cashSavingsRate >= 30) {
         healthStars = '⭐⭐⭐';
         healthTitle = 'Xuất sắc — Thặng dư cao';
         healthDesc = `Dư ${formatCurrency(cashRemaining)} (${cashSavingsRate.toFixed(1)}% thu nhập). Nên trích một phần vào quỹ tiết kiệm hoặc đầu tư!`;
@@ -286,45 +347,61 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       healthTitle = 'Thâm hụt ngân sách';
       healthDesc = `Chi tiêu vượt thu nhập ${formatCurrency(Math.abs(cashRemaining))}. Cần hãm phanh chi tiêu tháng tới!`;
       healthBadge = 'bg-rose-500/20 text-rose-300 border-rose-500/30';
-      healthBadgeText = `Thâm hụt: -${((Math.abs(cashRemaining) / totalIncome) * 100).toFixed(1)}%`;
+      healthBadgeText = totalIncome > 0
+        ? `Thâm hụt: -${((Math.abs(cashRemaining) / totalIncome) * 100).toFixed(1)}%`
+        : 'Thâm hụt chi tiêu';
     }
   }
 
   // Copy Summary text to clipboard
-  const handleCopySummary = () => {
-    const lines = [
-      `📊 BÁO CÁO TÀI CHÍNH THÁNG ${monthNum}/${yearNum} — HEO & MÈO 🐷🐱`,
-      `👨‍👩‍👧‍👦 Sổ chi tiêu của ba mẹ Chuối, Đậu, Vịt`,
-      `---------------------------------`,
-      `💰 Tổng thu nhập: ${formatCurrency(totalIncome)}`,
-      `🛒 Chi sinh hoạt: ${formatCurrency(livingExpense)} (${livingPctOfIncome.toFixed(1)}% thu nhập)`,
-      savingsAmount > 0 ? `🏦 Trích gửi tiết kiệm: ${formatCurrency(savingsAmount)} (${savingsPctOfIncome.toFixed(1)}% thu nhập)` : '',
-      `💳 Tổng chi thực tế: ${formatCurrency(totalExpense)}`,
-      `💵 Dòng tiền mặt còn lại: ${formatCurrency(cashRemaining, cashRemaining > 0)}`,
-      `⭐ Đánh giá: ${healthStars} ${healthTitle}`,
-      `💡 Chi tiết: ${healthDesc}`,
-      prevMonthStats && prevMonthStats.hasData ? [
+  const handleCopySummary = async () => {
+    try {
+      const lines = [
+        `📊 BÁO CÁO TÀI CHÍNH THÁNG ${monthNum}/${yearNum} — HEO & MÈO 🐷🐱`,
+        `👨‍👩‍👧‍👦 Sổ chi tiêu của ba mẹ Chuối, Đậu, Vịt`,
         `---------------------------------`,
-        `📈 So với tháng trước (${prevMonthLabel}):`,
-        `  • Tổng chi: ${prevMonthStats.expenseDelta <= 0 ? '' : '+'}${formatCurrency(prevMonthStats.expenseDelta)} (${isExpenseDecreased ? 'tiết kiệm' : isExpenseIncreased ? 'tăng' : 'ổn định'} ${prevMonthStats.expenseDeltaPct.toFixed(1)}%)`,
-        `  • Tổng thu nhập: ${prevMonthStats.incomeDelta >= 0 ? '+' : ''}${formatCurrency(prevMonthStats.incomeDelta)} (${prevMonthStats.incomeDeltaPct.toFixed(1)}%)`,
-        prevMonthStats.topIncrease ? `  • Tăng nhiều nhất: ${prevMonthStats.topIncrease.category} (+${formatCurrency(prevMonthStats.topIncrease.delta)})` : '',
-        prevMonthStats.topDecrease ? `  • Cắt giảm tốt nhất: ${prevMonthStats.topDecrease.category} (${formatCurrency(prevMonthStats.topDecrease.delta)})` : '',
-      ].filter(Boolean).join('\n') : '',
-      `---------------------------------`,
-      `🏆 Top Hạng Mục Chi Tiêu Sinh Hoạt:`,
-      ...topLivingCategories.map(
-        (c, idx) => `  ${idx + 1}. ${c.category}: ${formatCurrency(c.amount)} (${c.pctOfLiving.toFixed(0)}% sinh hoạt)`
-      ),
-      biggestExpense ? `🌟 Món chi sinh hoạt lớn nhất: ${biggestExpense.purchaseItem} (${formatCurrency(biggestExpense.amount)})` : '',
-      totalCredit > 0 ? `💳 Quẹt thẻ tín dụng: ${formatCurrency(totalCredit)}` : '',
-      `---------------------------------`,
-      `🔗 Xem chi tiết tại https://nguyenquochuydl96.github.io/Expense-Income-Tracker/`,
-    ].filter(Boolean);
+        `💰 Tổng thu nhập: ${formatCurrency(totalIncome)}`,
+        `🛒 Chi sinh hoạt: ${formatCurrency(livingExpense)} (${totalIncome > 0 ? livingPctOfIncome.toFixed(1) + '% thu nhập' : 'chưa có thu nhập'})`,
+        savingsAmount > 0
+          ? `🏦 Trích gửi tiết kiệm: ${formatCurrency(savingsAmount)} (${totalIncome > 0 ? savingsPctOfIncome.toFixed(1) + '% thu nhập' : 'chưa có thu nhập'})`
+          : '',
+        `💳 Tổng chi thực tế: ${formatCurrency(totalExpense)}`,
+        `💵 Dòng tiền mặt còn lại: ${formatCurrency(cashRemaining, cashRemaining > 0)}`,
+        `⭐ Đánh giá: ${healthStars} ${healthTitle}`,
+        `💡 Chi tiết: ${healthDesc}`,
+        prevMonthStats && prevMonthStats.hasData
+          ? [
+              `---------------------------------`,
+              `📈 So với tháng trước (${prevMonthLabel}):`,
+              `  • Tổng chi: ${prevMonthStats.expenseDelta <= 0 ? '' : '+'}${formatCurrency(prevMonthStats.expenseDelta)} (${isExpenseDecreased ? 'tiết kiệm' : isExpenseIncreased ? 'tăng' : 'ổn định'} ${prevMonthStats.expenseDeltaPct.toFixed(1)}%)`,
+              `  • Tổng thu nhập: ${prevMonthStats.incomeDelta >= 0 ? '+' : ''}${formatCurrency(prevMonthStats.incomeDelta)} (${prevMonthStats.incomeDeltaPct.toFixed(1)}%)`,
+              prevMonthStats.topIncrease
+                ? `  • Tăng nhiều nhất: ${prevMonthStats.topIncrease.category} (+${formatCurrency(prevMonthStats.topIncrease.delta)})`
+                : '',
+              prevMonthStats.topDecrease
+                ? `  • Cắt giảm tốt nhất: ${prevMonthStats.topDecrease.category} (${formatCurrency(prevMonthStats.topDecrease.delta)})`
+                : '',
+            ]
+              .filter(Boolean)
+              .join('\n')
+          : '',
+        `---------------------------------`,
+        `🏆 Top Hạng Mục Chi Tiêu Sinh Hoạt:`,
+        ...topLivingCategories.map(
+          (c, idx) => `  ${idx + 1}. ${c.category}: ${formatCurrency(c.amount)} (${c.pctOfLiving.toFixed(0)}% sinh hoạt)`
+        ),
+        biggestExpense ? `🌟 Món chi sinh hoạt lớn nhất: ${biggestExpenseLabel} (${formatCurrency(biggestExpense.amount)})` : '',
+        totalCredit > 0 ? `💳 Quẹt thẻ tín dụng: ${formatCurrency(totalCredit)}` : '',
+        `---------------------------------`,
+        `🔗 Xem chi tiết tại https://nguyenquochuydl96.github.io/Expense-Income-Tracker/`,
+      ].filter(Boolean);
 
-    navigator.clipboard.writeText(lines.join('\n'));
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
+      await navigator.clipboard.writeText(lines.join('\n'));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch (err) {
+      console.warn('Failed to copy summary to clipboard:', err);
+    }
   };
 
   // Download High-Resolution Infographic Card as PNG via Canvas
@@ -601,13 +678,23 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       ctx.fillText('🌟 Món chi sinh hoạt lớn nhất:', 54, curY + 28);
 
       if (biggestExpense) {
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = '12px "Segoe UI", Arial, sans-serif';
-        ctx.fillText(`${biggestExpense.purchaseItem} (${biggestExpense.category})`, 54, curY + 48);
+        const amtStr = formatCurrency(biggestExpense.amount);
         ctx.fillStyle = '#F43F5E';
         ctx.font = 'bold 13px "Segoe UI", Arial, sans-serif';
-        const amtW = ctx.measureText(formatCurrency(biggestExpense.amount)).width;
-        ctx.fillText(formatCurrency(biggestExpense.amount), width - 54 - amtW, curY + 48);
+        const amtW = ctx.measureText(amtStr).width;
+        ctx.fillText(amtStr, width - 54 - amtW, curY + 48);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '12px "Segoe UI", Arial, sans-serif';
+        const maxLabelW = width - 54 - amtW - 20 - 54;
+        let displayLabel = biggestExpenseLabel || 'Khoản chi lớn';
+        if (ctx.measureText(displayLabel).width > maxLabelW) {
+          while (displayLabel.length > 3 && ctx.measureText(displayLabel + '...').width > maxLabelW) {
+            displayLabel = displayLabel.slice(0, -1);
+          }
+          displayLabel += '...';
+        }
+        ctx.fillText(displayLabel, 54, curY + 48);
       } else {
         ctx.fillStyle = '#94A3B8';
         ctx.font = '12px "Segoe UI", Arial, sans-serif';
@@ -645,17 +732,20 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.24 }}
-          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 cursor-pointer"
+          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md flex items-start sm:items-center justify-center p-3 sm:p-5 py-4 sm:py-8 overflow-y-auto cursor-pointer"
           onClick={onClose}
         >
           {/* 3D BOOK CONTAINER WITH PERSPECTIVE */}
           <div
             style={{ perspective: 1600 }}
-            className="w-full max-w-5xl cursor-default"
+            className="w-full max-w-5xl my-auto cursor-default"
             onClick={(e) => e.stopPropagation()}
           >
             <motion.div
               key="monthly-report-book"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="monthly-report-modal-title"
               initial={{ opacity: 0, scale: 0.92, y: 24, rotateX: 6 }}
               animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: 24, rotateX: 6 }}
@@ -665,7 +755,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
               {/* Top Navigation Bar: Close & Mobile Tab Switcher */}
               <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800/80 bg-slate-900/90 shrink-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono-tabular font-bold px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/30">
+                  <span id="monthly-report-modal-title" className="text-xs font-mono-tabular font-bold px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/30">
                     Sổ tài chính Tháng {monthNum}/{yearNum}
                   </span>
                   <span className="hidden sm:inline text-xs text-slate-400 font-serif italic">
@@ -702,8 +792,9 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="min-h-[44px] min-w-[44px] p-2 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer flex items-center justify-center"
                   title="Đóng sổ (Escape)"
+                  aria-label="Đóng báo cáo tháng"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -998,8 +1089,8 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
                             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                             <span>Món chi lớn nhất:</span>
                           </span>
-                          <span className="font-bold text-amber-300 text-right truncate max-w-[260px]">
-                            {biggestExpense.purchaseItem}{' '}
+                          <span className="font-bold text-amber-300 text-right truncate max-w-[260px]" title={biggestExpenseLabel}>
+                            {biggestExpenseLabel}{' '}
                             <span className="font-mono-tabular text-rose-300">
                               ({formatCurrency(biggestExpense.amount)})
                             </span>

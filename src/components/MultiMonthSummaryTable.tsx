@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { TransactionRecord } from '../types/finance';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
-import { getBillingCycleRange } from '../utils/cycleUtils';
+import { getBillingCycleRange, isBudgetTransferRecord } from '../utils/cycleUtils';
 import { usePrivacyMode } from '../utils/privacyService';
+import { computeNormalizedMonthMap } from '../utils/budgetUtils';
 import {
   ChevronLeft,
   ChevronRight,
@@ -121,6 +122,18 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
     }
   }, [selectedMonth, sortedMonths, rangePreset, windowEndIndex]);
 
+  const monthMap = useMemo(() => computeNormalizedMonthMap(allRecords), [allRecords]);
+
+  // Pre-filter expenses with non-zero BE Corp and Credit
+  const beCorpExpenses = useMemo(
+    () => allRecords.filter((r) => r.sheetType === 'Expenses' && r.beCorp !== 0),
+    [allRecords]
+  );
+  const creditExpenses = useMemo(
+    () => allRecords.filter((r) => r.sheetType === 'Expenses' && r.credit !== 0),
+    [allRecords]
+  );
+
   // Compute stats for ALL months first so cumulative cash flow is calculated accurately
   const allMonthlyData = useMemo(() => {
     let runningCumulative = 0;
@@ -128,28 +141,30 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
       const [y, m] = mKey.split('-');
       const label = `T${parseInt(m, 10)}/${y.slice(2)}`;
 
-      const mRecords = allRecords.filter((r) => r.monthKey === mKey);
+      const mRecords = monthMap.get(mKey) || [];
 
       // Income strictly from Sheet Income records for this specific month
-      const sheetIncome = mRecords
-        .filter((r) => r.sheetType === 'Income')
-        .reduce((sum, r) => sum + r.amount, 0);
-      const income = sheetIncome;
-
-      // Expenses
-      const expenseRecords = mRecords.filter((r) => r.sheetType === 'Expenses');
+      let sheetIncome = 0;
       let totalExpense = 0;
       let livingExpense = 0;
       let savingsExpense = 0;
 
-      for (const r of expenseRecords) {
-        totalExpense += r.amount;
-        if (r.category === 'Tiết kiệm') {
-          savingsExpense += r.amount;
-        } else {
-          livingExpense += r.amount;
+      for (const r of mRecords) {
+        if (r.sheetType === 'Income') {
+          sheetIncome += r.amount;
+        } else if (r.sheetType === 'Expenses') {
+          if (isBudgetTransferRecord(r)) {
+            continue;
+          }
+          totalExpense += r.amount;
+          if (r.category === 'Tiết kiệm') {
+            savingsExpense += r.amount;
+          } else {
+            livingExpense += r.amount;
+          }
         }
       }
+      const income = sheetIncome;
 
       const remaining = income - totalExpense;
       runningCumulative += remaining;
@@ -159,24 +174,12 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
       const beRange = getBillingCycleRange(mKey, beCorpStartDay, beCorpEndDay);
       const creditRange = getBillingCycleRange(mKey, creditStartDay, creditEndDay);
 
-      const beCorpTotal = allRecords
-        .filter(
-          (r) =>
-            r.sheetType === 'Expenses' &&
-            r.beCorp !== 0 &&
-            r.isoDate >= beRange.startDate &&
-            r.isoDate <= beRange.endDate
-        )
+      const beCorpTotal = beCorpExpenses
+        .filter((r) => r.isoDate >= beRange.startDate && r.isoDate <= beRange.endDate)
         .reduce((sum, r) => sum + r.beCorp, 0);
 
-      const creditTotal = allRecords
-        .filter(
-          (r) =>
-            r.sheetType === 'Expenses' &&
-            r.credit !== 0 &&
-            r.isoDate >= creditRange.startDate &&
-            r.isoDate <= creditRange.endDate
-        )
+      const creditTotal = creditExpenses
+        .filter((r) => r.isoDate >= creditRange.startDate && r.isoDate <= creditRange.endDate)
         .reduce((sum, r) => sum + r.credit, 0);
 
       return {
@@ -334,7 +337,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
               }}
               className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                 rangePreset === '3m'
-                  ? 'theme-preset-btn-active'
+                  ? 'theme-btn-active'
                   : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
               }`}
               title="Xem 3 tháng gần nhất (Mặc định)"
@@ -349,7 +352,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
               }}
               className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                 rangePreset === '6m'
-                  ? 'theme-preset-btn-active'
+                  ? 'theme-btn-active'
                   : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
               }`}
               title="Xem 6 tháng"
@@ -364,7 +367,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
               }}
               className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                 rangePreset === '12m'
-                  ? 'theme-preset-btn-active'
+                  ? 'theme-btn-active'
                   : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
               }`}
               title="Xem 12 tháng"
@@ -376,7 +379,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
               onClick={() => setRangePreset('all')}
               className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                 rangePreset === 'all'
-                  ? 'theme-preset-btn-active'
+                  ? 'theme-btn-active'
                   : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
               }`}
               title={`Xem toàn bộ ${allMonthlyData.length} tháng`}
@@ -388,7 +391,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
               onClick={() => setRangePreset('custom')}
               className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                 rangePreset === 'custom'
-                  ? 'theme-preset-btn-active'
+                  ? 'theme-btn-active'
                   : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
               }`}
               title="Tùy chọn khoảng tháng xem"

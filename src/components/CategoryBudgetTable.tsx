@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { TransactionRecord, EXPENSE_CATEGORIES, BudgetTransferRecord } from '../types/finance';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { CategoryBadge } from '../utils/categoryIcons';
@@ -11,6 +11,7 @@ import {
   RolloverMode,
   DEFAULT_CATEGORY_PERCENTAGES_T4_T7,
   DEFAULT_CATEGORY_PERCENTAGES,
+  MultiMonthRolloverResult,
 } from '../utils/budgetUtils';
 
 import {
@@ -50,6 +51,11 @@ interface CategoryBudgetTableProps {
   onOpenTransfer?: () => void;
   budgetTransfers?: BudgetTransferRecord[];
   isPrivate?: boolean;
+  precomputedRollover?: MultiMonthRolloverResult;
+  rolloverMode?: RolloverMode;
+  onRolloverModeChange?: (mode: RolloverMode) => void;
+  customPercentages?: Record<string, number>;
+  onPercentagesChange?: (percentages: Record<string, number>) => void;
 }
 
 export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.memo(({
@@ -68,6 +74,11 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
   onOpenTransfer,
   budgetTransfers = [],
   isPrivate: propIsPrivate,
+  precomputedRollover,
+  rolloverMode: propRolloverMode,
+  onRolloverModeChange,
+  customPercentages: propCustomPercentages,
+  onPercentagesChange,
 }) => {
   const { isPrivate: hookIsPrivate } = usePrivacyMode();
   const _effectiveIsPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
@@ -96,6 +107,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
 
   // Rollover mode: full (carryover surplus & deficit), deficit_only (deduct overspending only), or none
   const [rolloverMode, setRolloverMode] = useState<RolloverMode>(() => {
+    if (propRolloverMode && ['full', 'deficit_only', 'none'].includes(propRolloverMode)) {
+      return propRolloverMode;
+    }
     try {
       const saved = localStorage.getItem(SAVED_ROLLOVER_MODE_KEY) as RolloverMode;
       if (saved && ['full', 'deficit_only', 'none'].includes(saved)) {
@@ -106,6 +120,18 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
     }
     return 'full';
   });
+
+  useEffect(() => {
+    if (propCustomPercentages) {
+      setPercentages(propCustomPercentages);
+    }
+  }, [propCustomPercentages]);
+
+  useEffect(() => {
+    if (propRolloverMode) {
+      setRolloverMode(propRolloverMode);
+    }
+  }, [propRolloverMode]);
 
   const [viewTab, setViewTab] = useState<'month_detail' | 'multi_month_matrix'>('month_detail');
   const [isEditingBudgets, setIsEditingBudgets] = useState<boolean>(false);
@@ -142,8 +168,15 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
     }
   }, [percentages]);
 
-  // Compute multi-month rollover chain for all months and all categories
+  // Compute multi-month rollover chain for all months and all categories (or reuse precomputed)
   const multiMonthRolloverData = useMemo(() => {
+    if (
+      precomputedRollover &&
+      !hasCustomPercentages &&
+      (!precomputedRollover.rolloverMode || precomputedRollover.rolloverMode === rolloverMode)
+    ) {
+      return precomputedRollover;
+    }
     return computeMultiMonthRollover(
       allRecords,
       budgetTransfers,
@@ -151,7 +184,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
       rolloverMode,
       hasCustomPercentages
     );
-  }, [allRecords, budgetTransfers, percentages, rolloverMode, hasCustomPercentages]);
+  }, [precomputedRollover, allRecords, budgetTransfers, percentages, rolloverMode, hasCustomPercentages]);
 
   // Previous month key for the selectedMonth
   const prevMonthKey = useMemo(() => {
@@ -195,7 +228,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
 
         const defaultPct = DEFAULT_CATEGORY_PERCENTAGES[cat] ?? 0;
         const pct = percentages[cat] ?? defaultPct;
-        const effectiveBudget = totalBaseBudget > 0 ? totalBaseBudget : Math.round((totalIncome * pct) / 100);
+        const netTransfer = totalTransferIn - totalTransferOut;
+        const baseOrIncomeBudget = totalBaseBudget > 0 ? totalBaseBudget : Math.round((totalIncome * pct) / 100);
+        const effectiveBudget = baseOrIncomeBudget + netTransfer;
         const remaining = effectiveBudget - totalSpent;
         const pctUsed = effectiveBudget > 0 ? (totalSpent / effectiveBudget) * 100 : totalSpent > 0 ? 999 : 0;
         const isOver = remaining < 0;
@@ -203,11 +238,11 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
         return {
           category: cat,
           percentage: pct,
-          baseBudget: effectiveBudget,
+          baseBudget: baseOrIncomeBudget,
           dedicatedIncome: totalDedicated,
           transferIn: totalTransferIn,
           transferOut: totalTransferOut,
-          netTransfer: totalTransferIn - totalTransferOut,
+          netTransfer,
           carryover: 0,
           effectiveBudget,
           spent: totalSpent,
@@ -374,6 +409,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
     } catch {
       // ignore
     }
+    if (onPercentagesChange) {
+      onPercentagesChange(tempPercentages);
+    }
     setIsEditingBudgets(false);
   };
 
@@ -384,6 +422,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
     } catch {
       // ignore
     }
+    if (onPercentagesChange) {
+      onPercentagesChange(DEFAULT_CATEGORY_PERCENTAGES);
+    }
     setIsEditingBudgets(false);
   };
 
@@ -393,6 +434,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
       localStorage.setItem(SAVED_ROLLOVER_MODE_KEY, mode);
     } catch {
       // ignore
+    }
+    if (onRolloverModeChange) {
+      onRolloverModeChange(mode);
     }
   };
 
@@ -449,7 +493,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
               onClick={() => setViewTab('month_detail')}
               className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                 viewTab === 'month_detail'
-                  ? 'theme-preset-btn-active'
+                  ? 'theme-btn-active'
                   : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
               }`}
             >
@@ -460,7 +504,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
               onClick={() => setViewTab('multi_month_matrix')}
               className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
                 viewTab === 'multi_month_matrix'
-                  ? 'theme-preset-btn-active'
+                  ? 'theme-btn-active'
                   : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
               }`}
             >

@@ -1,10 +1,5 @@
-import gsap from 'gsap';
 import { useEffect } from 'react';
-
-// Expose gsap globally for debugging and inspection
-if (typeof window !== 'undefined') {
-  (window as any).gsap = gsap;
-}
+import { animate } from 'motion/react';
 
 // Prefers-reduced-motion media query check
 const prefersReducedMotion = () =>
@@ -19,58 +14,45 @@ const canHover = () =>
 
 /**
  * Kinlo signature card entrance animation (`ko`)
- * Organic slight alternating rotation tilt, scale 0.95 -> 1, back.out(1.4)
+ * Organic slight alternating rotation tilt, scale 0.96 -> 1, smooth spring ease
  */
 export function animateCardsEntrance(
   elements: (Element | null)[] | NodeListOf<Element> | HTMLCollection | Element[],
   options?: { delay?: number; stagger?: number; onComplete?: () => void }
 ) {
   if (prefersReducedMotion()) return;
-  const list = Array.from(elements).filter(Boolean) as Element[];
+  const list = Array.from(elements).filter(Boolean) as HTMLElement[];
   if (!list.length) return;
 
   const isMobile = !canHover() || (typeof window !== 'undefined' && window.innerWidth < 768);
+  const stagger = options?.stagger ?? (isMobile ? 0.03 : 0.05);
+  const baseDelay = options?.delay ?? 0;
 
-  if (isMobile) {
-    return gsap.fromTo(
-      list,
-      { opacity: 0, y: 16 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 0.35,
-        ease: 'power2.out',
-        stagger: options?.stagger ?? 0.03,
-        delay: options?.delay ?? 0,
-        overwrite: 'auto',
-        clearProps: 'transform,opacity',
-        onComplete: options?.onComplete,
-      }
-    );
+  const animations = list.map((el, i) => {
+    const delay = baseDelay + i * stagger;
+    if (isMobile) {
+      return animate(
+        el,
+        { opacity: [0, 1], y: [16, 0] },
+        { duration: 0.35, ease: 'easeOut', delay }
+      );
+    } else {
+      const rot = i % 2 === 0 ? -2 : 2;
+      return animate(
+        el,
+        { opacity: [0, 1], y: [32, 0], scale: [0.96, 1], rotate: [rot, 0] },
+        { duration: 0.6, ease: [0.34, 1.56, 0.64, 1], delay }
+      );
+    }
+  });
+
+  if (options?.onComplete) {
+    Promise.all(animations.map((a) => a.finished)).then(() => {
+      options.onComplete?.();
+    });
   }
 
-  return gsap.fromTo(
-    list,
-    {
-      opacity: 0,
-      y: 32,
-      rotation: (i: number) => (i % 2 === 0 ? -2 : 2),
-      scale: 0.96,
-    },
-    {
-      opacity: 1,
-      y: 0,
-      rotation: 0,
-      scale: 1,
-      duration: 0.6,
-      ease: 'back.out(1.4)',
-      stagger: options?.stagger ?? 0.05,
-      delay: options?.delay ?? 0,
-      overwrite: 'auto',
-      clearProps: 'transform,opacity',
-      onComplete: options?.onComplete,
-    }
-  );
+  return animations;
 }
 
 /**
@@ -82,47 +64,41 @@ export function animateSectionEntrance(
   options?: { y?: number; stagger?: number; delay?: number; onComplete?: () => void }
 ) {
   if (prefersReducedMotion()) return;
-  const list = Array.from(elements).filter(Boolean) as Element[];
+  const list = Array.from(elements).filter(Boolean) as HTMLElement[];
   if (!list.length) return;
 
-  return gsap.fromTo(
-    list,
-    {
-      opacity: 0,
-      y: options?.y ?? 24,
-      scale: 0.985,
-    },
-    {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      duration: 0.7,
-      ease: 'expo.out',
-      stagger: options?.stagger ?? 0.04,
-      delay: options?.delay ?? 0,
-      clearProps: 'transform,opacity',
-      onComplete: options?.onComplete,
-    }
+  const stagger = options?.stagger ?? 0.04;
+  const baseDelay = options?.delay ?? 0;
+  const yDist = options?.y ?? 24;
+
+  const animations = list.map((el, i) =>
+    animate(
+      el,
+      { opacity: [0, 1], y: [yDist, 0], scale: [0.985, 1] },
+      { duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: baseDelay + i * stagger }
+    )
   );
+
+  if (options?.onComplete) {
+    Promise.all(animations.map((a) => a.finished)).then(() => {
+      options.onComplete?.();
+    });
+  }
+
+  return animations;
 }
 
 /**
  * Kinlo button / icon spring bounce (`Io`)
- * Springs the inner SVG on click or hover with back.out(3)
+ * Springs the inner SVG on click or hover
  */
 export function animateIconBounce(element: Element | null) {
   if (!element || prefersReducedMotion()) return;
-  const target = element.querySelector('svg') || element;
-  return gsap.fromTo(
+  const target = (element.querySelector('svg') || element) as HTMLElement;
+  return animate(
     target,
-    { scale: 0.72 },
-    {
-      scale: 1,
-      duration: 0.5,
-      ease: 'back.out(3)',
-      overwrite: true,
-      clearProps: 'transform',
-    }
+    { scale: [0.72, 1.15, 1] },
+    { duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }
   );
 }
 
@@ -134,17 +110,10 @@ export function animateBadgePop(
   options?: { from?: number; delay?: number }
 ) {
   if (!element || prefersReducedMotion()) return;
-  return gsap.fromTo(
-    element,
-    { scale: options?.from ?? 0.6, opacity: 0 },
-    {
-      scale: 1,
-      opacity: 1,
-      duration: 0.55,
-      ease: 'back.out(3)',
-      delay: options?.delay ?? 0,
-      clearProps: 'transform,opacity',
-    }
+  return animate(
+    element as HTMLElement,
+    { scale: [options?.from ?? 0.6, 1.1, 1], opacity: [0, 1, 1] },
+    { duration: 0.55, delay: options?.delay ?? 0, ease: [0.34, 1.56, 0.64, 1] }
   );
 }
 
@@ -157,29 +126,26 @@ export function animateBarScaleX(
   options?: { duration?: number; stagger?: number; delay?: number }
 ) {
   if (prefersReducedMotion()) return;
-  const list = Array.from(elements).filter(Boolean) as Element[];
+  const list = Array.from(elements).filter(Boolean) as HTMLElement[];
   if (!list.length) return;
 
-  return gsap.fromTo(
-    list,
-    {
-      scaleX: 0,
-      transformOrigin: '0% 50%',
-    },
-    {
-      scaleX: 1,
-      duration: options?.duration ?? 0.85,
-      ease: 'expo.out',
-      stagger: options?.stagger ?? 0.03,
-      delay: options?.delay ?? 0,
-      clearProps: 'transform',
-    }
-  );
+  const stagger = options?.stagger ?? 0.03;
+  const baseDelay = options?.delay ?? 0;
+  const dur = options?.duration ?? 0.85;
+
+  return list.map((el, i) => {
+    el.style.transformOrigin = '0% 50%';
+    return animate(
+      el,
+      { scaleX: [0, 1] },
+      { duration: dur, ease: [0.16, 1, 0.3, 1], delay: baseDelay + i * stagger }
+    );
+  });
 }
 
 /**
  * Kinlo interactive card hover lift (`Bo` / `[data-lift]`)
- * Translates -4px on Y smoothly with power3.out
+ * Translates -4px on Y smoothly
  */
 export function initCardLift(container: HTMLElement | Document = document, yOffset = -4) {
   if (!canHover() || prefersReducedMotion()) return () => {};
@@ -191,12 +157,15 @@ export function initCardLift(container: HTMLElement | Document = document, yOffs
     if ((el as any).__kinloLift) return;
     (el as any).__kinloLift = true;
 
+    let anim: any = null;
     const onEnter = () => {
-      gsap.to(el, { y: yOffset, duration: 0.4, ease: 'power3.out', overwrite: 'auto' });
+      anim?.stop?.();
+      anim = animate(el, { y: yOffset }, { duration: 0.4, ease: 'easeOut' });
     };
 
     const onLeave = () => {
-      gsap.to(el, { y: 0, duration: 0.45, ease: 'power3.out', overwrite: 'auto', clearProps: 'transform' });
+      anim?.stop?.();
+      anim = animate(el, { y: 0 }, { duration: 0.45, ease: 'easeOut' });
     };
 
     el.addEventListener('pointerenter', onEnter);
@@ -214,7 +183,7 @@ export function initCardLift(container: HTMLElement | Document = document, yOffs
 
 /**
  * Kinlo magnetic button hover tracking (`Ro` / `.magnetic`)
- * Follows cursor with quickTo and springs back on leave
+ * Follows cursor with quick spring and returns on leave
  */
 export function initMagneticButtons(container: HTMLElement | Document = document) {
   if (!canHover() || prefersReducedMotion()) return () => {};
@@ -226,20 +195,24 @@ export function initMagneticButtons(container: HTMLElement | Document = document
     if ((el as any).__kinloMag) return;
     (el as any).__kinloMag = true;
 
-    const quickX = gsap.quickTo(el, 'x', { duration: 0.45, ease: 'power3.out' });
-    const quickY = gsap.quickTo(el, 'y', { duration: 0.45, ease: 'power3.out' });
+    let animX: any = null;
+    let animY: any = null;
 
     const onMove = (e: PointerEvent) => {
       const rect = el.getBoundingClientRect();
       const dx = (e.clientX - rect.left - rect.width / 2) * 0.22;
       const dy = (e.clientY - rect.top - rect.height / 2) * 0.28;
-      quickX(dx);
-      quickY(dy);
+      animX?.stop?.();
+      animY?.stop?.();
+      animX = animate(el, { x: dx }, { duration: 0.45, ease: 'easeOut' });
+      animY = animate(el, { y: dy }, { duration: 0.45, ease: 'easeOut' });
     };
 
     const onLeave = () => {
-      quickX(0);
-      quickY(0);
+      animX?.stop?.();
+      animY?.stop?.();
+      animX = animate(el, { x: 0 }, { duration: 0.45, ease: 'easeOut' });
+      animY = animate(el, { y: 0 }, { duration: 0.45, ease: 'easeOut' });
     };
 
     el.addEventListener('pointermove', onMove);
@@ -267,7 +240,7 @@ export function updateSlidingPill(
   if (!pill) return;
   const parent = pill.parentElement;
   if (!activeTarget || !activeTarget.offsetWidth || !parent) {
-    gsap.set(pill, { opacity: 0 });
+    pill.style.opacity = '0';
     return;
   }
 
@@ -290,30 +263,26 @@ export function updateSlidingPill(
   const prevTarget = d.__targetBounds;
   d.__targetBounds = targetBounds;
 
-  if (!options?.animate || prefersReducedMotion() || !prevTarget || Number(gsap.getProperty(pill, 'opacity')) === 0) {
-    gsap.killTweensOf(d.__state ?? {});
-    d.__state = { ...targetBounds };
-    gsap.set(pill, { clipPath: getInset(targetBounds), opacity: 1 });
+  if (!options?.animate || prefersReducedMotion() || !prevTarget || pill.style.opacity === '0') {
+    pill.style.clipPath = getInset(targetBounds);
+    pill.style.opacity = '1';
     return;
   }
 
-  const animState = d.__state ?? { ...prevTarget };
-  d.__state = animState;
-  gsap.killTweensOf(animState);
-
-  const applyClip = () => {
-    gsap.set(pill, { clipPath: getInset(animState), opacity: 1 });
-  };
-
-  gsap.to(animState, {
-    l: targetBounds.l,
-    r: targetBounds.r,
-    t: targetBounds.t,
-    b: targetBounds.b,
-    duration: 0.38,
-    ease: 'power3.inOut',
-    onUpdate: applyClip,
-  });
+  d.__anim?.stop?.();
+  d.__anim = animate(
+    (progress: number) => {
+      const cur = {
+        l: prevTarget.l + (targetBounds.l - prevTarget.l) * progress,
+        r: prevTarget.r + (targetBounds.r - prevTarget.r) * progress,
+        t: prevTarget.t + (targetBounds.t - prevTarget.t) * progress,
+        b: prevTarget.b + (targetBounds.b - prevTarget.b) * progress,
+      };
+      pill.style.clipPath = getInset(cur);
+      pill.style.opacity = '1';
+    },
+    { duration: 0.38, ease: 'easeInOut' }
+  );
 }
 
 /**
@@ -342,17 +311,13 @@ export function triggerFloatUp(
 
   document.body.appendChild(el);
 
-  gsap.fromTo(
+  animate(
     el,
-    { opacity: 0, y: 6, scale: 0.9 },
-    {
-      keyframes: [
-        { opacity: 1, y: -14, scale: 1.05, duration: 0.35, ease: 'back.out(2)' },
-        { opacity: 0, y: -38, duration: 0.65, ease: 'power2.in', delay: 0.4 },
-      ],
-      onComplete: () => el.remove(),
-    }
-  );
+    { opacity: [0, 1, 1, 0], y: [6, -14, -14, -38], scale: [0.9, 1.05, 1.05, 1] },
+    { duration: 1.0, times: [0, 0.35, 0.65, 1.0], ease: 'easeOut' }
+  ).finished.then(() => {
+    el.remove();
+  });
 }
 
 /**

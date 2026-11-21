@@ -116,8 +116,17 @@ export const KinloBankAccountsCard: React.FC<KinloBankAccountsCardProps> = ({
         {/* Row 1: Ví BE Corp */}
         <div
           data-lift
+          role="button"
+          tabIndex={0}
           onClick={onReconcileClick}
-          className="p-3 sm:p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-amber-400/40 transition-all cursor-pointer flex items-center justify-between gap-3 group/row"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onReconcileClick?.();
+            }
+          }}
+          aria-label="Chi tiết chu kỳ Ví BE Corp — Bấm để mở màn hình Đối soát"
+          className="p-3 sm:p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-amber-400/40 focus:outline-none focus:ring-2 focus:ring-amber-400/60 transition-all cursor-pointer flex items-center justify-between gap-3 group/row"
         >
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-300 shrink-0">
@@ -147,8 +156,17 @@ export const KinloBankAccountsCard: React.FC<KinloBankAccountsCardProps> = ({
         {/* Row 2: Thẻ tín dụng Credit */}
         <div
           data-lift
+          role="button"
+          tabIndex={0}
           onClick={onReconcileClick}
-          className="p-3 sm:p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-sky-400/40 transition-all cursor-pointer flex items-center justify-between gap-3 group/row"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onReconcileClick?.();
+            }
+          }}
+          aria-label="Chi tiết sao kê Thẻ tín dụng — Bấm để mở màn hình Đối soát"
+          className="p-3 sm:p-3.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 hover:border-sky-400/40 focus:outline-none focus:ring-2 focus:ring-sky-400/60 transition-all cursor-pointer flex items-center justify-between gap-3 group/row"
         >
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-sky-300 shrink-0">

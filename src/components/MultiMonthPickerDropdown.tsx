@@ -198,8 +198,9 @@ export const MultiMonthPickerDropdown: React.FC<MultiMonthPickerDropdownProps> =
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md hover:bg-slate-200/50 dark:hover:bg-slate-700 transition-colors"
+                className="p-1 min-h-[32px] min-w-[32px] flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md hover:bg-slate-200/50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                 title="Đóng"
+                aria-label="Đóng bảng chọn tháng"
               >
                 <X className="w-3.5 h-3.5" />
               </button>

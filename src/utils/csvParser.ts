@@ -106,12 +106,13 @@ export function parseDateString(rawDate: string): {
   day: number;
 } {
   const trimmed = (rawDate || '').trim();
+  const currentYear = new Date().getFullYear();
 
   // 1. Match English Month Name (e.g. "April 2026", "October 2026", "October")
   const engMatch = trimmed.match(/^([a-zA-Z]+)(?:[\s,/-]+(\d{4}))?$/);
   if (engMatch && ENGLISH_MONTHS[engMatch[1].toLowerCase()]) {
     const m = ENGLISH_MONTHS[engMatch[1].toLowerCase()];
-    const y = engMatch[2] ? parseInt(engMatch[2], 10) : 2026;
+    const y = engMatch[2] ? parseInt(engMatch[2], 10) : currentYear;
     const mm = String(m).padStart(2, '0');
     return {
       isoDate: `${y}-${mm}-01`,
@@ -127,7 +128,7 @@ export function parseDateString(rawDate: string): {
   const vnMatch = trimmed.match(/^t(?:háng)?\s*(\d{1,2})(?:[\/\s-]+(\d{4}))?$/i);
   if (vnMatch) {
     const m = parseInt(vnMatch[1], 10);
-    const y = vnMatch[2] ? parseInt(vnMatch[2], 10) : 2026;
+    const y = vnMatch[2] ? parseInt(vnMatch[2], 10) : currentYear;
     const mm = String(Math.max(1, Math.min(12, m))).padStart(2, '0');
     return {
       isoDate: `${y}-${mm}-01`,
@@ -139,7 +140,52 @@ export function parseDateString(rawDate: string): {
     };
   }
 
-  // 3. Match M/D/YYYY or M/YYYY
+  // 3. Match DD.MM.YYYY or DD.MM (Vietnamese dot notation)
+  const dotParts = trimmed.split('.');
+  if (dotParts.length === 3) {
+    let d = parseInt(dotParts[0], 10);
+    let m = parseInt(dotParts[1], 10);
+    let y = parseInt(dotParts[2], 10);
+    if (y < 100) y += 2000;
+    if (m > 12 && d <= 12) {
+      const temp = m;
+      m = d;
+      d = temp;
+    }
+    const mm = String(Math.max(1, Math.min(12, m || 1))).padStart(2, '0');
+    const dd = String(Math.max(1, Math.min(31, d || 1))).padStart(2, '0');
+    const yyyy = y || currentYear;
+    return {
+      isoDate: `${yyyy}-${mm}-${dd}`,
+      monthKey: `${yyyy}-${mm}`,
+      displayDate: `${m}/${d}/${yyyy}`,
+      year: yyyy,
+      month: m,
+      day: d,
+    };
+  }
+
+  if (dotParts.length === 2 && dotParts[0].length <= 2 && dotParts[1].length <= 2) {
+    let d = parseInt(dotParts[0], 10);
+    let m = parseInt(dotParts[1], 10);
+    if (m > 12 && d <= 12) {
+      const temp = m;
+      m = d;
+      d = temp;
+    }
+    const mm = String(Math.max(1, Math.min(12, m || 1))).padStart(2, '0');
+    const dd = String(Math.max(1, Math.min(31, d || 1))).padStart(2, '0');
+    return {
+      isoDate: `${currentYear}-${mm}-${dd}`,
+      monthKey: `${currentYear}-${mm}`,
+      displayDate: `${m}/${d}/${currentYear}`,
+      year: currentYear,
+      month: m,
+      day: d,
+    };
+  }
+
+  // 4. Match M/D/YYYY or M/YYYY
   const slashParts = trimmed.split('/');
   if (slashParts.length === 3) {
     let m = parseInt(slashParts[0], 10);
@@ -153,7 +199,7 @@ export function parseDateString(rawDate: string): {
     }
     const mm = String(Math.max(1, Math.min(12, m || 1))).padStart(2, '0');
     const dd = String(Math.max(1, Math.min(31, d || 1))).padStart(2, '0');
-    const yyyy = y || 2026;
+    const yyyy = y || currentYear;
     return {
       isoDate: `${yyyy}-${mm}-${dd}`,
       monthKey: `${yyyy}-${mm}`,
@@ -184,10 +230,10 @@ export function parseDateString(rawDate: string): {
     };
   }
 
-  // 4. Match YYYY-MM-DD or YYYY-MM
+  // 5. Match YYYY-MM-DD or YYYY-MM
   const dashParts = trimmed.split('-');
   if (dashParts.length === 3 && dashParts[0].length === 4) {
-    const y = parseInt(dashParts[0], 10) || 2026;
+    const y = parseInt(dashParts[0], 10) || currentYear;
     const m = parseInt(dashParts[1], 10) || 10;
     const d = parseInt(dashParts[2], 10) || 1;
     const mm = String(m).padStart(2, '0');
@@ -203,7 +249,7 @@ export function parseDateString(rawDate: string): {
   }
 
   if (dashParts.length === 2 && dashParts[0].length === 4) {
-    const y = parseInt(dashParts[0], 10) || 2026;
+    const y = parseInt(dashParts[0], 10) || currentYear;
     const m = parseInt(dashParts[1], 10) || 10;
     const mm = String(m).padStart(2, '0');
     return {
@@ -217,10 +263,10 @@ export function parseDateString(rawDate: string): {
   }
 
   return {
-    isoDate: '2026-10-25',
-    monthKey: '2026-10',
-    displayDate: '10/25/2026',
-    year: 2026,
+    isoDate: `${currentYear}-10-25`,
+    monthKey: `${currentYear}-10`,
+    displayDate: `10/25/${currentYear}`,
+    year: currentYear,
     month: 10,
     day: 25,
   };

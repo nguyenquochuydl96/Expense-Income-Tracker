@@ -84,8 +84,9 @@ export const KinloCashflowCard: React.FC<KinloCashflowCardProps> = ({
               <button
                 type="button"
                 onClick={onViewLedger}
-                className="p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)] transition-colors cursor-pointer"
+                className="min-h-[36px] min-w-[36px] p-2 rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--card-2)] transition-colors cursor-pointer flex items-center justify-center"
                 title="Xem chi tiết sổ giao dịch"
+                aria-label="Xem chi tiết sổ giao dịch"
               >
                 <ArrowUpRight className="w-4 h-4" />
               </button>

@@ -263,6 +263,7 @@ export async function fetchCheckTienSheet(
   tabName: string,
   accessToken: string
 ): Promise<CheckTienSheetData | null> {
+  if (isAppsScriptUrl(spreadsheetId)) return null;
   const range = `'${tabName.replace(/'/g, "''")}'!A1:M120`;
   const [formattedRes, formulaRes] = await Promise.all([
     fetch(
@@ -407,12 +408,13 @@ export async function appendTransactionToSheet(
     beCorp: number;
     credit: number;
     note?: string;
+    txId?: string;
   },
   accessToken: string
-): Promise<void> {
+): Promise<{ rowIndex?: number }> {
   if (isAppsScriptUrl(spreadsheetId)) {
-    await appsScriptAppendTransaction(spreadsheetId, tabName, record);
-    return;
+    const asRes = await appsScriptAppendTransaction(spreadsheetId, tabName, record);
+    return { rowIndex: asRes?.rowIndex };
   }
 
   const isIncome = record.sheetType === 'Income' || tabName.toLowerCase().includes('income');
@@ -427,17 +429,18 @@ export async function appendTransactionToSheet(
       ? `${parseInt(parsedDate.monthKey.split('-')[1], 10)}/1/${parsedDate.monthKey.split('-')[0]}`
       : record.purchaseDate;
 
-    // Income tab columns: Date (A), Income Source (B), Description (C), Income Amount (D), Month (E)
+    // Income tab columns: Date (A), Income Source (B), Description (C), Income Amount (D), Month (E), txId (F)
     rowValues = [
       record.purchaseDate,
       record.category,
       record.purchaseItem,
       record.amount,
       monthDateStr,
+      record.txId || '',
     ];
-    range = `${safeTab}!A:E`;
+    range = `${safeTab}!A:F`;
   } else {
-    // Expenses tab columns: Date (A), Category (B), Purchase Item (C), Amount (D), BE Corp (E), Credit (F), Note (G)
+    // Expenses tab columns: Date (A), Category (B), Purchase Item (C), Amount (D), BE Corp (E), Credit (F), Note (G), txId (H)
     rowValues = [
       record.purchaseDate,
       record.category,
@@ -445,14 +448,13 @@ export async function appendTransactionToSheet(
       record.amount,
       record.beCorp !== 0 ? record.beCorp : '',
       record.credit !== 0 ? record.credit : '',
+      record.note ? record.note.trim() : '',
+      record.txId || '',
     ];
-    if (record.note && record.note.trim()) {
-      rowValues.push(record.note.trim());
-    }
-    range = `${safeTab}!A:G`;
+    range = `${safeTab}!A:H`;
   }
 
-  const sendAppend = async () => {
+  const sendAppend = async (): Promise<{ res: Response; targetRow?: number }> => {
     // 1. Try to find the exact next row based on Column A (to avoid being pushed by trailing formula cells in other columns)
     try {
       const colARange = `${safeTab}!A:A`;
@@ -489,7 +491,7 @@ export async function appendTransactionToSheet(
             }),
           });
           if (putRes.ok) {
-            return putRes;
+            return { res: putRes, targetRow };
           }
         }
       }
@@ -501,7 +503,7 @@ export async function appendTransactionToSheet(
       spreadsheetId
     )}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=OVERWRITE`;
 
-    return await fetch(url, {
+    const appendRes = await fetch(url, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -512,9 +514,11 @@ export async function appendTransactionToSheet(
         values: [rowValues],
       }),
     });
+    return { res: appendRes };
   };
 
-  let res = await sendAppend();
+  let appendResult = await sendAppend();
+  let res = appendResult.res;
 
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
@@ -532,7 +536,8 @@ export async function appendTransactionToSheet(
       // Auto-create missing tab with standard headers and retry
       const defaultHeaders = isIncome ? INCOME_TAB_HEADERS : EXPENSE_TAB_HEADERS;
       await createSheetTab(spreadsheetId, tabName, defaultHeaders, accessToken);
-      res = await sendAppend();
+      appendResult = await sendAppend();
+      res = appendResult.res;
     }
 
     if (!res.ok) {
@@ -541,6 +546,22 @@ export async function appendTransactionToSheet(
       throw new Error(`Không thể ghi dòng mới vào bảng ${tabName}: ${retryMsg}`);
     }
   }
+
+  let finalRowIndex = appendResult.targetRow;
+  if (!finalRowIndex) {
+    try {
+      const data = await res.json();
+      const updatedRange = data?.updates?.updatedRange || '';
+      const match = updatedRange.match(/![A-Za-z0-9_]*?[A-Z]+(\d+)/);
+      if (match) {
+        finalRowIndex = parseInt(match[1], 10);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return { rowIndex: finalRowIndex };
 }
 
 export async function fetchBudgetTransfersSheet(
@@ -743,11 +764,13 @@ export async function updateTransactionOnSheet(
     beCorp: number;
     credit: number;
     note?: string;
+    txId?: string;
   },
-  accessToken: string
+  accessToken: string,
+  txId?: string
 ): Promise<void> {
   if (isAppsScriptUrl(spreadsheetId)) {
-    await appsScriptUpdateTransaction(spreadsheetId, tabName, rowIndex, record);
+    await appsScriptUpdateTransaction(spreadsheetId, tabName, rowIndex, record, undefined, txId || record.txId);
     return;
   }
 
@@ -758,12 +781,18 @@ export async function updateTransactionOnSheet(
   let range: string;
 
   if (isIncome) {
-    range = `${safeTab}!A${rowIndex}:D${rowIndex}`;
+    const parsedDate = parseDateString(record.purchaseDate);
+    const monthDateStr = parsedDate.monthKey
+      ? `${parseInt(parsedDate.monthKey.split('-')[1], 10)}/1/${parsedDate.monthKey.split('-')[0]}`
+      : record.purchaseDate;
+
+    range = `${safeTab}!A${rowIndex}:E${rowIndex}`;
     rowValues = [
       record.purchaseDate,
       record.category,
       record.purchaseItem,
       record.amount,
+      monthDateStr,
     ];
   } else {
     range = `${safeTab}!A${rowIndex}:G${rowIndex}`;
@@ -772,8 +801,8 @@ export async function updateTransactionOnSheet(
       record.category,
       record.purchaseItem,
       record.amount,
-      record.beCorp > 0 ? record.beCorp : '',
-      record.credit > 0 ? record.credit : '',
+      record.beCorp !== 0 && !isNaN(record.beCorp) ? record.beCorp : '',
+      record.credit !== 0 && !isNaN(record.credit) ? record.credit : '',
       record.note || '',
     ];
   }
@@ -810,11 +839,12 @@ export async function deleteTransactionFromSheet(
   sheetId: number,
   rowIndex: number,
   accessToken: string,
-  tabName?: string
+  tabName?: string,
+  txId?: string
 ): Promise<void> {
   if (isAppsScriptUrl(spreadsheetId)) {
     const finalTab = tabName || (sheetId === 392215035 ? 'Income' : 'Expenses');
-    await appsScriptDeleteTransaction(spreadsheetId, finalTab, rowIndex);
+    await appsScriptDeleteTransaction(spreadsheetId, finalTab, rowIndex, undefined, txId);
     return;
   }
 

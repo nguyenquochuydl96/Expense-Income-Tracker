@@ -74,6 +74,37 @@ export const DEFAULT_CATEGORY_RATIOS: Record<string, number> = {
   'Khác': 0.5 / 51.0,
 };
 
+export interface BudgetEraConfig {
+  effectiveFrom: string; // ISO monthKey 'YYYY-MM'
+  name: string;
+  percentages: Record<string, number>;
+  ratios: Record<string, number>;
+}
+
+export const BUDGET_ERAS: BudgetEraConfig[] = [
+  {
+    effectiveFrom: '2026-08',
+    name: 'Current Era (T8/2026+)',
+    percentages: DEFAULT_CATEGORY_PERCENTAGES,
+    ratios: DEFAULT_CATEGORY_RATIOS,
+  },
+  {
+    effectiveFrom: '2026-04',
+    name: 'Historical Era (T4-T7/2026)',
+    percentages: DEFAULT_CATEGORY_PERCENTAGES_T4_T7,
+    ratios: DEFAULT_CATEGORY_RATIOS_T4_T7,
+  },
+];
+
+export function getBudgetEraForMonth(mKey: string): BudgetEraConfig {
+  for (const era of BUDGET_ERAS) {
+    if (mKey >= era.effectiveFrom) {
+      return era;
+    }
+  }
+  return BUDGET_ERAS[BUDGET_ERAS.length - 1];
+}
+
 // General income categories (salary / shared household income split by %):
 export const GENERAL_INCOME_CATEGORIES = new Set([
   'lương yes4all',
@@ -138,6 +169,28 @@ export interface MultiMonthRolloverResult {
   monthlyCategoryExpenses: Record<string, Record<string, { total: number; count: number }>>;
   monthlyTransfersIn: Record<string, Record<string, number>>;
   monthlyTransfersOut: Record<string, Record<string, number>>;
+  rolloverMode?: RolloverMode;
+}
+
+/**
+ * Pre-indexes all records into an O(1) month lookup map: Map<string, TransactionRecord[]>.
+ * Eliminates repeated O(M*N) array filter scans across months.
+ */
+export function computeNormalizedMonthMap(
+  records: TransactionRecord[]
+): Map<string, TransactionRecord[]> {
+  const map = new Map<string, TransactionRecord[]>();
+  for (const r of records) {
+    const mKey = r.monthKey;
+    if (!mKey) continue;
+    let list = map.get(mKey);
+    if (!list) {
+      list = [];
+      map.set(mKey, list);
+    }
+    list.push(r);
+  }
+  return map;
 }
 
 /**
@@ -151,11 +204,20 @@ export function computeMultiMonthRollover(
   rolloverMode: RolloverMode = 'full',
   hasCustomPercentages: boolean = false
 ): MultiMonthRolloverResult {
+  const monthMap = computeNormalizedMonthMap(allRecords);
+
   // 1. Determine all chronological months
   const mSet = new Set<string>();
-  for (const r of allRecords) {
-    if (r.monthKey && r.monthKey.includes('-')) {
-      mSet.add(r.monthKey);
+  for (const mKey of monthMap.keys()) {
+    if (mKey.includes('-')) {
+      mSet.add(mKey);
+    }
+  }
+  if (budgetTransfers && budgetTransfers.length > 0) {
+    for (const bt of budgetTransfers) {
+      if (bt.monthKey && bt.monthKey.includes('-')) {
+        mSet.add(bt.monthKey);
+      }
     }
   }
   const allChronologicalMonths = Array.from(mSet).sort((a, b) => a.localeCompare(b));
@@ -179,8 +241,9 @@ export function computeMultiMonthRollover(
     let totalSum = 0;
     dedicatedMonthlyIncomes[mKey] = {};
 
-    const mIncomes = allRecords.filter((r) => r.sheetType === 'Income' && r.monthKey === mKey);
-    for (const r of mIncomes) {
+    const mRecords = monthMap.get(mKey) || [];
+    for (const r of mRecords) {
+      if (r.sheetType !== 'Income') continue;
       totalSum += r.amount;
       const rawCat = (r.category || '').trim();
 
@@ -234,6 +297,10 @@ export function computeMultiMonthRollover(
     if (r.sheetType === 'Expenses' && r.monthKey) {
       const cat = r.category || 'Khác';
 
+      if (!monthlyCategoryExpenses[r.monthKey]) monthlyCategoryExpenses[r.monthKey] = {};
+      if (!monthlyTransfersIn[r.monthKey]) monthlyTransfersIn[r.monthKey] = {};
+      if (!monthlyTransfersOut[r.monthKey]) monthlyTransfersOut[r.monthKey] = {};
+
       if (isBudgetTransferRecord(r)) {
         if (r.amount > 0) {
           monthlyTransfersOut[r.monthKey][cat] = (monthlyTransfersOut[r.monthKey][cat] || 0) + r.amount;
@@ -264,18 +331,21 @@ export function computeMultiMonthRollover(
       let ratio: number;
       let pct: number;
 
+      // Era determination via BUDGET_ERAS
+      const era = getBudgetEraForMonth(mKey);
+
       // Historical months (T4-T7) are locked historical eras synchronized to Google Sheet Section 2 (R20:R23)
       // They MUST NEVER be retroactively modified by Phase 2 or custom percentages!
       if (mKey <= '2026-07') {
-        ratio = DEFAULT_CATEGORY_RATIOS_T4_T7[cat] ?? 0;
-        pct = DEFAULT_CATEGORY_PERCENTAGES_T4_T7[cat] ?? (ratio * 100);
+        ratio = era.ratios[cat] ?? 0;
+        pct = era.percentages[cat] ?? (ratio * 100);
       } else {
         if (hasCustomPercentages && customPercentages[cat] !== undefined) {
           pct = customPercentages[cat];
           ratio = pct / 100;
         } else {
-          ratio = DEFAULT_CATEGORY_RATIOS[cat] ?? 0;
-          pct = DEFAULT_CATEGORY_PERCENTAGES[cat] ?? (ratio * 100);
+          ratio = era.ratios[cat] ?? 0;
+          pct = era.percentages[cat] ?? (ratio * 100);
         }
       }
 
@@ -339,5 +409,6 @@ export function computeMultiMonthRollover(
     monthlyCategoryExpenses,
     monthlyTransfersIn,
     monthlyTransfersOut,
+    rolloverMode,
   };
 }
