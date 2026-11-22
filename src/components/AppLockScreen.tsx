@@ -8,7 +8,8 @@ export const STORAGE_KEY_CUSTOM_PIN = 'heomeo_custom_pin_v1';
 export const STORAGE_KEY_CUSTOM_PIN_HASH = 'heomeo_custom_pin_hash_v1';
 export const STORAGE_KEY_FAILED_ATTEMPTS = 'heomeo_lock_failed_attempts_v1';
 export const STORAGE_KEY_LOCKOUT_UNTIL = 'heomeo_lock_until_v1';
-export const DEFAULT_MASTER_PIN = '111196';
+export const DEFAULT_MASTER_PIN_HASH = '11fbf75f3d8a3953f521d45de1762447bd2bd3737e0c30074e69948ef58585c7';
+export const DEFAULT_PIN_LENGTH = 6;
 export const APP_PIN_SALT = 'heomeo_salt_v1_secure_8f9c2d1e';
 export const MAX_FAILED_ATTEMPTS = 5;
 export const LOCKOUT_DURATION_MS = 30 * 1000; // 30 seconds
@@ -31,14 +32,14 @@ export async function hashPin(pin: string): Promise<string> {
   return `fallback_${Math.abs(hash)}`;
 }
 
-export function getEffectiveMasterPin(): string {
+export function getCustomPin(): string | null {
   try {
     const custom = localStorage.getItem(STORAGE_KEY_CUSTOM_PIN);
     if (custom && custom.trim().length >= 4) return custom.trim();
   } catch {
     // ignore
   }
-  return DEFAULT_MASTER_PIN;
+  return null;
 }
 
 export async function verifyPin(enteredPin: string): Promise<boolean> {
@@ -56,8 +57,7 @@ export async function verifyPin(enteredPin: string): Promise<boolean> {
   } catch {
     // ignore
   }
-  const defaultHash = await hashPin(DEFAULT_MASTER_PIN);
-  return enteredHash === defaultHash;
+  return enteredHash === DEFAULT_MASTER_PIN_HASH;
 }
 
 export function isDeviceUnlocked(): boolean {
@@ -126,8 +126,6 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
     return () => window.clearInterval(interval);
   }, []);
 
-  const masterPin = getEffectiveMasterPin();
-
   const handleVerifyPin = useCallback(
     async (enteredPin: string) => {
       if (lockoutRemaining > 0) return;
@@ -181,6 +179,7 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
     [lockoutRemaining, rememberDevice, onUnlock]
   );
 
+  // Auto-verify when pin matches DEFAULT_PIN_LENGTH (6 digits) or custom pin length
   const handlePressDigit = useCallback(
     (digit: string) => {
       if (isSuccess || lockoutRemaining > 0 || pin.length >= 6) return;
@@ -188,12 +187,12 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
       const nextPin = pin + digit;
       setPin(nextPin);
 
-      // Auto-verify if reaches 6 digits or matches known master PIN length
-      if (nextPin.length === 6 || (masterPin.length >= 4 && nextPin.length === masterPin.length)) {
+      const customPin = getCustomPin();
+      if (nextPin.length === DEFAULT_PIN_LENGTH || (customPin && nextPin.length === customPin.length)) {
         handleVerifyPin(nextPin);
       }
     },
-    [pin, isSuccess, lockoutRemaining, masterPin, handleVerifyPin]
+    [pin, isSuccess, lockoutRemaining, handleVerifyPin]
   );
 
   const handleDeleteDigit = useCallback(() => {

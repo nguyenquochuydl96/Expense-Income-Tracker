@@ -18,7 +18,7 @@
 const CONFIG = {
   // 1. Mã bảo vệ gia đình (Tùy chọn - Dành cho Web/Mobile App)
   // Nếu điền (VD: 'heomeo2026'), chỉ người có mã này mới đọc/ghi dữ liệu vào Sheet được
-  API_SECRET_KEY: '111196',
+  API_SECRET_KEY: 'YOUR_SECRET_KEY_HERE',
 
   // 2. Cấu hình định mức
   BE_CORP_ALLOWANCE: 2500000, // 2.5 triệu / tháng (chu kỳ 26 -> 25)

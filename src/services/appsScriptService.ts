@@ -40,7 +40,7 @@ export function getStoredWebAppKey(): string | null {
   } catch {
     // ignore
   }
-  return '111196';
+  return null;
 }
 
 export function saveStoredWebAppKey(key: string) {

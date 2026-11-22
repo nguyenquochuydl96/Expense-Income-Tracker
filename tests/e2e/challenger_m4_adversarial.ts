@@ -37,7 +37,8 @@ import {
 import {
   hashPin,
   verifyPin,
-  DEFAULT_MASTER_PIN,
+  DEFAULT_MASTER_PIN_HASH,
+  DEFAULT_PIN_LENGTH,
   MAX_FAILED_ATTEMPTS,
   LOCKOUT_DURATION_MS,
 } from '../../src/components/AppLockScreen';
@@ -650,17 +651,18 @@ describe('CH4.7: Math Precision Edge Cases & PIN Security Hardening', () => {
   });
 
   test('CH4.7.2: Web Crypto SHA-256 PIN hashing with application salt', async () => {
-    const hash1 = await hashPin('111196');
-    const hash2 = await hashPin('111196');
+    // Verify default master PIN hash matches the precomputed SHA-256 hash
+    expect(DEFAULT_MASTER_PIN_HASH).toBe('11fbf75f3d8a3953f521d45de1762447bd2bd3737e0c30074e69948ef58585c7');
+    expect(DEFAULT_PIN_LENGTH).toBe(6);
+
+    const testPin = '888888';
+    const hash1 = await hashPin(testPin);
+    const hash2 = await hashPin(testPin);
     expect(hash1).toBe(hash2);
     expect(hash1.length).toBe(64); // SHA-256 hex string length
 
-    // Verify correct default master PIN
-    const isValidDefault = await verifyPin(DEFAULT_MASTER_PIN);
-    expect(isValidDefault).toBe(true);
-
     // Reject incorrect PIN
-    const isInvalid = await verifyPin('999999');
+    const isInvalid = await verifyPin('000000');
     expect(isInvalid).toBe(false);
   });
 

@@ -11,3 +11,9 @@ scratch/
 tests/dist/
 .agents/
 
+# Audit & review logs (never track on GitHub)
+audit_bundle.md
+dot*_review.md
+dot*.txt
+dot*.md
+
