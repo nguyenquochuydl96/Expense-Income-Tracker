@@ -2444,9 +2444,7 @@ export default function App() {
         </AnimatePresence>
 
         {isLoadingInitial ? (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-12 text-center text-sm text-slate-500 dark:text-slate-400">
-            Đang nạp dữ liệu lịch sử tài chính của bạn...
-          </div>
+          <TableSkeletonLoader label="Đang nạp dữ liệu lịch sử tài chính của bạn..." />
         ) : (
           <>
             {/* VIEW CONTENT */}

@@ -144,7 +144,7 @@ export const TransactionMobileCard: React.FC<TransactionRowProps> = React.memo((
               type="button"
               onClick={() => onEditTransaction(rec)}
               aria-label={`Chỉnh sửa giao dịch: ${rec.purchaseItem}`}
-              className="min-h-[38px] px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-sky-100 dark:bg-slate-800 dark:hover:bg-sky-950/60 hover:text-sky-700 dark:hover:text-sky-300 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95"
+              className="min-h-[44px] px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-sky-100 dark:bg-slate-800 dark:hover:bg-sky-950/60 hover:text-sky-700 dark:hover:text-sky-300 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-teal-500/60"
             >
               <Edit3 className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
               <span>Sửa</span>
@@ -155,7 +155,7 @@ export const TransactionMobileCard: React.FC<TransactionRowProps> = React.memo((
               type="button"
               onClick={() => onDeleteTransaction(rec)}
               aria-label={`Xóa giao dịch: ${rec.purchaseItem}`}
-              className="min-h-[38px] px-3.5 py-1.5 text-xs font-semibold text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95 ml-1"
+              className="min-h-[44px] px-3.5 py-1.5 text-xs font-semibold text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95 ml-1 focus-visible:ring-2 focus-visible:ring-teal-500/60"
             >
               <Trash2 className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400" />
               <span>Xóa</span>
@@ -309,6 +309,24 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
       (allCategories.length > 0 && selectedCategories.length >= allCategories.length)
     );
   }, [selectedCategories, allCategories]);
+
+  const isFiltered = Boolean(
+    (!isAllCategoriesSelected || selectedCategory !== 'ALL') ||
+    quickFilter !== 'all' ||
+    searchQuery ||
+    filterBigExpense ||
+    filterWeekendOnly
+  );
+
+  const handleClearAllFilters = () => {
+    onSelectCategory('ALL');
+    if (onSelectCategories) onSelectCategories(allCategories);
+    setQuickFilter('all');
+    setSearchQuery('');
+    setFilterBigExpense(false);
+    setFilterWeekendOnly(false);
+    setVisibleLimit(80);
+  };
 
   const { categoryRecordCounts, categorySpentTotals } = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -558,7 +576,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
                     setSearchQuery('');
                     setVisibleLimit(80);
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 -m-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                   title="Xóa tìm kiếm"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -632,19 +650,11 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
               </span>
             </button>
 
-            {((!isAllCategoriesSelected || selectedCategory !== 'ALL') || quickFilter !== 'all' || searchQuery || filterBigExpense || filterWeekendOnly) && (
+            {isFiltered && (
               <button
                 type="button"
-                onClick={() => {
-                  onSelectCategory('ALL');
-                  if (onSelectCategories) onSelectCategories(allCategories);
-                  setQuickFilter('all');
-                  setSearchQuery('');
-                  setFilterBigExpense(false);
-                  setFilterWeekendOnly(false);
-                  setVisibleLimit(80);
-                }}
-                className="px-2.5 py-1.5 text-xs font-medium text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-lg flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors"
+                onClick={handleClearAllFilters}
+                className="px-2.5 py-1.5 text-xs font-medium text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 rounded-lg flex items-center gap-1 whitespace-nowrap shrink-0 transition-colors cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-teal-500/60"
               >
                 <FilterX className="w-3.5 h-3.5" />
                 <span>Xóa lọc</span>
@@ -721,8 +731,31 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
       {/* ═══════ MOBILE CARD LIST VIEW (< 768px) ═══════ */}
       <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
         {displayedRows.length === 0 ? (
-          <div className="py-12 px-4 text-center text-slate-500 dark:text-slate-400 text-xs">
-            Không tìm thấy dòng giao dịch nào khớp với bộ lọc hiện tại.
+          <div className="py-12 px-4 text-center text-slate-500 dark:text-slate-400 text-xs flex flex-col items-center justify-center gap-3">
+            <p>
+              {isFiltered
+                ? 'Không tìm thấy dòng giao dịch nào khớp với bộ lọc hiện tại.'
+                : 'Chưa có giao dịch nào trong sổ cái.'}
+            </p>
+            {isFiltered ? (
+              <button
+                type="button"
+                onClick={handleClearAllFilters}
+                className="min-h-[40px] px-3.5 py-2 text-xs font-semibold text-rose-700 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-teal-500/60"
+              >
+                <FilterX className="w-3.5 h-3.5" />
+                <span>Xóa bộ lọc</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onOpenAddModal}
+                className="min-h-[40px] px-4 py-2 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95 shadow-xs focus-visible:ring-2 focus-visible:ring-teal-500/60"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Thêm giao dịch</span>
+              </button>
+            )}
           </div>
         ) : (
           displayedRows.map((rec) => (
@@ -757,7 +790,32 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
             {displayedRows.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-12 text-center text-slate-500 dark:text-slate-400">
-                  Không tìm thấy dòng giao dịch nào khớp với bộ lọc hiện tại.
+                  <div className="flex flex-col items-center justify-center gap-3">
+                    <p>
+                      {isFiltered
+                        ? 'Không tìm thấy dòng giao dịch nào khớp với bộ lọc hiện tại.'
+                        : 'Chưa có giao dịch nào trong sổ cái.'}
+                    </p>
+                    {isFiltered ? (
+                      <button
+                        type="button"
+                        onClick={handleClearAllFilters}
+                        className="min-h-[38px] px-3.5 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95 focus-visible:ring-2 focus-visible:ring-teal-500/60"
+                      >
+                        <FilterX className="w-3.5 h-3.5" />
+                        <span>Xóa bộ lọc</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={onOpenAddModal}
+                        className="min-h-[38px] px-4 py-1.5 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer active:scale-95 shadow-xs focus-visible:ring-2 focus-visible:ring-teal-500/60"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>+ Thêm giao dịch</span>
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ) : (

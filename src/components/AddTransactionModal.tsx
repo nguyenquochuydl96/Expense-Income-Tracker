@@ -28,6 +28,8 @@ export interface NewTransactionPayload {
   note?: string;
 }
 
+const QUICK_EXPENSE_CHIPS = ['Ăn uống', 'Shopping', 'Điện thoại/Xăng xe', 'Giải trí Heo', 'Tiết kiệm'] as const;
+
 interface AddTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -707,9 +709,35 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                {sheetType === 'Expenses' ? 'Danh mục chi tiêu' : 'Mục đích thu nhập / Ngân sách'}
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  {sheetType === 'Expenses' ? 'Danh mục chi tiêu' : 'Mục đích thu nhập / Ngân sách'}
+                </label>
+              </div>
+
+              {/* Quick 1-tap Category Chips for common expenses */}
+              {sheetType === 'Expenses' && (
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 mb-1.5 no-scrollbar touch-pan-x">
+                  {QUICK_EXPENSE_CHIPS.map((chip) => {
+                    const isSelected = category === chip;
+                    return (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => setCategory(chip)}
+                        className={`min-h-[32px] px-2.5 py-1 text-xs rounded-full border transition-all whitespace-nowrap cursor-pointer flex items-center gap-1 active:scale-95 focus-visible:ring-2 focus-visible:ring-teal-500/60 ${
+                          isSelected
+                            ? 'bg-teal-600 text-white font-bold border-teal-600 shadow-xs dark:bg-teal-500 dark:border-teal-500'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        <span>{chip}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
@@ -778,7 +806,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 {sheetType === 'Expenses' ? 'Nội dung chi tiêu' : 'Nội dung khoản thu'}
               </label>
               {filteredSuggestions.length > 0 && (
-                <span className="text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-teal-600 dark:text-teal-400" />
                   <span>
                     Gợi ý theo mục:{' '}
@@ -830,7 +858,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   <button
                     key={`${s.category}-${s.item}`}
                     type="button"
-                    onMouseDown={() => applySuggestion(s)}
+                    onClick={() => applySuggestion(s)}
                     className="w-full px-3 py-2 text-left text-xs hover:bg-slate-50 dark:hover:bg-slate-700/60 flex items-center justify-between gap-2 transition-colors cursor-pointer"
                   >
                     <div className="truncate flex items-center gap-1.5">
@@ -847,7 +875,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                     </div>
                     {s.lastAmount > 0 && (
                       <span
-                        className="font-mono-tabular text-slate-400 dark:text-slate-500 shrink-0 text-[11px]"
+                        className="font-mono-tabular text-slate-500 dark:text-slate-400 shrink-0 text-[11px]"
                         title="Giá lần gần nhất (chỉ để tham khảo, không tự điền vào ô tiền)"
                       >
                         ~{formatNumberForSheet(s.lastAmount)} ₫
@@ -992,14 +1020,14 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 rounded-lg transition-colors"
+              className="min-h-[44px] px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700 rounded-lg transition-colors cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-teal-500/60"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`px-5 py-2 text-xs font-semibold text-white disabled:opacity-50 rounded-lg transition-colors flex items-center gap-2 shadow-xs ${
+              className={`min-h-[44px] px-5 py-2 text-xs font-semibold text-white disabled:opacity-50 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-teal-500/60 ${
                 modalMode === 'Transfer'
                   ? 'bg-purple-700 hover:bg-purple-800'
                   : sheetType === 'Expenses'

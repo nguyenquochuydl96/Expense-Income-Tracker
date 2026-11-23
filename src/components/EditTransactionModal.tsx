@@ -255,7 +255,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 onChange={(e) => setIsoDate(e.target.value)}
                 className="w-full text-base sm:text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 font-mono-tabular"
               />
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 block">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 block">
                 Định dạng: {sheetDatePreview}
               </span>
             </div>
@@ -453,7 +453,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
             <button
               type="button"
               onClick={() => onDeleteRequest(record)}
-              className="px-3 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors flex items-center gap-1.5"
+              className="min-h-[44px] px-3 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5 focus-visible:ring-2 focus-visible:ring-teal-500/60"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Xóa giao dịch này</span>
@@ -464,14 +464,14 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+                className="min-h-[44px] px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer flex items-center justify-center focus-visible:ring-2 focus-visible:ring-teal-500/60"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-5 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 active:bg-sky-800 rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+                className="min-h-[44px] px-5 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 active:bg-sky-800 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 focus-visible:ring-2 focus-visible:ring-teal-500/60"
               >
                 <Check className="w-3.5 h-3.5" />
                 <span>{isSubmitting ? 'Đang lưu...' : 'Lưu thay đổi'}</span>

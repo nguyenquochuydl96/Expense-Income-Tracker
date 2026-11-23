@@ -249,7 +249,7 @@ export const MultiCategoryPickerDropdown: React.FC<MultiCategoryPickerDropdownPr
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 -m-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer rounded-full"
                 >
                   <X className="w-3 h-3" />
                 </button>

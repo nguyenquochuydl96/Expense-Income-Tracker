@@ -12,7 +12,7 @@ import { TransactionRecord } from '../types/finance';
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { CategoryBadge } from '../utils/categoryIcons';
 import { NewTransactionPayload } from './AddTransactionModal';
-import { usePrivacyMode } from '../utils/privacyService';
+import { usePrivacyMode, isPrivacyActive } from '../utils/privacyService';
 import { isBudgetTransferRecord } from '../utils/cycleUtils';
 
 interface CalendarHeatmapViewProps {
@@ -34,6 +34,24 @@ interface DayData {
   totalSpent: number;
   totalIncome: number;
   transactions: TransactionRecord[];
+}
+
+function formatCompactMobileMoney(val: number, showSign = false, isPrivate = false): string {
+  if (isPrivate || isPrivacyActive()) {
+    return '••••';
+  }
+  const abs = Math.abs(val);
+  const sign = val < 0 ? '-' : showSign ? '+' : '';
+  if (abs >= 1_000_000) {
+    const tr = abs / 1_000_000;
+    const formatted = tr >= 10 ? Math.round(tr) : tr.toFixed(1).replace(/\.0$/, '');
+    return `${sign}${formatted}tr`;
+  }
+  if (abs >= 1_000) {
+    const k = Math.round(abs / 1_000);
+    return `${sign}${k}k`;
+  }
+  return `${sign}${abs}`;
 }
 
 export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.memo(({
@@ -341,7 +359,8 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.mem
                     {d.totalSpent > 0 ? (
                       <div>
                         <div className="text-[10px] sm:text-xs font-bold font-mono-tabular truncate">
-                          {formatCurrency(d.totalSpent)}
+                          <span className="sm:hidden">{formatCompactMobileMoney(d.totalSpent, false, _effectiveIsPrivate)}</span>
+                          <span className="hidden sm:inline">{formatCurrency(d.totalSpent)}</span>
                         </div>
                         <div className="text-[9px] text-slate-500 dark:text-slate-400 hidden sm:block">
                           {d.transactions.filter((t) => t.sheetType === 'Expenses').length} khoản
@@ -349,12 +368,14 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.mem
                       </div>
                     ) : d.totalIncome > 0 ? (
                       <div className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 font-mono-tabular truncate">
-                        {formatCurrency(d.totalIncome, true)}
+                        <span className="sm:hidden">{formatCompactMobileMoney(d.totalIncome, true, _effectiveIsPrivate)}</span>
+                        <span className="hidden sm:inline">{formatCurrency(d.totalIncome, true)}</span>
                       </div>
                     ) : !d.isFuture ? (
                       <div className="text-[10px] text-emerald-700/80 dark:text-emerald-400 font-semibold flex items-center justify-end gap-0.5">
                         <Leaf className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
                         <span className="hidden sm:inline">{formatCurrency(0)}</span>
+                        <span className="sm:hidden font-mono-tabular">0đ</span>
                       </div>
                     ) : null}
                   </div>
@@ -447,7 +468,7 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.mem
                     🍃
                   </div>
                   <div className="font-bold text-slate-700 dark:text-slate-300">Ngày không phát sinh chi tiêu</div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
                     Tuyệt vời! Bạn không có giao dịch nào ghi nhận trong ngày này.
                   </p>
                 </div>

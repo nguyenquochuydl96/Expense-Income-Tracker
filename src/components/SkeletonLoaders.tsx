@@ -60,7 +60,7 @@ export const TableSkeletonLoader: React.FC<SkeletonProps> = ({
       </div>
 
       {/* Subtle Bottom Progress Hint */}
-      <div className="flex items-center justify-center gap-2 pt-4 mt-2 text-xs text-slate-400 dark:text-slate-500 font-medium">
+      <div className="flex items-center justify-center gap-2 pt-4 mt-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
         <span className="w-1.5 h-1.5 rounded-full bg-teal-500 animate-ping" />
         <span>{label}</span>
       </div>
@@ -117,7 +117,7 @@ export const ChartSkeletonLoader: React.FC<SkeletonProps> = ({
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-2 pt-4 mt-2 text-xs text-slate-400 dark:text-slate-500 font-medium">
+      <div className="flex items-center justify-center gap-2 pt-4 mt-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
         <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping" />
         <span>{label}</span>
       </div>
@@ -172,7 +172,7 @@ export const ReconcileSkeletonLoader: React.FC<SkeletonProps> = ({
         ))}
       </div>
 
-      <div className="flex items-center justify-center gap-2 pt-2 text-xs text-slate-400 dark:text-slate-500 font-medium">
+      <div className="flex items-center justify-center gap-2 pt-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
         <span>{label}</span>
       </div>
@@ -206,7 +206,7 @@ export const SheetSyncSkeletonLoader: React.FC<SkeletonProps> = ({
         <div className="h-9 w-full bg-slate-200 dark:bg-slate-700 rounded-xl animate-shimmer" />
       </div>
 
-      <div className="flex items-center justify-center gap-2 pt-2 text-xs text-slate-400 dark:text-slate-500 font-medium">
+      <div className="flex items-center justify-center gap-2 pt-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
         <span>{label}</span>
       </div>

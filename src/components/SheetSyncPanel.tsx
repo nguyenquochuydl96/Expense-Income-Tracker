@@ -407,7 +407,7 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = React.memo(({
                       <button
                         type="button"
                         onClick={() => setShowApiKey((v) => !v)}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-2.5 -m-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer rounded-full focus-visible:ring-2 focus-visible:ring-teal-500/60"
                         aria-label={showApiKey ? 'Ẩn khóa API' : 'Hiện khóa API'}
                       >
                         {showApiKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}

@@ -194,7 +194,7 @@ export const CashflowSegmentedBar: React.FC<CashflowSegmentedBarProps> = ({
               );
             })
           ) : (
-            <div className="w-full h-full rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse" />
+            <div className="w-full h-full rounded-full bg-slate-200 dark:bg-slate-700/80" />
           )}
         </div>
       </div>
