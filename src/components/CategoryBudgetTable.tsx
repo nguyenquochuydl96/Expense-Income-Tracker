@@ -172,7 +172,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
   const multiMonthRolloverData = useMemo(() => {
     if (
       precomputedRollover &&
-      !hasCustomPercentages &&
+      !isEditingBudgets &&
       (!precomputedRollover.rolloverMode || precomputedRollover.rolloverMode === rolloverMode)
     ) {
       return precomputedRollover;
@@ -184,7 +184,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
       rolloverMode,
       hasCustomPercentages
     );
-  }, [precomputedRollover, allRecords, budgetTransfers, percentages, rolloverMode, hasCustomPercentages]);
+  }, [precomputedRollover, isEditingBudgets, allRecords, budgetTransfers, percentages, rolloverMode, hasCustomPercentages]);
 
   // Previous month key for the selectedMonth
   const prevMonthKey = useMemo(() => {

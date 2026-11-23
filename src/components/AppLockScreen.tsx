@@ -228,9 +228,35 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
     };
 
     checkLockout();
-    const interval = window.setInterval(checkLockout, 1000);
-    return () => window.clearInterval(interval);
   }, []);
+
+  // Only run 1-second countdown setInterval when actively temporarily locked
+  useEffect(() => {
+    if (lockoutRemaining <= 0) return;
+
+    const interval = window.setInterval(() => {
+      try {
+        const lockoutUntilStr = localStorage.getItem(STORAGE_KEY_LOCKOUT_UNTIL);
+        if (lockoutUntilStr) {
+          const lockoutUntil = parseInt(lockoutUntilStr, 10);
+          const now = Date.now();
+          if (lockoutUntil > now) {
+            setLockoutRemaining(Math.ceil((lockoutUntil - now) / 1000));
+            return;
+          } else {
+            localStorage.removeItem(STORAGE_KEY_LOCKOUT_UNTIL);
+            localStorage.removeItem(STORAGE_KEY_FAILED_ATTEMPTS);
+            setLockoutRemaining(0);
+          }
+        }
+      } catch {
+        // ignore
+      }
+      setLockoutRemaining(0);
+    }, 1000);
+
+    return () => window.clearInterval(interval);
+  }, [lockoutRemaining > 0]);
 
   const triggerErrorShake = useCallback((message: string, clearPin = true) => {
     setErrorMsg(message);

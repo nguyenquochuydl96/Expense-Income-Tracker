@@ -15,6 +15,40 @@ import {
 
 export type SummaryTimeRangePreset = '3m' | '6m' | '12m' | 'all' | 'custom';
 
+function getCycleMonthKey(
+  isoDate: string,
+  startDay: number = 26,
+  endDay: number = 25
+): string | null {
+  if (!isoDate || isoDate.length < 10) return null;
+  const parts = isoDate.split('-');
+  if (parts.length < 3) return null;
+  const y = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  const d = parseInt(parts[2], 10);
+  if (isNaN(y) || isNaN(m) || isNaN(d)) return null;
+
+  if (startDay <= endDay) {
+    if (d >= startDay && d <= endDay) {
+      return `${parts[0]}-${parts[1]}`;
+    }
+    return null;
+  }
+
+  if (d >= startDay) {
+    let nextM = m + 1;
+    let nextY = y;
+    if (nextM > 12) {
+      nextM = 1;
+      nextY += 1;
+    }
+    return `${nextY}-${String(nextM).padStart(2, '0')}`;
+  } else if (d <= endDay) {
+    return `${parts[0]}-${parts[1]}`;
+  }
+  return null;
+}
+
 interface MultiMonthSummaryTableProps {
   allRecords: TransactionRecord[];
   availableMonths: string[];
@@ -124,15 +158,31 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
 
   const monthMap = useMemo(() => computeNormalizedMonthMap(allRecords), [allRecords]);
 
-  // Pre-filter expenses with non-zero BE Corp and Credit
-  const beCorpExpenses = useMemo(
-    () => allRecords.filter((r) => r.sheetType === 'Expenses' && r.beCorp !== 0),
-    [allRecords]
-  );
-  const creditExpenses = useMemo(
-    () => allRecords.filter((r) => r.sheetType === 'Expenses' && r.credit !== 0),
-    [allRecords]
-  );
+  // Group BE Corp & Credit totals by cycle monthKey in a single O(N) pass
+  const { beCorpByMonth, creditByMonth } = useMemo(() => {
+    const beMap = new Map<string, number>();
+    const creditMap = new Map<string, number>();
+
+    for (const r of allRecords) {
+      if (r.sheetType !== 'Expenses' || !r.isoDate) continue;
+
+      if (r.beCorp !== 0) {
+        const beKey = getCycleMonthKey(r.isoDate, beCorpStartDay, beCorpEndDay);
+        if (beKey) {
+          beMap.set(beKey, (beMap.get(beKey) || 0) + r.beCorp);
+        }
+      }
+
+      if (r.credit !== 0) {
+        const creditKey = getCycleMonthKey(r.isoDate, creditStartDay, creditEndDay);
+        if (creditKey) {
+          creditMap.set(creditKey, (creditMap.get(creditKey) || 0) + r.credit);
+        }
+      }
+    }
+
+    return { beCorpByMonth: beMap, creditByMonth: creditMap };
+  }, [allRecords, beCorpStartDay, beCorpEndDay, creditStartDay, creditEndDay]);
 
   // Compute stats for ALL months first so cumulative cash flow is calculated accurately
   const allMonthlyData = useMemo(() => {
@@ -174,13 +224,8 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
       const beRange = getBillingCycleRange(mKey, beCorpStartDay, beCorpEndDay);
       const creditRange = getBillingCycleRange(mKey, creditStartDay, creditEndDay);
 
-      const beCorpTotal = beCorpExpenses
-        .filter((r) => r.isoDate >= beRange.startDate && r.isoDate <= beRange.endDate)
-        .reduce((sum, r) => sum + r.beCorp, 0);
-
-      const creditTotal = creditExpenses
-        .filter((r) => r.isoDate >= creditRange.startDate && r.isoDate <= creditRange.endDate)
-        .reduce((sum, r) => sum + r.credit, 0);
+      const beCorpTotal = beCorpByMonth.get(mKey) || 0;
+      const creditTotal = creditByMonth.get(mKey) || 0;
 
       return {
         mKey,

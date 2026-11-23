@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   RefreshCw,
   CheckCircle2,
@@ -104,6 +104,16 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = React.memo(({
   const [showApiKey, setShowApiKey] = useState<boolean>(false);
   const [copiedApiKey, setCopiedApiKey] = useState<boolean>(false);
 
+  const copiedApiKeyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copiedCodeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copiedApiKeyTimerRef.current) clearTimeout(copiedApiKeyTimerRef.current);
+      if (copiedCodeTimerRef.current) clearTimeout(copiedCodeTimerRef.current);
+    };
+  }, []);
+
   // Device PIN change state (completely independent from API_SECRET_KEY)
   const [currentPinInput, setCurrentPinInput] = useState<string>('');
   const [newPinInput, setNewPinInput] = useState<string>('');
@@ -135,8 +145,12 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = React.memo(({
     if (!webAppKeyInput.trim()) return;
     try {
       await navigator.clipboard.writeText(webAppKeyInput.trim());
+      if (copiedApiKeyTimerRef.current) clearTimeout(copiedApiKeyTimerRef.current);
       setCopiedApiKey(true);
-      setTimeout(() => setCopiedApiKey(false), 2500);
+      copiedApiKeyTimerRef.current = setTimeout(() => {
+        setCopiedApiKey(false);
+        copiedApiKeyTimerRef.current = null;
+      }, 2500);
     } catch {
       setCopiedApiKey(false);
     }
@@ -198,11 +212,19 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = React.memo(({
     try {
       const codeText = `// Mở file apps-script/Code.gs trong thư mục mã nguồn dự án để copy toàn bộ.`;
       await navigator.clipboard.writeText(codeText);
+      if (copiedCodeTimerRef.current) clearTimeout(copiedCodeTimerRef.current);
       setCopiedCode(true);
-      setTimeout(() => setCopiedCode(false), 3000);
+      copiedCodeTimerRef.current = setTimeout(() => {
+        setCopiedCode(false);
+        copiedCodeTimerRef.current = null;
+      }, 3000);
     } catch {
+      if (copiedCodeTimerRef.current) clearTimeout(copiedCodeTimerRef.current);
       setCopiedCode(true);
-      setTimeout(() => setCopiedCode(false), 3000);
+      copiedCodeTimerRef.current = setTimeout(() => {
+        setCopiedCode(false);
+        copiedCodeTimerRef.current = null;
+      }, 3000);
     }
   };
 

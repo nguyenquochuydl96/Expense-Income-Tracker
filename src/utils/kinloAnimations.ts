@@ -186,7 +186,15 @@ export function initCardLift(container: HTMLElement | Document = document, yOffs
  * Follows cursor with quick spring and returns on leave
  */
 export function initMagneticButtons(container: HTMLElement | Document = document) {
-  if (!canHover() || prefersReducedMotion()) return () => {};
+  if (
+    typeof window === 'undefined' ||
+    !window.matchMedia ||
+    !window.matchMedia('(hover: hover)').matches ||
+    !canHover() ||
+    prefersReducedMotion()
+  ) {
+    return () => {};
+  }
 
   const elements = container.querySelectorAll<HTMLElement>('.magnetic');
   const cleanups: (() => void)[] = [];

@@ -18,7 +18,7 @@ export interface KinloCashflowCardProps {
   className?: string;
 }
 
-export const KinloCashflowCard: React.FC<KinloCashflowCardProps> = ({
+export const KinloCashflowCard: React.FC<KinloCashflowCardProps> = React.memo(({
   income,
   totalExpense,
   netBalance,
@@ -171,4 +171,4 @@ export const KinloCashflowCard: React.FC<KinloCashflowCardProps> = ({
       </div>
     </div>
   );
-};
+});

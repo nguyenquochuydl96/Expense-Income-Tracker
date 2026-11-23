@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useDeferredValue, useMemo, useState } from 'react';
 import {
   Search,
   Plus,
@@ -287,6 +287,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
   const { isPrivate: hookIsPrivate } = usePrivacyMode();
   const _effectiveIsPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const [quickFilter, setQuickFilter] = useState<QuickLedgerFilter>('all');
   const [filterBigExpense, setFilterBigExpense] = useState<boolean>(false);
   const [filterWeekendOnly, setFilterWeekendOnly] = useState<boolean>(false);
@@ -343,7 +344,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
   }, [records]);
 
   const filteredRecords = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    const q = deferredSearchQuery.trim().toLowerCase();
 
     const list = records.filter((rec) => {
       if (!isAllCategoriesSelected && selectedCategories && selectedCategories.length > 0) {
@@ -393,7 +394,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
     selectedCategories,
     isAllCategoriesSelected,
     quickFilter,
-    searchQuery,
+    deferredSearchQuery,
     sortOrder,
     filterBigExpense,
     filterWeekendOnly,

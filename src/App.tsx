@@ -464,13 +464,33 @@ export default function App() {
   }, [monthlyBaseIncome]);
 
   useEffect(() => {
-    if (sheetRecords !== null) {
-      try {
-        localStorage.setItem(SAVED_SHEET_RECORDS_KEY, JSON.stringify(sheetRecords));
-      } catch (e) {
-        console.warn('Cannot persist sheetRecords', e);
+    if (sheetRecords === null) return;
+
+    const flush = () => {
+      if (sheetRecordsRef.current !== null) {
+        try {
+          localStorage.setItem(SAVED_SHEET_RECORDS_KEY, JSON.stringify(sheetRecordsRef.current));
+        } catch (e) {
+          console.warn('Cannot persist sheetRecords', e);
+        }
       }
-    }
+    };
+
+    const timer = setTimeout(flush, 300);
+
+    const handleBeforeUnload = () => {
+      clearTimeout(timer);
+      flush();
+    };
+
+    window.addEventListener('pagehide', handleBeforeUnload);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('pagehide', handleBeforeUnload);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   }, [sheetRecords]);
 
   useEffect(() => {
@@ -503,11 +523,23 @@ export default function App() {
     }
   }, [checkTienData]);
 
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const showToast = useCallback((type: 'success' | 'warning' | 'error', message: string) => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
     setToast({ type, message });
-    setTimeout(() => {
+    toastTimerRef.current = setTimeout(() => {
       setToast((prev) => (prev?.message === message ? null : prev));
+      toastTimerRef.current = null;
     }, 4500);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
   }, []);
 
   // Load attached CSV on startup (skip fetch and parse when sheetRecords cache exists)
@@ -618,26 +650,52 @@ export default function App() {
 
     resetTimer();
 
-    const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
-    const handleActivity = () => resetTimer();
+    const discreteEvents = ['mousedown', 'keydown', 'touchstart'];
+    const streamEvents = ['mousemove', 'scroll'];
 
-    activityEvents.forEach((event) => {
-      window.addEventListener(event, handleActivity, { passive: true });
+    let lastThrottledActivity = 0;
+    const handleStreamActivity = () => {
+      const now = Date.now();
+      if (now - lastThrottledActivity >= 1500) {
+        lastThrottledActivity = now;
+        resetTimer();
+      }
+    };
+
+    const handleDiscreteActivity = () => {
+      lastThrottledActivity = Date.now();
+      resetTimer();
+    };
+
+    discreteEvents.forEach((event) => {
+      window.addEventListener(event, handleDiscreteActivity, { passive: true });
+    });
+    streamEvents.forEach((event) => {
+      window.addEventListener(event, handleStreamActivity, { passive: true });
     });
 
     return () => {
       window.clearTimeout(timeoutId);
-      activityEvents.forEach((event) => {
-        window.removeEventListener(event, handleActivity);
+      discreteEvents.forEach((event) => {
+        window.removeEventListener(event, handleDiscreteActivity);
+      });
+      streamEvents.forEach((event) => {
+        window.removeEventListener(event, handleStreamActivity);
       });
     };
   }, [isUnlocked]);
+
+  // Pending unsynced local records
+  const pendingLocalRecords = useMemo(
+    () => localNewRecords.filter((r) => !r.syncedToSheet),
+    [localNewRecords]
+  );
 
   // Combined active records
   const allRecords = useMemo(() => {
     let combined: TransactionRecord[];
     if (sheetRecords !== null) {
-      const unsynced = localNewRecords.filter((r) => !r.syncedToSheet);
+      const unsynced = pendingLocalRecords;
       const sheetIds = new Set(sheetRecords.map((r) => r.id));
       const dedupedUnsynced = unsynced.filter((r) => !sheetIds.has(r.id));
       combined = [...sheetRecords, ...dedupedUnsynced];
@@ -1147,11 +1205,14 @@ export default function App() {
   };
 
   // Connect & Sync with Google Sheet (with auto-push of offline/pending transactions and transfers)
-  const handleConnectAndSyncSheet = async (
-    customUrlOrId?: string,
-    overrideToken?: string,
-    silent?: boolean
-  ) => {
+  const handleConnectAndSyncSheetRef = useRef<((customUrlOrId?: string, overrideToken?: string, silent?: boolean) => Promise<void>) | null>(null);
+
+  const handleConnectAndSyncSheet = useCallback(
+    async (
+      customUrlOrId?: string,
+      overrideToken?: string,
+      silent?: boolean
+    ) => {
     // Hard guard: never invoke any sync API while the app is locked
     if (!isUnlockedRef.current) {
       return;
@@ -1498,10 +1559,12 @@ export default function App() {
       if (queuedAuthSyncRef.current) {
         const next = queuedAuthSyncRef.current;
         queuedAuthSyncRef.current = null;
-        handleConnectAndSyncSheet(next.customUrlOrId, next.overrideToken, next.silent).catch(console.error);
+        handleConnectAndSyncSheetRef.current?.(next.customUrlOrId, next.overrideToken, next.silent).catch(console.error);
       }
     }
-  };
+  }, [spreadsheetInput, accessToken, showToast]);
+
+  handleConnectAndSyncSheetRef.current = handleConnectAndSyncSheet;
 
   const handleSaveTransfer = async (transfer: {
     date: string;
@@ -2662,7 +2725,7 @@ export default function App() {
                       syncError={syncError}
                       lastSyncedAt={lastSyncedAt}
                       onConnectAndSyncSheet={handleConnectAndSyncSheet}
-                      pendingLocalRecords={localNewRecords.filter((r) => !r.syncedToSheet)}
+                      pendingLocalRecords={pendingLocalRecords}
                       onPushPendingToSheet={handlePushPendingToSheet}
                       onExportCsv={handleExportCsv}
                       totalExpensesCount={totalExpensesCount}
