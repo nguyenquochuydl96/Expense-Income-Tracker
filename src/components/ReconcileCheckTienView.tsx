@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import {
   Calculator,
   CheckCircle2,
@@ -20,10 +20,11 @@ import { CheckTienSheetData, TransactionRecord } from '../types/finance';
 import {
   formatCurrency,
   formatNumberForSheet,
+  getTodayIsoDate,
   isoToSheetDate,
   parseSheetNumber,
 } from '../utils/csvParser';
-import { getBillingCycleRange } from '../utils/cycleUtils';
+import { getBillingCycleRange, isBudgetTransferRecord } from '../utils/cycleUtils';
 import { NewTransactionPayload } from './AddTransactionModal';
 import { MoneyCalculatorInput } from './MoneyCalculatorInput';
 import { evaluateMoneyExpression } from '../utils/mathExpression';
@@ -47,26 +48,28 @@ interface ReconcileCheckTienViewProps {
   onOpenAddWithPreset: (preset: Partial<NewTransactionPayload>) => void;
   checkTienData?: CheckTienSheetData | null;
   onEditTransaction?: (tx: TransactionRecord) => void;
+  onSyncWalletsToSheet?: (wallets: HeoMeoWallets) => Promise<void> | void;
 }
 
 type ReconcileSubTab = 'reconcile' | 'accounts' | 'becorp' | 'credit';
 
 const SAVED_WALLETS_KEY = 'heomeo_wallets_v3';
 const SAVED_BE_SUBSIDY_KEY = 'heomeo_be_subsidy_quota_v1';
+const SAVED_OPENING_BALANCE_KEY = 'heomeo_reconcile_opening_balance_v1';
 const DEFAULT_BE_SUBSIDY = 2500000;
 
 const DEFAULT_WALLETS: HeoMeoWallets = {
   heo: {
-    cash: 1949000,
-    bank: 2107000,
-    ewallet: -863000, // Momo (-949k) + Zalopay (86k)
+    cash: 0,
+    bank: 0,
+    ewallet: 0,
     receivable: 0,
   },
   meo: {
-    cash: 760000,
-    bank: 13954000,
-    ewallet: 2678000, // Momo (16k) + Zalopay (2,662k)
-    receivable: 390000,
+    cash: 0,
+    bank: 0,
+    ewallet: 0,
+    receivable: 0,
   },
 };
 
@@ -76,9 +79,41 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
   onOpenAddWithPreset,
   checkTienData,
   onEditTransaction,
+  onSyncWalletsToSheet,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<ReconcileSubTab>('reconcile');
   const { isPrivate } = usePrivacyMode();
+  const walletSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (walletSyncTimerRef.current) {
+        clearTimeout(walletSyncTimerRef.current);
+      }
+    };
+  }, []);
+
+  // ═══════ SỐ DƯ ĐẦU KỲ (OPENING BALANCE) ═══════
+  const [openingBalance, setOpeningBalance] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(SAVED_OPENING_BALANCE_KEY);
+      if (saved !== null) {
+        const parsed = Number(saved);
+        return Number.isFinite(parsed) ? parsed : 0;
+      }
+    } catch {
+      // ignore
+    }
+    return 0;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SAVED_OPENING_BALANCE_KEY, String(openingBalance));
+    } catch {
+      // ignore
+    }
+  }, [openingBalance]);
 
   // ═══════ WALLET FUNDS: 4 FIXED FIELDS FOR HEO & 4 FOR MÈO ═══════
   const [wallets, setWallets] = useState<HeoMeoWallets>(() => {
@@ -90,8 +125,8 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
       const oldAccountsRaw = localStorage.getItem('heomeo_real_accounts_v1');
       if (oldAccountsRaw) {
         const oldAccounts = JSON.parse(oldAccountsRaw);
-        const heoCash = oldAccounts.find((a: any) => a.id === 'acc-heo-cash')?.balance ?? 1450000;
-        const meoCash = oldAccounts.find((a: any) => a.id === 'acc-meo-cash')?.balance ?? 1850000;
+        const heoCash = oldAccounts.find((a: any) => a.id === 'acc-heo-cash')?.balance ?? 0;
+        const meoCash = oldAccounts.find((a: any) => a.id === 'acc-meo-cash')?.balance ?? 0;
         const heoBank = oldAccounts.find((a: any) => a.id === 'acc-heo-bank')?.balance ?? 0;
         const meoBank = oldAccounts.find((a: any) => a.id === 'acc-meo-bank')?.balance ?? 0;
         const heoEwallet = oldAccounts.find((a: any) => a.id === 'acc-heo-ewallet')?.balance ?? 0;
@@ -164,17 +199,28 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
       if (evaluated !== null) {
         num = evaluated;
       } else {
-        const cleanDigits = rawVal.replace(/[^\d]/g, '');
-        num = cleanDigits === '' ? 0 : parseInt(cleanDigits, 10);
+        const cleanDigits = rawVal.trim().replace(/(?!^-)[^\d]/g, '').replace(/(?!^)-/g, '');
+        num = cleanDigits === '' || cleanDigits === '-' ? 0 : parseInt(cleanDigits, 10);
       }
     }
-    setWallets((prev) => ({
-      ...prev,
-      [person]: {
-        ...prev[person],
-        [field]: num,
-      },
-    }));
+    setWallets((prev) => {
+      const next: HeoMeoWallets = {
+        ...prev,
+        [person]: {
+          ...prev[person],
+          [field]: num,
+        },
+      };
+      if (onSyncWalletsToSheet) {
+        if (walletSyncTimerRef.current) {
+          clearTimeout(walletSyncTimerRef.current);
+        }
+        walletSyncTimerRef.current = setTimeout(() => {
+          onSyncWalletsToSheet(next);
+        }, 1200);
+      }
+      return next;
+    });
   };
 
   // Real Money Totals (Heo, Mèo, Combined)
@@ -233,20 +279,29 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
       cycleIncome = monthIncomeRows.reduce((s, r) => s + r.amount, 0);
     }
 
-    // 2. Expense within cycle
+    // 2. Expense within cycle (exclude internal budget transfer records)
     const expenseRows = allRecords.filter(
-      (r) => r.sheetType === 'Expenses' && r.isoDate >= cycleStart && r.isoDate <= cycleEnd
+      (r) =>
+        r.sheetType === 'Expenses' &&
+        !isBudgetTransferRecord(r) &&
+        r.isoDate >= cycleStart &&
+        r.isoDate <= cycleEnd
     );
     const cycleExpense = expenseRows.reduce((s, r) => s + r.amount, 0);
 
-    // 3. Credit swiped within cycle
+    // 3. Credit swiped / refunded within cycle (r.credit !== 0 includes card refunds)
     const creditRows = allRecords.filter(
-      (r) => r.sheetType === 'Expenses' && r.credit > 0 && r.isoDate >= cycleStart && r.isoDate <= cycleEnd
+      (r) =>
+        r.sheetType === 'Expenses' &&
+        !isBudgetTransferRecord(r) &&
+        r.credit !== 0 &&
+        r.isoDate >= cycleStart &&
+        r.isoDate <= cycleEnd
     );
     const cycleCredit = creditRows.reduce((s, r) => s + r.credit, 0);
 
-    // Theoretical remaining = Income - Expense + Credit (Chuẩn 100% Google Sheet)
-    const theoreticalRemaining = cycleIncome - cycleExpense + cycleCredit;
+    // Theoretical remaining = Opening Balance + Income - Expense + Credit
+    const theoreticalRemaining = openingBalance + cycleIncome - cycleExpense + cycleCredit;
 
     // Discrepancy = Actual money - Theoretical book money
     const discrepancy = totalRealMoney - theoreticalRemaining;
@@ -261,7 +316,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
       theoreticalRemaining,
       discrepancy,
     };
-  }, [allRecords, cycleStart, cycleEnd, selectedMonth, totalRealMoney]);
+  }, [allRecords, cycleStart, cycleEnd, selectedMonth, totalRealMoney, openingBalance]);
 
   // ═══════ BE CORP SUBSIDY TRACKER (2.5M / THÁNG) ═══════
   const [beSubsidyQuota, setBeSubsidyQuota] = useState<number>(() => {
@@ -364,7 +419,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
     const missingAmount = Math.abs(Math.round(cycleReconcileStats.discrepancy));
     if (missingAmount === 0) return;
 
-    const todayIso = new Date().toISOString().split('T')[0];
+    const todayIso = getTodayIsoDate();
     if (cycleReconcileStats.discrepancy < 0) {
       onOpenAddWithPreset({
         sheetType: 'Expenses',
@@ -581,7 +636,35 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                   </span>
                 </div>
 
-                <div className="mt-4 space-y-4 text-xs">
+                <div className="mt-4 space-y-3 text-xs">
+                  {/* Opening Balance */}
+                  <div className="p-3 bg-white dark:bg-slate-800/80 border border-teal-200/80 dark:border-teal-800/60 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <div className="text-slate-700 dark:text-slate-300 font-semibold flex items-center gap-1">
+                          <Wallet className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+                          <span>Số dư đầu kỳ</span>
+                        </div>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                          Tiền kết chuyển từ kỳ trước
+                        </span>
+                      </div>
+                      <span className="font-mono-tabular font-extrabold text-teal-700 dark:text-teal-400 text-sm shrink-0">
+                        {formatCurrency(openingBalance, openingBalance !== 0)}
+                      </span>
+                    </div>
+                    <MoneyCalculatorInput
+                      value={openingBalance === 0 ? '' : formatNumberForSheet(openingBalance, false, true)}
+                      onChange={(_str, num) => setOpeningBalance(num)}
+                      placeholder="0 ₫"
+                      size="xs"
+                      theme="teal"
+                      allowNegative={true}
+                      className="w-full"
+                      inputClassName={`text-right font-mono-tabular font-bold text-teal-900 dark:text-teal-200 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
+                    />
+                  </div>
+
                   {/* Income */}
                   <div className="p-3 bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl flex items-center justify-between">
                     <div>
@@ -633,7 +716,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                     = Tiền lý thuyết phải còn:
                   </span>
                   <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono-tabular">
-                    (Income − Expense + Credit)
+                    (Đầu kỳ + Income − Expense + Credit)
                   </span>
                 </div>
                 <span className="text-base font-extrabold font-mono-tabular text-slate-900 dark:text-slate-100">
@@ -684,6 +767,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                             placeholder="0 ₫"
                             size="xs"
                             theme="rose"
+                            allowNegative={true}
                             className="w-full"
                             inputClassName={`text-right font-mono-tabular font-bold text-rose-950 dark:text-rose-200 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                           />
@@ -715,6 +799,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                             placeholder="0 ₫"
                             size="xs"
                             theme="sky"
+                            allowNegative={true}
                             className="w-full"
                             inputClassName={`text-right font-mono-tabular font-bold text-sky-950 dark:text-sky-200 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                           />
@@ -888,6 +973,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                           placeholder="0 ₫"
                           size="md"
                           theme="rose"
+                          allowNegative={true}
                           className="w-44 shrink-0"
                           inputClassName={`text-right text-sm font-extrabold text-slate-900 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/60 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                         />
@@ -942,6 +1028,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                           placeholder="0 ₫"
                           size="md"
                           theme="sky"
+                          allowNegative={true}
                           className="w-44 shrink-0"
                           inputClassName={`text-right text-sm font-extrabold text-slate-900 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/60 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                         />

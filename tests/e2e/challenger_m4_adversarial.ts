@@ -37,7 +37,8 @@ import {
 import {
   hashPin,
   verifyPin,
-  DEFAULT_MASTER_PIN_HASH,
+  savePinHash,
+  hasConfiguredPin,
   DEFAULT_PIN_LENGTH,
   MAX_FAILED_ATTEMPTS,
   LOCKOUT_DURATION_MS,
@@ -231,13 +232,13 @@ describe('CH4.2: Multi-Billion VND Extreme Values & Floating Point Precision Str
       totalBaseBudget += catStats.baseBudget;
     }
 
-    // Tiết kiệm gets 20/51 * 100B = ~39,215,686,275
+    // Tiết kiệm gets 20/51 * 100B (~39,215,686,274 under Largest Remainder Method so total sums to exact 100B)
     const tietKiem = res.chain['Tiết kiệm']['2026-10'];
-    expect(tietKiem.baseBudget).toBe(Math.round(100_000_000_000 * (20.0 / 51.0)));
+    expect(Math.abs(tietKiem.baseBudget - Math.round(100_000_000_000 * (20.0 / 51.0)))).toBeLessThanOrEqual(1);
 
-    // Due to rounding each category to nearest VND, sum of 13 rounded categories differs from 100B by at most 13 VND:
+    // Largest Remainder Method guarantees exact 100% conservation (0 VND discrepancy)
     const discrepancy = Math.abs(totalBaseBudget - 100_000_000_000);
-    expect(discrepancy).toBeLessThanOrEqual(13);
+    expect(discrepancy).toBe(0);
   });
 
   test('CH4.2.3: Multi-month cascading carryovers with multi-billion VND balances retain exact math', () => {
@@ -252,13 +253,16 @@ describe('CH4.2: Multi-Billion VND Extreme Values & Floating Point Precision Str
     const aug = res.chain['Tiết kiệm']['2026-08'];
     const sep = res.chain['Tiết kiệm']['2026-09'];
 
-    const expectedAugBase = Math.round(10_000_000_000 * (20.0 / 51.0)); // 3,921,568,627
-    expect(aug.baseBudget).toBe(expectedAugBase);
+    const augTotalAllocated = EXPENSE_CATEGORIES.reduce((s, c) => s + res.chain[c]['2026-08'].baseBudget, 0);
+    expect(augTotalAllocated).toBe(10_000_000_000);
+
+    const exactShare = Math.round(10_000_000_000 * (20.0 / 51.0));
+    expect(Math.abs(aug.baseBudget - exactShare)).toBeLessThanOrEqual(1);
     expect(aug.spent).toBe(3_000_000_000);
-    expect(aug.remaining).toBe(expectedAugBase - 3_000_000_000); // 921,568,627
+    expect(aug.remaining).toBe(aug.baseBudget - 3_000_000_000);
 
     expect(sep.carryover).toBe(aug.remaining);
-    expect(sep.effectiveBudget).toBe(aug.remaining + expectedAugBase);
+    expect(sep.effectiveBudget).toBe(aug.remaining + sep.baseBudget);
     expect(sep.remaining).toBe(sep.effectiveBudget - 2_000_000_000);
   });
 
@@ -650,9 +654,10 @@ describe('CH4.7: Math Precision Edge Cases & PIN Security Hardening', () => {
     expect(evaluateMoneyExpression('10 / 0')).toBe(null);
   });
 
-  test('CH4.7.2: Web Crypto SHA-256 PIN hashing with application salt', async () => {
-    // Verify default master PIN hash matches the precomputed SHA-256 hash
-    expect(DEFAULT_MASTER_PIN_HASH).toBe('11fbf75f3d8a3953f521d45de1762447bd2bd3737e0c30074e69948ef58585c7');
+  test('CH4.7.2: Web Crypto SHA-256 PIN hashing with application salt & no hardcoded master PIN hash', async () => {
+    const lockSource = fs.readFileSync(path.join(projectRoot, 'src/components/AppLockScreen.tsx'), 'utf-8');
+    expect(lockSource.includes('DEFAULT_MASTER_PIN_HASH')).toBe(false);
+    expect(lockSource.includes('saveStoredWebAppKey')).toBe(false);
     expect(DEFAULT_PIN_LENGTH).toBe(6);
 
     const testPin = '888888';
@@ -661,9 +666,29 @@ describe('CH4.7: Math Precision Edge Cases & PIN Security Hardening', () => {
     expect(hash1).toBe(hash2);
     expect(hash1.length).toBe(64); // SHA-256 hex string length
 
-    // Reject incorrect PIN
+    // Without configured PIN in storage, verification must reject
+    expect(hasConfiguredPin()).toBe(false);
     const isInvalid = await verifyPin('000000');
     expect(isInvalid).toBe(false);
+
+    // Verify savePinHash works with a local storage shim
+    const store = new Map<string, string>();
+    const prevStorage = (globalThis as any).localStorage;
+    (globalThis as any).localStorage = {
+      getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+      setItem: (k: string, v: string) => store.set(k, String(v)),
+      removeItem: (k: string) => store.delete(k),
+    };
+    try {
+      await savePinHash('246810');
+      expect(hasConfiguredPin()).toBe(true);
+      expect(await verifyPin('246810')).toBe(true);
+      expect(await verifyPin('000000')).toBe(false);
+      // Plaintext PIN must never be stored
+      expect(store.has('heomeo_custom_pin_v1')).toBe(false);
+    } finally {
+      (globalThis as any).localStorage = prevStorage;
+    }
   });
 
   test('CH4.7.3: Security parameters & Lockout limits', () => {

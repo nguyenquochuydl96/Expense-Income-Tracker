@@ -1,12 +1,16 @@
 import { BudgetTransferRecord, CheckTienSheetData, SheetTabType, TransactionRecord } from '../types/finance';
 import { parseDateString, parseSheetNumber } from '../utils/csvParser';
+import { RowSignature } from '../utils/syncStateUtils';
 import {
   isAppsScriptUrl,
   appsScriptSyncAll,
   appsScriptAppendTransaction,
   appsScriptUpdateTransaction,
   appsScriptDeleteTransaction,
+  appsScriptMoveTransaction,
   appsScriptAppendTransfer,
+  appsScriptUpdateCheckTienWallets,
+  AppsScriptWalletPayload,
 } from './appsScriptService';
 
 export interface SpreadsheetMetadata {
@@ -168,6 +172,7 @@ export async function fetchTabTransactions(
   let beCorpIdx = -1;
   let creditIdx = -1;
   let noteIdx = -1;
+  let txIdIdx = -1;
 
   if (sheetType === 'Expenses') {
     for (let c = 0; c < header.length; c++) {
@@ -179,6 +184,7 @@ export async function fetchTabTransactions(
       else if (categoryIdx === -1 && /category|hạng mục|danh mục|loại/i.test(h)) categoryIdx = c;
       else if (itemIdx === -1 && /item|nội dung|khoản|mô tả|tên|chi tiết/i.test(h)) itemIdx = c;
       else if (noteIdx === -1 && /note|ghi chú|bảng/i.test(h)) noteIdx = c;
+      else if (txIdIdx === -1 && /^txid$|^tx_id$|^uuid$|^id$/i.test(h)) txIdIdx = c;
     }
     if (dateIdx === -1) dateIdx = 0;
     if (categoryIdx === -1) categoryIdx = 1;
@@ -187,9 +193,10 @@ export async function fetchTabTransactions(
     if (beCorpIdx === -1) beCorpIdx = 4;
     if (creditIdx === -1) creditIdx = 5;
     if (noteIdx === -1) noteIdx = 6;
+    if (txIdIdx === -1) txIdIdx = 7;
   } else {
     // sheetType === 'Income'
-    // Header format: Date (0), Income Source (1), Description (2), Income Amount (3), Month (4)
+    // Header format: Date (0), Income Source (1), Description (2), Income Amount (3), Month (4), txId (5)
     for (let c = 0; c < header.length; c++) {
       const h = header[c];
       if (dateIdx === -1 && /date|ngày|time|thời gian/i.test(h) && !/month|tháng/i.test(h)) dateIdx = c;
@@ -197,11 +204,13 @@ export async function fetchTabTransactions(
       else if (categoryIdx === -1 && /source|income source|nguồn|category|danh mục|hạng mục|loại/i.test(h)) categoryIdx = c;
       else if (itemIdx === -1 && /desc|description|item|mô tả|nội dung|khoản|chi tiết/i.test(h)) itemIdx = c;
       else if (noteIdx === -1 && /note|ghi chú/i.test(h)) noteIdx = c;
+      else if (txIdIdx === -1 && /^txid$|^tx_id$|^uuid$|^id$/i.test(h)) txIdIdx = c;
     }
     if (dateIdx === -1) dateIdx = 0;
     if (categoryIdx === -1) categoryIdx = 1;
     if (itemIdx === -1) itemIdx = 2;
     if (amountIdx === -1) amountIdx = 3;
+    if (txIdIdx === -1) txIdIdx = 5;
   }
 
   const records: TransactionRecord[] = [];
@@ -216,6 +225,7 @@ export async function fetchTabTransactions(
     const rawBeCorp = beCorpIdx !== -1 && beCorpIdx < row.length ? (row[beCorpIdx] || '').trim() : '';
     const rawCredit = creditIdx !== -1 && creditIdx < row.length ? (row[creditIdx] || '').trim() : '';
     const rawNote = noteIdx !== -1 && noteIdx < row.length ? (row[noteIdx] || '').trim() : '';
+    const rawTxId = txIdIdx !== -1 && txIdIdx < row.length ? (row[txIdIdx] || '').trim() : '';
 
     if (!rawDate && !rawCategory && !rawItem && !rawAmount) continue;
     if (rawDate.toLowerCase() === 'purchase date' || rawDate.toLowerCase() === 'date') continue;
@@ -237,8 +247,10 @@ export async function fetchTabTransactions(
       continue;
     }
 
+    const stableId = rawTxId || `sheet-${sheetType}-${i + 1}`;
     records.push({
-      id: `sheet-${sheetType}-${i + 1}`,
+      id: stableId,
+      txId: rawTxId || undefined,
       rowIndex: i + 1,
       sheetType,
       purchaseDate: rawDate || parsedDate.displayDate,
@@ -263,7 +275,10 @@ export async function fetchCheckTienSheet(
   tabName: string,
   accessToken: string
 ): Promise<CheckTienSheetData | null> {
-  if (isAppsScriptUrl(spreadsheetId)) return null;
+  if (isAppsScriptUrl(spreadsheetId)) {
+    const result = await appsScriptSyncAll(spreadsheetId);
+    return result.checkTien || null;
+  }
   const range = `'${tabName.replace(/'/g, "''")}'!A1:M120`;
   const [formattedRes, formulaRes] = await Promise.all([
     fetch(
@@ -340,9 +355,9 @@ export async function fetchSummarySheet(
   };
 }
 
-export const INCOME_TAB_HEADERS = ['Date', 'Income Source', 'Description', 'Income Amount', 'Month'];
-export const EXPENSE_TAB_HEADERS = ['Purchase Date', 'Category', 'Purchase Item', 'Amount', 'BE Corp', 'Credit', 'Note'];
-export const BUDGET_TRANSFER_HEADERS = ['Date', 'From Category', 'To Category', 'Amount', 'Description', 'Month'];
+export const INCOME_TAB_HEADERS = ['Date', 'Income Source', 'Description', 'Income Amount', 'Month', 'txId'];
+export const EXPENSE_TAB_HEADERS = ['Purchase Date', 'Category', 'Purchase Item', 'Amount', 'BE Corp', 'Credit', 'Note', 'txId'];
+export const BUDGET_TRANSFER_HEADERS = ['Date', 'From Category', 'To Category', 'Amount', 'Description', 'Month', 'txId'];
 
 export async function createSheetTab(
   spreadsheetId: string,
@@ -411,10 +426,10 @@ export async function appendTransactionToSheet(
     txId?: string;
   },
   accessToken: string
-): Promise<{ rowIndex?: number }> {
+): Promise<{ rowIndex?: number; deduplicated?: boolean }> {
   if (isAppsScriptUrl(spreadsheetId)) {
     const asRes = await appsScriptAppendTransaction(spreadsheetId, tabName, record);
-    return { rowIndex: asRes?.rowIndex };
+    return { rowIndex: asRes?.rowIndex, deduplicated: asRes?.deduplicated };
   }
 
   const isIncome = record.sheetType === 'Income' || tabName.toLowerCase().includes('income');
@@ -454,56 +469,13 @@ export async function appendTransactionToSheet(
     range = `${safeTab}!A:H`;
   }
 
-  const sendAppend = async (): Promise<{ res: Response; targetRow?: number }> => {
-    // 1. Try to find the exact next row based on Column A (to avoid being pushed by trailing formula cells in other columns)
-    try {
-      const colARange = `${safeTab}!A:A`;
-      const colAUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
-        spreadsheetId
-      )}/values/${encodeURIComponent(colARange)}?majorDimension=COLUMNS`;
-      const colARes = await fetch(colAUrl, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (colARes.ok) {
-        const colAData = await colARes.json();
-        const colAVals: any[] = colAData.values?.[0] || [];
-        let lastFilledRow = 0;
-        for (let i = 0; i < colAVals.length; i++) {
-          if (colAVals[i] !== undefined && colAVals[i] !== null && String(colAVals[i]).trim() !== '') {
-            lastFilledRow = i + 1;
-          }
-        }
-        if (lastFilledRow > 0) {
-          const targetRow = lastFilledRow + 1;
-          const endCol = isIncome ? 'E' : 'G';
-          const putUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
-            spreadsheetId
-          )}/values/${encodeURIComponent(`${safeTab}!A${targetRow}:${endCol}${targetRow}`)}?valueInputOption=USER_ENTERED`;
-          const putRes = await fetch(putUrl, {
-            method: 'PUT',
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              majorDimension: 'ROWS',
-              values: [rowValues],
-            }),
-          });
-          if (putRes.ok) {
-            return { res: putRes, targetRow };
-          }
-        }
-      }
-    } catch {
-      // Fall back to append if Column A lookup fails
-    }
-
+  // Prioritize atomic Sheets :append with insertDataOption=INSERT_ROWS on full range A:H / A:F so txId is never truncated
+  const sendAppend = async (): Promise<Response> => {
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
       spreadsheetId
-    )}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=OVERWRITE`;
+    )}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 
-    const appendRes = await fetch(url, {
+    return await fetch(url, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -514,11 +486,9 @@ export async function appendTransactionToSheet(
         values: [rowValues],
       }),
     });
-    return { res: appendRes };
   };
 
-  let appendResult = await sendAppend();
-  let res = appendResult.res;
+  let res = await sendAppend();
 
   if (!res.ok) {
     const errBody = await res.json().catch(() => ({}));
@@ -533,11 +503,10 @@ export async function appendTransactionToSheet(
       res.status === 400 ||
       res.status === 404
     ) {
-      // Auto-create missing tab with standard headers and retry
+      // Auto-create missing tab with standard headers (including txId) and retry
       const defaultHeaders = isIncome ? INCOME_TAB_HEADERS : EXPENSE_TAB_HEADERS;
       await createSheetTab(spreadsheetId, tabName, defaultHeaders, accessToken);
-      appendResult = await sendAppend();
-      res = appendResult.res;
+      res = await sendAppend();
     }
 
     if (!res.ok) {
@@ -547,18 +516,16 @@ export async function appendTransactionToSheet(
     }
   }
 
-  let finalRowIndex = appendResult.targetRow;
-  if (!finalRowIndex) {
-    try {
-      const data = await res.json();
-      const updatedRange = data?.updates?.updatedRange || '';
-      const match = updatedRange.match(/![A-Za-z0-9_]*?[A-Z]+(\d+)/);
-      if (match) {
-        finalRowIndex = parseInt(match[1], 10);
-      }
-    } catch {
-      // ignore
+  let finalRowIndex: number | undefined;
+  try {
+    const data = await res.json();
+    const updatedRange = data?.updates?.updatedRange || '';
+    const match = updatedRange.match(/![A-Za-z0-9_]*?[A-Z]+(\d+)/);
+    if (match) {
+      finalRowIndex = parseInt(match[1], 10);
     }
+  } catch {
+    // ignore
   }
 
   return { rowIndex: finalRowIndex };
@@ -574,7 +541,7 @@ export async function fetchBudgetTransfersSheet(
     return result.budgetTransfers;
   }
 
-  const range = `'${tabName.replace(/'/g, "''")}'!A2:F`;
+  const range = `'${tabName.replace(/'/g, "''")}'!A2:G`;
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
     spreadsheetId
   )}/values/${encodeURIComponent(range)}?valueRenderOption=FORMATTED_VALUE`;
@@ -602,14 +569,17 @@ export async function fetchBudgetTransfersSheet(
     const rawTo = row[2]?.trim() || '';
     const rawAmount = row[3];
     const rawDesc = row[4]?.trim() || '';
+    const rawTxId = row[6]?.trim() || '';
 
     if (!rawDate && !rawFrom && !rawTo && !rawAmount) continue;
 
     const amount = parseSheetNumber(rawAmount);
     const parsedDate = parseDateString(rawDate);
+    const stableId = rawTxId || `bt-${i + 2}-${rawDate || 'undated'}`;
 
     records.push({
-      id: `bt-${i + 2}-${rawDate || 'undated'}`,
+      id: stableId,
+      txId: rawTxId || undefined,
       rowIndex: i + 2,
       date: rawDate,
       isoDate: parsedDate.isoDate,
@@ -635,12 +605,13 @@ export async function appendBudgetTransferToSheet(
     toCategory: string;
     amount: number;
     description: string;
+    txId?: string;
   },
   accessToken: string
-): Promise<void> {
+): Promise<{ rowIndex?: number; deduplicated?: boolean }> {
   if (isAppsScriptUrl(spreadsheetId)) {
-    await appsScriptAppendTransfer(spreadsheetId, transfer);
-    return;
+    const res = await appsScriptAppendTransfer(spreadsheetId, transfer, undefined, tabName);
+    return { rowIndex: res?.rowIndex, deduplicated: res?.deduplicated };
   }
 
   const parsedDate = parseDateString(transfer.date);
@@ -648,6 +619,7 @@ export async function appendBudgetTransferToSheet(
     ? `${parseInt(parsedDate.monthKey.split('-')[1], 10)}/1/${parsedDate.monthKey.split('-')[0]}`
     : transfer.date;
 
+  // Budget Transfers columns: Date (A), From (B), To (C), Amount (D), Description (E), Month (F), txId (G)
   const rowValues = [
     transfer.date,
     transfer.fromCategory,
@@ -655,58 +627,15 @@ export async function appendBudgetTransferToSheet(
     transfer.amount,
     transfer.description,
     monthDateStr,
+    transfer.txId || '',
   ];
   const safeTab = `'${tabName.replace(/'/g, "''")}'`;
-  const range = `${safeTab}!A:F`;
+  const range = `${safeTab}!A:G`;
 
   const sendAppend = async () => {
-    // 1. Try to find the exact next row based on Column A (to avoid being pushed by trailing formula cells in other columns)
-    try {
-      const colARange = `${safeTab}!A:A`;
-      const colAUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
-        spreadsheetId
-      )}/values/${encodeURIComponent(colARange)}?majorDimension=COLUMNS`;
-      const colARes = await fetch(colAUrl, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (colARes.ok) {
-        const colAData = await colARes.json();
-        const colAVals: any[] = colAData.values?.[0] || [];
-        let lastFilledRow = 0;
-        for (let i = 0; i < colAVals.length; i++) {
-          if (colAVals[i] !== undefined && colAVals[i] !== null && String(colAVals[i]).trim() !== '') {
-            lastFilledRow = i + 1;
-          }
-        }
-        if (lastFilledRow > 0) {
-          const targetRow = lastFilledRow + 1;
-          const endCol = 'F';
-          const putUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
-            spreadsheetId
-          )}/values/${encodeURIComponent(`${safeTab}!A${targetRow}:${endCol}${targetRow}`)}?valueInputOption=USER_ENTERED`;
-          const putRes = await fetch(putUrl, {
-            method: 'PUT',
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              majorDimension: 'ROWS',
-              values: [rowValues],
-            }),
-          });
-          if (putRes.ok) {
-            return putRes;
-          }
-        }
-      }
-    } catch {
-      // Fall back to append if Column A lookup fails
-    }
-
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
       spreadsheetId
-    )}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=OVERWRITE`;
+    )}/values/${encodeURIComponent(range)}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 
     return await fetch(url, {
       method: 'POST',
@@ -746,10 +675,24 @@ export async function appendBudgetTransferToSheet(
       throw new Error(`Không thể ghi chuyển ngân sách vào bảng ${tabName}: ${retryMsg}`);
     }
   }
+
+  let finalRowIndex: number | undefined;
+  try {
+    const data = await res.json();
+    const updatedRange = data?.updates?.updatedRange || '';
+    const match = updatedRange.match(/![A-Za-z0-9_]*?[A-Z]+(\d+)/);
+    if (match) {
+      finalRowIndex = parseInt(match[1], 10);
+    }
+  } catch {
+    // ignore
+  }
+
+  return { rowIndex: finalRowIndex };
 }
 
 /**
- * Updates an existing transaction row in Google Sheet by rowIndex
+ * Updates an existing transaction row in Google Sheet by txId (Apps Script) or rowIndex (OAuth A:H / A:F).
  */
 export async function updateTransactionOnSheet(
   spreadsheetId: string,
@@ -767,15 +710,25 @@ export async function updateTransactionOnSheet(
     txId?: string;
   },
   accessToken: string,
-  txId?: string
+  txId?: string,
+  expectedSignature?: RowSignature
 ): Promise<void> {
   if (isAppsScriptUrl(spreadsheetId)) {
-    await appsScriptUpdateTransaction(spreadsheetId, tabName, rowIndex, record, undefined, txId || record.txId);
+    await appsScriptUpdateTransaction(
+      spreadsheetId,
+      tabName,
+      rowIndex,
+      record,
+      undefined,
+      txId || record.txId,
+      expectedSignature
+    );
     return;
   }
 
   const isIncome = record.sheetType === 'Income' || tabName.toLowerCase().includes('income');
   const safeTab = `'${tabName.replace(/'/g, "''")}'`;
+  const effectiveTxId = txId || record.txId || '';
 
   let rowValues: any[];
   let range: string;
@@ -786,16 +739,19 @@ export async function updateTransactionOnSheet(
       ? `${parseInt(parsedDate.monthKey.split('-')[1], 10)}/1/${parsedDate.monthKey.split('-')[0]}`
       : record.purchaseDate;
 
-    range = `${safeTab}!A${rowIndex}:E${rowIndex}`;
+    // Income full range A:F including txId column
+    range = `${safeTab}!A${rowIndex}:F${rowIndex}`;
     rowValues = [
       record.purchaseDate,
       record.category,
       record.purchaseItem,
       record.amount,
       monthDateStr,
+      effectiveTxId,
     ];
   } else {
-    range = `${safeTab}!A${rowIndex}:G${rowIndex}`;
+    // Expenses full range A:H including txId column
+    range = `${safeTab}!A${rowIndex}:H${rowIndex}`;
     rowValues = [
       record.purchaseDate,
       record.category,
@@ -804,6 +760,7 @@ export async function updateTransactionOnSheet(
       record.beCorp !== 0 && !isNaN(record.beCorp) ? record.beCorp : '',
       record.credit !== 0 && !isNaN(record.credit) ? record.credit : '',
       record.note || '',
+      effectiveTxId,
     ];
   }
 
@@ -832,7 +789,7 @@ export async function updateTransactionOnSheet(
 }
 
 /**
- * Deletes a row permanently from Google Sheet by rowIndex
+ * Deletes a row permanently from Google Sheet by txId (Apps Script) or rowIndex (OAuth).
  */
 export async function deleteTransactionFromSheet(
   spreadsheetId: string,
@@ -840,11 +797,12 @@ export async function deleteTransactionFromSheet(
   rowIndex: number,
   accessToken: string,
   tabName?: string,
-  txId?: string
+  txId?: string,
+  expectedSignature?: RowSignature
 ): Promise<void> {
   if (isAppsScriptUrl(spreadsheetId)) {
     const finalTab = tabName || (sheetId === 392215035 ? 'Income' : 'Expenses');
-    await appsScriptDeleteTransaction(spreadsheetId, finalTab, rowIndex, undefined, txId);
+    await appsScriptDeleteTransaction(spreadsheetId, finalTab, rowIndex, undefined, txId, expectedSignature);
     return;
   }
 
@@ -881,4 +839,167 @@ export async function deleteTransactionFromSheet(
     }
     throw new Error(errBody?.error?.message || `Không thể xóa dòng #${rowIndex} trên Google Sheet`);
   }
+}
+
+/**
+ * Moves a transaction across tabs (Expenses <-> Income).
+ * Uses atomic server-side moveTransaction inside LockService for Apps Script,
+ * and append-then-delete for OAuth.
+ */
+export async function moveTransactionOnSheet(
+  spreadsheetId: string,
+  params: {
+    fromTab: string;
+    toTab: string;
+    fromSheetId: number;
+    rowIndex: number;
+    txId?: string;
+    record: {
+      sheetType?: SheetTabType;
+      purchaseDate: string;
+      category: string;
+      purchaseItem: string;
+      amount: number;
+      beCorp: number;
+      credit: number;
+      note?: string;
+      txId?: string;
+    };
+    expectedSignature?: RowSignature;
+  },
+  accessToken: string
+): Promise<{ rowIndex?: number; deduplicated?: boolean }> {
+  if (isAppsScriptUrl(spreadsheetId)) {
+    const res = await appsScriptMoveTransaction(spreadsheetId, {
+      fromTab: params.fromTab,
+      toTab: params.toTab,
+      rowIndex: params.rowIndex,
+      txId: params.txId || params.record.txId,
+      record: params.record,
+      expectedSignature: params.expectedSignature,
+    });
+    return { rowIndex: res?.rowIndex, deduplicated: res?.deduplicated };
+  }
+
+  // OAuth fallback: append to destination tab FIRST (INSERT_ROWS, A:H / A:F), then delete source row
+  const appendRes = await appendTransactionToSheet(
+    spreadsheetId,
+    params.toTab,
+    {
+      ...params.record,
+      txId: params.txId || params.record.txId,
+    },
+    accessToken
+  );
+
+  await deleteTransactionFromSheet(
+    spreadsheetId,
+    params.fromSheetId,
+    params.rowIndex,
+    accessToken,
+    params.fromTab,
+    params.txId || params.record.txId,
+    params.expectedSignature
+  );
+
+  return { rowIndex: appendRes?.rowIndex };
+}
+
+/**
+ * Synchronizes Heo & Mèo wallet balances back to the Check tiền tab if it exists.
+ * Safely returns { updated: false } when the Check tiền tab or Heo/Mèo rows are absent.
+ */
+export async function updateCheckTienWalletsOnSheet(
+  spreadsheetId: string,
+  tabName: string | null | undefined,
+  wallets: AppsScriptWalletPayload,
+  accessToken: string
+): Promise<{ updated: boolean; message?: string }> {
+  if (isAppsScriptUrl(spreadsheetId)) {
+    const res = await appsScriptUpdateCheckTienWallets(spreadsheetId, wallets, tabName);
+    return { updated: Boolean(res?.updated), message: res?.message };
+  }
+
+  if (!tabName || !accessToken) {
+    return { updated: false, message: 'Chưa có tab Check tiền hoặc phiên OAuth' };
+  }
+
+  const safeTab = `'${tabName.replace(/'/g, "''")}'`;
+  const readRange = `${safeTab}!A1:G120`;
+  const readRes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
+      spreadsheetId
+    )}/values/${encodeURIComponent(readRange)}?valueRenderOption=FORMATTED_VALUE`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+
+  if (!readRes.ok) {
+    return { updated: false, message: 'Không thể đọc tab Check tiền' };
+  }
+
+  const readData = await readRes.json();
+  const rows: string[][] = readData.values || [];
+  let heoRowIndex: number | null = null;
+  let meoRowIndex: number | null = null;
+
+  for (let i = 0; i < rows.length; i++) {
+    const label = (rows[i]?.[1] || '').trim().toLowerCase();
+    if (label === 'heo' && heoRowIndex === null) heoRowIndex = i + 1;
+    if ((label === 'mèo' || label === 'meo') && meoRowIndex === null) meoRowIndex = i + 1;
+  }
+
+  const updates: { range: string; values: number[][] }[] = [];
+  if (heoRowIndex) {
+    updates.push({
+      range: `${safeTab}!C${heoRowIndex}:G${heoRowIndex}`,
+      values: [[
+        Number(wallets.heo.cash) || 0,
+        Number(wallets.heo.bank) || 0,
+        Number(wallets.heo.ewallet) || 0,
+        0,
+        Number(wallets.heo.receivable) || 0,
+      ]],
+    });
+  }
+  if (meoRowIndex) {
+    updates.push({
+      range: `${safeTab}!C${meoRowIndex}:G${meoRowIndex}`,
+      values: [[
+        Number(wallets.meo.cash) || 0,
+        Number(wallets.meo.bank) || 0,
+        Number(wallets.meo.ewallet) || 0,
+        0,
+        Number(wallets.meo.receivable) || 0,
+      ]],
+    });
+  }
+
+  if (updates.length === 0) {
+    return { updated: false, message: 'Không tìm thấy dòng Heo/Mèo trong tab Check tiền' };
+  }
+
+  const writeUrl = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
+    spreadsheetId
+  )}/values:batchUpdate`;
+  const writeRes = await fetch(writeUrl, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      valueInputOption: 'USER_ENTERED',
+      data: updates,
+    }),
+  });
+
+  if (!writeRes.ok) {
+    const errBody = await writeRes.json().catch(() => ({}));
+    if (writeRes.status === 401) {
+      throw new Error(`TOKEN_EXPIRED: Token Google OAuth đã hết hạn (${errBody?.error?.message || ''})`);
+    }
+    throw new Error(errBody?.error?.message || `Không thể cập nhật tab "${tabName}"`);
+  }
+
+  return { updated: true };
 }

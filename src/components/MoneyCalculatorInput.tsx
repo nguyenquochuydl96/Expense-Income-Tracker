@@ -182,10 +182,20 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
   const handleCommit = () => {
     const effective = computeEffectiveMoneyValue(text, isAutoThousands, allowNegative);
     if (effective !== null) {
-      // If user typed an expression, commit evaluated text into the field
-      if (isAutoThousands && !hasExplicitUnit(text) && !hasThousandSeparator(text)) {
+      // If user typed an expression or plain number in x1k mode, preserve consistent representation
+      if (isAutoThousands && Math.abs(effective.num) % 100 === 0 && !hasExplicitUnit(text) && !hasThousandSeparator(text)) {
+        setText(String(effective.num / 1000));
+      } else if (
+        isAutoThousands &&
+        Math.abs(effective.num) % 100 === 0 &&
+        Math.abs(effective.num) < 1000 &&
+        effective.num !== 0
+      ) {
         setText(String(effective.num / 1000));
       } else {
+        if (isAutoThousands && Math.abs(effective.num) < 1000 && effective.num !== 0) {
+          setIsAutoThousands(false);
+        }
         setText(effective.formatted);
       }
       lastEmittedNumRef.current = effective.num;
@@ -247,7 +257,7 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
         return formatMoneyString(n);
       }
       if (['+', '-', '*', '/'].includes(token) && !prev.trim()) {
-        const currentVal = parseMoneyNumber(text) || 0;
+        const currentVal = computeEffectiveMoneyValue(text, isAutoThousands, allowNegative)?.num || 0;
         return `${formatMoneyString(currentVal)} ${token} `;
       }
       if (['+', '-', '*', '/'].includes(token)) {
@@ -276,6 +286,9 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
     if (isAutoThousands && Math.abs(finalNum) % 100 === 0) {
       setText(String(finalNum / 1000));
     } else {
+      if (isAutoThousands) {
+        setIsAutoThousands(false);
+      }
       setText(formatted);
     }
     lastEmittedNumRef.current = finalNum;

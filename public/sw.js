@@ -36,33 +36,78 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
+const BLOCKED_DOMAINS = [
+  'script.google.com',
+  'script.googleusercontent.com',
+  'googleapis.com',
+  'firebaseapp.com',
+  'firebaseio.com',
+  'firebase.google.com',
+];
+
+function isBlockedHostname(hostname) {
+  const host = (hostname || '').toLowerCase();
+  return BLOCKED_DOMAINS.some(
+    (domain) => host === domain || host.endsWith('.' + domain)
+  );
+}
+
+function createOfflineResponse() {
+  return new Response('Offline', {
+    status: 503,
+    statusText: 'Service Unavailable',
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  });
+}
+
 self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   const url = new URL(event.request.url);
 
-  // 1. NEVER cache Google Apps Script, Google Sheets API, Firebase, or external dynamic API calls
+  // 1. NEVER cache external origins, Google Apps Script (incl. script.googleusercontent.com),
+  //    Google Sheets API, Firebase, or CSV data files
   if (
-    url.hostname.includes('script.google.com') ||
-    url.hostname.includes('googleapis.com') ||
-    url.hostname.includes('firebase') ||
-    event.request.method !== 'GET'
+    isBlockedHostname(url.hostname) ||
+    url.origin !== self.location.origin ||
+    url.pathname.toLowerCase().endsWith('.csv') ||
+    url.pathname.includes('/assets/aistudio/')
   ) {
     return;
   }
 
-  // 2. Navigation requests: Network first with Cache fallback
+  // 2. Navigation requests: Network-first, refresh cached index.html on success, 503 fallback on miss
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match('./index.html'))
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.ok && networkResponse.type === 'basic') {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put('./index.html', responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() =>
+          caches.match('./index.html').then((cached) => cached || createOfflineResponse())
+        )
     );
     return;
   }
 
-  // 3. Static assets: Stale-while-revalidate or Cache-first
+  // 3. Same-origin static assets: Stale-while-revalidate with guaranteed Response fallback
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request)
         .then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
+          if (
+            networkResponse &&
+            networkResponse.status === 200 &&
+            networkResponse.type === 'basic'
+          ) {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME).then((cache) => {
               cache.put(event.request, responseToCache);
@@ -70,7 +115,7 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch(() => cachedResponse);
+        .catch(() => cachedResponse || createOfflineResponse());
 
       return cachedResponse || fetchPromise;
     })

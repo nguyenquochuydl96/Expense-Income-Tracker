@@ -1,14 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Lock, Delete, ShieldCheck, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Lock, Delete, ShieldCheck, AlertCircle, CheckCircle2, ArrowRight, KeyRound, ArrowLeft } from 'lucide-react';
 import { PigIcon, SiameseCatIcon } from '../utils/categoryIcons';
-import { saveStoredWebAppKey } from '../services/appsScriptService';
+import { clearStoredAccessToken } from '../services/authStorage';
 
 export const STORAGE_KEY_APP_UNLOCKED = 'heomeo_app_unlocked_v1';
-export const STORAGE_KEY_CUSTOM_PIN = 'heomeo_custom_pin_v1';
 export const STORAGE_KEY_CUSTOM_PIN_HASH = 'heomeo_custom_pin_hash_v1';
+export const STORAGE_KEY_CUSTOM_PIN_LENGTH = 'heomeo_custom_pin_len_v1';
 export const STORAGE_KEY_FAILED_ATTEMPTS = 'heomeo_lock_failed_attempts_v1';
 export const STORAGE_KEY_LOCKOUT_UNTIL = 'heomeo_lock_until_v1';
-export const DEFAULT_MASTER_PIN_HASH = '11fbf75f3d8a3953f521d45de1762447bd2bd3737e0c30074e69948ef58585c7';
+const LEGACY_STORAGE_KEY_PLAINTEXT_PIN = 'heomeo_custom_pin_v1';
+
+export const MIN_PIN_LENGTH = 4;
 export const DEFAULT_PIN_LENGTH = 6;
 export const APP_PIN_SALT = 'heomeo_salt_v1_secure_8f9c2d1e';
 export const MAX_FAILED_ATTEMPTS = 5;
@@ -32,43 +34,133 @@ export async function hashPin(pin: string): Promise<string> {
   return `fallback_${Math.abs(hash)}`;
 }
 
-export function getCustomPin(): string | null {
-  try {
-    const custom = localStorage.getItem(STORAGE_KEY_CUSTOM_PIN);
-    if (custom && custom.trim().length >= 4) return custom.trim();
-  } catch {
-    // ignore
-  }
-  return null;
+export function isValidPinFormat(pin: string): boolean {
+  return /^\d{4,6}$/.test(pin.trim());
 }
 
-export async function verifyPin(enteredPin: string): Promise<boolean> {
-  const enteredHash = await hashPin(enteredPin);
+/**
+ * Migrate any legacy plaintext PIN in localStorage to SHA-256 hash and ALWAYS delete the plaintext key.
+ */
+export async function migrateAndPurgeLegacyPlaintextPin(): Promise<void> {
   try {
-    const customHash = localStorage.getItem(STORAGE_KEY_CUSTOM_PIN_HASH);
-    if (customHash) {
-      return enteredHash === customHash;
-    }
-    const customPlain = localStorage.getItem(STORAGE_KEY_CUSTOM_PIN);
-    if (customPlain && customPlain.trim().length >= 4) {
-      const computedCustom = await hashPin(customPlain.trim());
-      return enteredHash === computedCustom;
+    if (typeof localStorage === 'undefined') return;
+    const legacyPlain = localStorage.getItem(LEGACY_STORAGE_KEY_PLAINTEXT_PIN);
+    if (legacyPlain !== null) {
+      const cleaned = legacyPlain.trim();
+      const existingHash = localStorage.getItem(STORAGE_KEY_CUSTOM_PIN_HASH);
+      if (!existingHash && isValidPinFormat(cleaned)) {
+        const computed = await hashPin(cleaned);
+        localStorage.setItem(STORAGE_KEY_CUSTOM_PIN_HASH, computed);
+        localStorage.setItem(STORAGE_KEY_CUSTOM_PIN_LENGTH, String(cleaned.length));
+      }
+      localStorage.removeItem(LEGACY_STORAGE_KEY_PLAINTEXT_PIN);
     }
   } catch {
-    // ignore
+    // ignore storage errors
   }
-  return enteredHash === DEFAULT_MASTER_PIN_HASH;
 }
 
-export function isDeviceUnlocked(): boolean {
+export function hasConfiguredPin(): boolean {
   try {
-    return localStorage.getItem(STORAGE_KEY_APP_UNLOCKED) === 'true';
+    if (typeof localStorage === 'undefined') return false;
+    const hash = localStorage.getItem(STORAGE_KEY_CUSTOM_PIN_HASH);
+    return Boolean(hash && hash.trim().length > 0);
   } catch {
     return false;
   }
 }
 
+export function getConfiguredPinLength(): number {
+  try {
+    if (typeof localStorage === 'undefined') return DEFAULT_PIN_LENGTH;
+    const raw = localStorage.getItem(STORAGE_KEY_CUSTOM_PIN_LENGTH);
+    const parsed = raw ? parseInt(raw, 10) : NaN;
+    if (parsed >= MIN_PIN_LENGTH && parsed <= DEFAULT_PIN_LENGTH) {
+      return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return DEFAULT_PIN_LENGTH;
+}
+
+/**
+ * Saves ONLY the salted SHA-256 hash and length (4-6) of the device lock PIN.
+ * Completely independent from Apps Script API_SECRET_KEY.
+ */
+export async function savePinHash(pin: string): Promise<string> {
+  const cleaned = pin.trim();
+  if (!isValidPinFormat(cleaned)) {
+    throw new Error('Mã PIN phải gồm 4 đến 6 chữ số.');
+  }
+  const hashed = await hashPin(cleaned);
+  try {
+    localStorage.setItem(STORAGE_KEY_CUSTOM_PIN_HASH, hashed);
+    localStorage.setItem(STORAGE_KEY_CUSTOM_PIN_LENGTH, String(cleaned.length));
+    localStorage.removeItem(LEGACY_STORAGE_KEY_PLAINTEXT_PIN);
+    localStorage.removeItem(STORAGE_KEY_FAILED_ATTEMPTS);
+    localStorage.removeItem(STORAGE_KEY_LOCKOUT_UNTIL);
+  } catch {
+    // ignore
+  }
+  return hashed;
+}
+
+export async function verifyPin(enteredPin: string): Promise<boolean> {
+  await migrateAndPurgeLegacyPlaintextPin();
+  const cleaned = enteredPin.trim();
+  if (!cleaned) return false;
+  try {
+    if (typeof localStorage === 'undefined') return false;
+    const storedHash = localStorage.getItem(STORAGE_KEY_CUSTOM_PIN_HASH);
+    if (!storedHash || !storedHash.trim()) {
+      return false;
+    }
+    const enteredHash = await hashPin(cleaned);
+    return enteredHash === storedHash.trim();
+  } catch {
+    return false;
+  }
+}
+
+export async function changePin(
+  currentPin: string,
+  newPin: string
+): Promise<{ success: boolean; error?: string }> {
+  const cleanNew = newPin.trim();
+  if (!isValidPinFormat(cleanNew)) {
+    return { success: false, error: 'Mã PIN mới phải gồm từ 4 đến 6 chữ số.' };
+  }
+
+  if (hasConfiguredPin()) {
+    const validCurrent = await verifyPin(currentPin);
+    if (!validCurrent) {
+      return { success: false, error: 'Mã PIN hiện tại không đúng.' };
+    }
+  }
+
+  await savePinHash(cleanNew);
+  return { success: true };
+}
+
+export function isDeviceUnlocked(): boolean {
+  try {
+    // Require both unlocked flag and a configured PIN hash so fresh devices always run first-time PIN setup
+    return (
+      hasConfiguredPin() &&
+      localStorage.getItem(STORAGE_KEY_APP_UNLOCKED) === 'true'
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Locks the device UI and clears the RAM-only Google OAuth access token.
+ * Preserves Web App URL and API_SECRET_KEY in localStorage for practical daily unlock UX.
+ */
 export function lockDevice() {
+  clearStoredAccessToken();
   try {
     localStorage.removeItem(STORAGE_KEY_APP_UNLOCKED);
   } catch {
@@ -80,8 +172,14 @@ interface AppLockScreenProps {
   onUnlock: () => void;
 }
 
+type LockScreenMode = 'unlock' | 'setup_enter' | 'setup_confirm';
+
 export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
+  const [mode, setMode] = useState<LockScreenMode>(() =>
+    hasConfiguredPin() ? 'unlock' : 'setup_enter'
+  );
   const [pin, setPin] = useState<string>('');
+  const [firstSetupPin, setFirstSetupPin] = useState<string>('');
   const [rememberDevice, setRememberDevice] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isShaking, setIsShaking] = useState<boolean>(false);
@@ -92,13 +190,21 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
   const timersRef = useRef<number[]>([]);
 
   useEffect(() => {
+    let active = true;
+    migrateAndPurgeLegacyPlaintextPin().then(() => {
+      if (!active) return;
+      if (hasConfiguredPin()) {
+        setMode((prev) => (prev === 'setup_enter' ? 'unlock' : prev));
+      }
+    });
     return () => {
+      active = false;
       timersRef.current.forEach((id) => clearTimeout(id));
       timersRef.current = [];
     };
   }, []);
 
-  // Lockout verification timer
+  // Lockout verification timer (applies in unlock mode)
   useEffect(() => {
     const checkLockout = () => {
       try {
@@ -126,35 +232,48 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
     return () => window.clearInterval(interval);
   }, []);
 
+  const triggerErrorShake = useCallback((message: string, clearPin = true) => {
+    setErrorMsg(message);
+    setIsShaking(true);
+    const t = window.setTimeout(() => {
+      setIsShaking(false);
+      if (clearPin) setPin('');
+    }, 550);
+    timersRef.current.push(t);
+  }, []);
+
+  const completeUnlock = useCallback(() => {
+    setIsSuccess(true);
+    setErrorMsg(null);
+    try {
+      localStorage.removeItem(STORAGE_KEY_FAILED_ATTEMPTS);
+      localStorage.removeItem(STORAGE_KEY_LOCKOUT_UNTIL);
+      if (rememberDevice) {
+        localStorage.setItem(STORAGE_KEY_APP_UNLOCKED, 'true');
+      }
+    } catch {
+      // ignore
+    }
+    const t1 = window.setTimeout(() => {
+      onUnlock();
+    }, 380);
+    timersRef.current.push(t1);
+  }, [rememberDevice, onUnlock]);
+
   const handleVerifyPin = useCallback(
     async (enteredPin: string) => {
       if (lockoutRemaining > 0) return;
 
       const isValid = await verifyPin(enteredPin);
       if (isValid) {
-        setIsSuccess(true);
-        setErrorMsg(null);
-        try {
-          localStorage.removeItem(STORAGE_KEY_FAILED_ATTEMPTS);
-          localStorage.removeItem(STORAGE_KEY_LOCKOUT_UNTIL);
-          if (rememberDevice) {
-            localStorage.setItem(STORAGE_KEY_APP_UNLOCKED, 'true');
-          }
-        } catch {
-          // ignore
-        }
-        // Save to Apps Script API Key storage as well
-        saveStoredWebAppKey(enteredPin);
-
-        const t1 = window.setTimeout(() => {
-          onUnlock();
-        }, 400);
-        timersRef.current.push(t1);
+        // PIN unlocks the device UI ONLY — never overwrites Apps Script API_SECRET_KEY
+        completeUnlock();
       } else {
         setIsShaking(true);
         let nextFailed = 1;
         try {
-          const currentFailed = parseInt(localStorage.getItem(STORAGE_KEY_FAILED_ATTEMPTS) || '0', 10) || 0;
+          const currentFailed =
+            parseInt(localStorage.getItem(STORAGE_KEY_FAILED_ATTEMPTS) || '0', 10) || 0;
           nextFailed = currentFailed + 1;
           localStorage.setItem(STORAGE_KEY_FAILED_ATTEMPTS, String(nextFailed));
           if (nextFailed >= MAX_FAILED_ATTEMPTS) {
@@ -176,47 +295,82 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
         timersRef.current.push(t2);
       }
     },
-    [lockoutRemaining, rememberDevice, onUnlock]
+    [lockoutRemaining, completeUnlock]
   );
 
-  // Auto-verify when pin matches DEFAULT_PIN_LENGTH (6 digits) or custom pin length
+  const handleSetupContinue = useCallback(
+    async (enteredPin: string) => {
+      if (!isValidPinFormat(enteredPin)) {
+        triggerErrorShake('Mã PIN phải gồm từ 4 đến 6 chữ số.', false);
+        return;
+      }
+
+      if (mode === 'setup_enter') {
+        setFirstSetupPin(enteredPin);
+        setPin('');
+        setErrorMsg(null);
+        setMode('setup_confirm');
+        return;
+      }
+
+      if (mode === 'setup_confirm') {
+        if (enteredPin !== firstSetupPin) {
+          triggerErrorShake('Mã PIN xác nhận không khớp. Vui lòng nhập lại.');
+          return;
+        }
+        await savePinHash(enteredPin);
+        completeUnlock();
+      }
+    },
+    [mode, firstSetupPin, triggerErrorShake, completeUnlock]
+  );
+
   const handlePressDigit = useCallback(
     (digit: string) => {
-      if (isSuccess || lockoutRemaining > 0 || pin.length >= 6) return;
+      if (isSuccess || (mode === 'unlock' && lockoutRemaining > 0) || pin.length >= DEFAULT_PIN_LENGTH) {
+        return;
+      }
       setErrorMsg(null);
       const nextPin = pin + digit;
       setPin(nextPin);
 
-      const customPin = getCustomPin();
-      if (nextPin.length === DEFAULT_PIN_LENGTH || (customPin && nextPin.length === customPin.length)) {
-        handleVerifyPin(nextPin);
+      if (mode === 'unlock') {
+        const configuredLen = getConfiguredPinLength();
+        if (nextPin.length === configuredLen) {
+          handleVerifyPin(nextPin);
+        }
+      } else if (mode === 'setup_confirm' && nextPin.length === firstSetupPin.length) {
+        handleSetupContinue(nextPin);
       }
     },
-    [pin, isSuccess, lockoutRemaining, handleVerifyPin]
+    [pin, isSuccess, mode, lockoutRemaining, firstSetupPin.length, handleVerifyPin, handleSetupContinue]
   );
 
   const handleDeleteDigit = useCallback(() => {
-    if (isSuccess || lockoutRemaining > 0 || pin.length === 0) return;
+    if (isSuccess || (mode === 'unlock' && lockoutRemaining > 0) || pin.length === 0) return;
     setErrorMsg(null);
     setPin((prev) => prev.slice(0, -1));
-  }, [isSuccess, lockoutRemaining, pin.length]);
+  }, [isSuccess, mode, lockoutRemaining, pin.length]);
 
   const handleClearAll = useCallback(() => {
-    if (isSuccess || lockoutRemaining > 0) return;
+    if (isSuccess || (mode === 'unlock' && lockoutRemaining > 0)) return;
     setErrorMsg(null);
     setPin('');
-  }, [isSuccess, lockoutRemaining]);
+  }, [isSuccess, mode, lockoutRemaining]);
 
   const handleSubmitCurrentPin = useCallback(() => {
-    if (pin.length >= 4) {
+    if (pin.length < MIN_PIN_LENGTH) return;
+    if (mode === 'unlock') {
       handleVerifyPin(pin);
+    } else {
+      handleSetupContinue(pin);
     }
-  }, [pin, handleVerifyPin]);
+  }, [pin, mode, handleVerifyPin, handleSetupContinue]);
 
   // Physical keyboard listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (lockoutRemaining > 0) return;
+      if (mode === 'unlock' && lockoutRemaining > 0) return;
       if (e.key >= '0' && e.key <= '9') {
         e.preventDefault();
         handlePressDigit(e.key);
@@ -228,15 +382,18 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
         handleClearAll();
       } else if (e.key === 'Enter') {
         e.preventDefault();
-        if (pin.length >= 4) {
-          handleVerifyPin(pin);
+        if (pin.length >= MIN_PIN_LENGTH) {
+          handleSubmitCurrentPin();
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [lockoutRemaining, pin, handlePressDigit, handleDeleteDigit, handleClearAll, handleVerifyPin]);
+  }, [mode, lockoutRemaining, pin, handlePressDigit, handleDeleteDigit, handleClearAll, handleSubmitCurrentPin]);
+
+  const isLockedOut = mode === 'unlock' && lockoutRemaining > 0;
+  const dotCount = mode === 'setup_confirm' ? firstSetupPin.length : DEFAULT_PIN_LENGTH;
 
   return (
     <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-900 text-white flex flex-col items-center justify-center p-4 sm:p-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] select-none">
@@ -263,8 +420,10 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
           <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-teal-500 border-2 border-slate-950 flex items-center justify-center shadow-md z-20">
             {isSuccess ? (
               <CheckCircle2 className="w-4 h-4 text-white animate-bounce" />
-            ) : (
+            ) : mode === 'unlock' ? (
               <Lock className="w-3.5 h-3.5 text-white" />
+            ) : (
+              <KeyRound className="w-3.5 h-3.5 text-white" />
             )}
           </div>
         </div>
@@ -276,17 +435,38 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
         <p className="text-[11px] text-pink-200/90 font-medium mb-2">
           Sổ chi tiêu của ba mẹ Chuối, Đậu, Vịt
         </p>
-        <p className="text-xs text-slate-300 font-medium mb-6">
-          Nhập mã PIN (4–6 số) để mở khóa sổ chi tiêu
-        </p>
 
-        {/* 6-dot PIN Indicator (supports 4-6 digits) */}
+        {mode === 'setup_enter' ? (
+          <div className="mb-5 space-y-1">
+            <p className="text-sm font-semibold text-teal-300">
+              Thiết lập mã PIN khóa thiết bị lần đầu
+            </p>
+            <p className="text-xs text-slate-300">
+              Tạo mã PIN riêng (4–6 số) rồi bấm <strong>Tiếp</strong>. Mã PIN chỉ bảo vệ máy này, độc lập với khóa API Google Sheet.
+            </p>
+          </div>
+        ) : mode === 'setup_confirm' ? (
+          <div className="mb-5 space-y-1">
+            <p className="text-sm font-semibold text-teal-300">
+              Xác nhận lại mã PIN ({firstSetupPin.length} số)
+            </p>
+            <p className="text-xs text-slate-300">
+              Nhập lại chính xác mã PIN bạn vừa tạo để hoàn tất
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-300 font-medium mb-6">
+            Nhập mã PIN (4–6 số) để mở khóa sổ chi tiêu
+          </p>
+        )}
+
+        {/* PIN Indicator dots */}
         <div
           className={`flex items-center justify-center gap-3.5 mb-4 transition-transform ${
             isShaking ? 'animate-[shake_0.4s_ease-in-out]' : ''
           }`}
         >
-          {[0, 1, 2, 3, 4, 5].map((idx) => {
+          {Array.from({ length: dotCount }).map((_, idx) => {
             const isFilled = pin.length > idx;
             return (
               <div
@@ -306,7 +486,7 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
         </div>
 
         {/* Lockout banner or Error message */}
-        {lockoutRemaining > 0 ? (
+        {isLockedOut ? (
           <div className="flex items-center gap-1.5 text-rose-400 text-xs font-semibold mb-4 px-3 py-1.5 rounded-full bg-rose-950/80 border border-rose-800/80 animate-pulse">
             <AlertCircle className="w-3.5 h-3.5 shrink-0" />
             <span>Đã khóa tạm thời ({lockoutRemaining}s) do nhập sai nhiều lần</span>
@@ -326,7 +506,7 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
             <button
               key={num}
               type="button"
-              disabled={lockoutRemaining > 0 || isSuccess}
+              disabled={isLockedOut || isSuccess}
               onClick={() => handlePressDigit(num)}
               className="w-full aspect-square rounded-2xl bg-white/5 hover:bg-white/15 active:bg-teal-500/25 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 text-xl font-bold font-mono-tabular transition-all flex items-center justify-center text-white cursor-pointer shadow-xs"
             >
@@ -337,7 +517,7 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
           {/* Row 4: Backspace, 0, OK/Submit */}
           <button
             type="button"
-            disabled={lockoutRemaining > 0 || isSuccess || pin.length === 0}
+            disabled={isLockedOut || isSuccess || pin.length === 0}
             onClick={handleDeleteDigit}
             className="w-full aspect-square rounded-2xl bg-white/5 hover:bg-white/10 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 text-slate-400 hover:text-white transition-all flex items-center justify-center cursor-pointer"
             aria-label="Xóa 1 ký tự"
@@ -347,7 +527,7 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
 
           <button
             type="button"
-            disabled={lockoutRemaining > 0 || isSuccess}
+            disabled={isLockedOut || isSuccess}
             onClick={() => handlePressDigit('0')}
             className="w-full aspect-square rounded-2xl bg-white/5 hover:bg-white/15 active:bg-teal-500/25 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed border border-white/10 text-xl font-bold font-mono-tabular transition-all flex items-center justify-center text-white cursor-pointer shadow-xs"
           >
@@ -356,30 +536,47 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
 
           <button
             type="button"
-            disabled={lockoutRemaining > 0 || isSuccess || pin.length < 4}
+            disabled={isLockedOut || isSuccess || pin.length < MIN_PIN_LENGTH}
             onClick={handleSubmitCurrentPin}
             className={`w-full aspect-square rounded-2xl border text-xs font-bold transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
-              pin.length >= 4 && lockoutRemaining === 0
+              pin.length >= MIN_PIN_LENGTH && !isLockedOut
                 ? 'bg-teal-600 hover:bg-teal-500 text-white border-teal-400/50 shadow-md shadow-teal-500/30 active:scale-95'
                 : 'bg-white/5 text-slate-500 border-white/10 disabled:opacity-30 disabled:cursor-not-allowed'
             }`}
-            aria-label="Mở khóa"
+            aria-label={mode === 'setup_enter' ? 'Tiếp tục' : mode === 'setup_confirm' ? 'Lưu PIN' : 'Mở khóa'}
           >
             <ArrowRight className="w-4 h-4" />
-            <span>Mở</span>
+            <span>{mode === 'setup_enter' ? 'Tiếp' : mode === 'setup_confirm' ? 'Lưu' : 'Mở'}</span>
           </button>
         </div>
 
-        {/* Clear all text button */}
-        {pin.length > 0 && lockoutRemaining === 0 && (
-          <button
-            type="button"
-            onClick={handleClearAll}
-            className="text-[11px] text-slate-400 hover:text-white underline underline-offset-4 mb-3 transition-colors cursor-pointer"
-          >
-            Xóa hết
-          </button>
-        )}
+        {/* Setup back button or Clear all button */}
+        <div className="flex items-center justify-center gap-4 mb-3 min-h-[20px]">
+          {mode === 'setup_confirm' && !isSuccess && (
+            <button
+              type="button"
+              onClick={() => {
+                setMode('setup_enter');
+                setFirstSetupPin('');
+                setPin('');
+                setErrorMsg(null);
+              }}
+              className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-white underline underline-offset-4 transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3 h-3" />
+              <span>Nhập lại mã mới</span>
+            </button>
+          )}
+          {pin.length > 0 && !isLockedOut && (
+            <button
+              type="button"
+              onClick={handleClearAll}
+              className="text-[11px] text-slate-400 hover:text-white underline underline-offset-4 transition-colors cursor-pointer"
+            >
+              Xóa hết
+            </button>
+          )}
+        </div>
 
         {/* Remember device checkbox */}
         <label className="flex items-center gap-2 text-xs text-slate-300 font-medium cursor-pointer mb-3 hover:text-white transition-colors">
@@ -392,19 +589,23 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
           <span>Ghi nhớ mở khóa trên thiết bị này</span>
         </label>
 
-        {/* Hint button */}
-        <button
-          type="button"
-          onClick={() => setShowHint(!showHint)}
-          className="text-[11px] text-slate-400 hover:text-teal-300 underline underline-offset-4 transition-colors cursor-pointer mb-3"
-        >
-          {showHint ? 'Liên hệ Heo để được bật mí 😉' : 'Quên mã PIN?'}
-        </button>
+        {/* Hint button (unlock mode only) */}
+        {mode === 'unlock' && (
+          <button
+            type="button"
+            onClick={() => setShowHint(!showHint)}
+            className="text-[11px] text-slate-400 hover:text-teal-300 underline underline-offset-4 transition-colors cursor-pointer mb-3 max-w-xs"
+          >
+            {showHint
+              ? 'Mã PIN lưu riêng trên máy này (băm SHA-256). Nếu quên, hãy xóa dữ liệu trang web của trình duyệt để đặt lại PIN mới.'
+              : 'Quên mã PIN?'}
+          </button>
+        )}
 
         {/* Security badge footer */}
         <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
           <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
-          <span>Mã hóa SHA-256 kết hợp Google Apps Script API</span>
+          <span>Mã PIN băm SHA-256 cục bộ · Độc lập với API Key</span>
         </div>
       </div>
     </div>

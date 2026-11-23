@@ -63,15 +63,27 @@ import {
   fetchCheckTienSheet,
   fetchSpreadsheetMetadata,
   fetchTabTransactions,
+  moveTransactionOnSheet,
   SpreadsheetMetadata,
+  updateCheckTienWalletsOnSheet,
   updateTransactionOnSheet,
 } from './services/googleSheetsService';
 import {
   isAppsScriptUrl,
   appsScriptSyncAll,
-  DEFAULT_WEB_APP_URL,
   getStoredWebAppUrl,
+  type AppsScriptWalletPayload,
 } from './services/appsScriptService';
+import {
+  buildRowSignature,
+  generateTxId,
+  isSyncConflictError,
+  mergeBudgetTransfersOnSync,
+  rollbackDeletedListRecord,
+  rollbackDeletedRecord,
+  rollbackEditedListRecord,
+  rollbackEditedRecord,
+} from './utils/syncStateUtils';
 import type { NewTransactionPayload } from './components/AddTransactionModal';
 import {
   DEFAULT_CATEGORY_PERCENTAGES,
@@ -235,6 +247,8 @@ export default function App() {
     }
     return isDeviceUnlocked();
   });
+  const isUnlockedRef = useRef<boolean>(isUnlocked);
+  isUnlockedRef.current = isUnlocked;
   const [selectedMonths, setSelectedMonths] = useState<string[]>(() => {
     const now = new Date();
     return [`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`];
@@ -367,7 +381,7 @@ export default function App() {
     if (saved && isAppsScriptUrl(saved)) return saved;
     const storedWebApp = getStoredWebAppUrl();
     if (storedWebApp) return storedWebApp;
-    return saved || DEFAULT_WEB_APP_URL;
+    return saved || '';
   });
   const [sheetMeta, setSheetMeta] = useState<SpreadsheetMetadata | null>(() => {
     try {
@@ -394,9 +408,9 @@ export default function App() {
   const [monthlyBaseIncome, setMonthlyBaseIncome] = useState<number>(() => {
     try {
       const saved = localStorage.getItem(SAVED_BASE_INCOME_KEY);
-      return saved ? Number(saved) : 45000000;
+      return saved ? Number(saved) : 30000000;
     } catch {
-      return 45000000;
+      return 30000000;
     }
   });
 
@@ -520,23 +534,23 @@ export default function App() {
     };
   }, []);
 
-  // Auto-sync on load for Web App API (works without any Google login, only when app is unlocked)
+  // Auto-sync on load for Web App API (works without any Google login, strictly ONLY when app is unlocked)
   useEffect(() => {
     if (!isUnlocked) return;
-    // If user already has an OAuth token in storage, let Firebase Auth effect handle the sync
+    // If user already has an OAuth token in RAM, let Firebase Auth effect handle the sync
     const storedToken = getStoredAccessToken();
     if (storedToken) {
       return;
     }
-    const targetUrl = spreadsheetInput || getStoredWebAppUrl() || DEFAULT_WEB_APP_URL;
-    if (isAppsScriptUrl(targetUrl)) {
+    const targetUrl = spreadsheetInput || getStoredWebAppUrl();
+    if (targetUrl && isAppsScriptUrl(targetUrl)) {
       handleConnectAndSyncSheet(targetUrl, '', true).catch((err) => {
         console.warn('Initial background Web App sync:', err);
       });
     }
   }, [isUnlocked]);
 
-  // Initialize Firebase Auth listener with auto-sync on load (only when unlocked and stored OAuth token exists)
+  // Initialize Firebase Auth listener with auto-sync on load (strictly ONLY when unlocked and RAM OAuth token exists)
   useEffect(() => {
     if (!isUnlocked) return;
     const storedToken = getStoredAccessToken();
@@ -551,8 +565,8 @@ export default function App() {
         (loggedInUser, token) => {
           setUser(loggedInUser);
           setAccessToken(token);
-          const targetUrl = localStorage.getItem(SAVED_SHEET_URL_KEY) || DEFAULT_WEB_APP_URL;
-          if (targetUrl) {
+          const targetUrl = localStorage.getItem(SAVED_SHEET_URL_KEY) || getStoredWebAppUrl();
+          if (targetUrl && isUnlockedRef.current) {
             handleConnectAndSyncSheet(targetUrl, token);
           }
         },
@@ -569,7 +583,7 @@ export default function App() {
     };
   }, [isUnlocked]);
 
-  // Idle auto-lock: automatically lock app after 15 minutes of inactivity
+  // Idle auto-lock: automatically lock app after 15 minutes of inactivity (wipes RAM OAuth token, preserves Web App config)
   useEffect(() => {
     if (!isUnlocked) return;
 
@@ -579,7 +593,14 @@ export default function App() {
     const resetTimer = () => {
       window.clearTimeout(timeoutId);
       timeoutId = window.setTimeout(() => {
+        if (backgroundSyncTimerRef.current) {
+          clearTimeout(backgroundSyncTimerRef.current);
+          backgroundSyncTimerRef.current = null;
+        }
+        queuedAuthSyncRef.current = null;
+        isUnlockedRef.current = false;
         lockDevice();
+        setAccessToken(null);
         setIsUnlocked(false);
       }, IDLE_TIMEOUT_MS);
     };
@@ -947,8 +968,12 @@ export default function App() {
 
   // Memoized complete multi-month rollover chain across all categories and months
   const memoizedRolloverResult = useMemo(() => {
-    const isIdenticalToDefault = Object.entries(DEFAULT_CATEGORY_PERCENTAGES).every(
-      ([k, v]) => Math.abs((customPercentages[k] ?? 0) - v) < 0.05
+    const allPctKeys = new Set([
+      ...Object.keys(DEFAULT_CATEGORY_PERCENTAGES),
+      ...Object.keys(customPercentages),
+    ]);
+    const isIdenticalToDefault = Array.from(allPctKeys).every(
+      (k) => Math.abs((customPercentages[k] ?? 0) - (DEFAULT_CATEGORY_PERCENTAGES[k] ?? 0)) < 1e-6
     );
     const hasCustomPercentages = !isIdenticalToDefault;
 
@@ -974,11 +999,12 @@ export default function App() {
     if (targetCategories.length === 0) return null;
 
     const rolloverResult = memoizedRolloverResult;
-    const targetMonths = isAllMonthsSelected
+    const rawTargetMonths = isAllMonthsSelected
       ? rolloverResult.allChronologicalMonths
       : selectedMonths.length > 0
       ? selectedMonths
       : [selectedMonth !== 'ALL' ? selectedMonth : defaultLatestMonth];
+    const targetMonths = [...rawTargetMonths].sort((a, b) => a.localeCompare(b));
 
     let totalEffectiveBudget = 0;
     let totalBaseBudget = 0;
@@ -1115,6 +1141,11 @@ export default function App() {
     overrideToken?: string,
     silent?: boolean
   ) => {
+    // Hard guard: never invoke any sync API while the app is locked
+    if (!isUnlockedRef.current) {
+      return;
+    }
+
     if (isSyncingRef.current) {
       if (overrideToken && !activeSyncHasTokenRef.current) {
         queuedAuthSyncRef.current = { customUrlOrId, overrideToken, silent };
@@ -1158,6 +1189,7 @@ export default function App() {
       let preloadedExpenses: TransactionRecord[] | null = null;
       let preloadedIncome: TransactionRecord[] | null = null;
       let preloadedTransfers: BudgetTransferRecord[] | null = null;
+      let preloadedCheckTien: CheckTienSheetData | null = null;
 
       if (isAppsScript) {
         const fullData = await appsScriptSyncAll(targetInput);
@@ -1165,6 +1197,7 @@ export default function App() {
         preloadedExpenses = fullData.expenses;
         preloadedIncome = fullData.income;
         preloadedTransfers = fullData.budgetTransfers;
+        preloadedCheckTien = fullData.checkTien || null;
       } else {
         meta = await fetchSpreadsheetMetadata(targetInput, currentToken);
         const savedIncomeTab = localStorage.getItem('heomeo_custom_income_tab_v1');
@@ -1215,39 +1248,42 @@ export default function App() {
           prev.map((r) => (pendingMap.has(r.id) ? { ...r, syncing: true } : r))
         );
 
-        for (const rec of pendingTransactions) {
-          const targetTab = rec.sheetType === 'Expenses' ? meta.expensesTab : meta.incomeTab;
-          try {
-            await appendTransactionToSheet(
-              meta.spreadsheetId,
-              targetTab,
-              {
-                sheetType: rec.sheetType,
-                purchaseDate: rec.purchaseDate,
-                category: rec.category,
-                purchaseItem: rec.purchaseItem,
-                amount: rec.amount,
-                beCorp: rec.beCorp,
-                credit: rec.credit,
-                note: rec.note,
-              },
-              currentToken
-            );
-            pushedTxIds.add(rec.id);
-          } catch (pushErr: any) {
-            console.error(`Error auto-pushing transaction ${rec.id}:`, pushErr);
-            if (
-              pushErr?.message &&
-              (pushErr.message.includes('TOKEN_EXPIRED') || pushErr.message.includes('401'))
-            ) {
-              throw pushErr;
+        try {
+          for (const rec of pendingTransactions) {
+            const targetTab = rec.sheetType === 'Expenses' ? meta.expensesTab : meta.incomeTab;
+            try {
+              await appendTransactionToSheet(
+                meta.spreadsheetId,
+                targetTab,
+                {
+                  sheetType: rec.sheetType,
+                  purchaseDate: rec.purchaseDate,
+                  category: rec.category,
+                  purchaseItem: rec.purchaseItem,
+                  amount: rec.amount,
+                  beCorp: rec.beCorp,
+                  credit: rec.credit,
+                  note: rec.note,
+                  txId: rec.txId || rec.id,
+                },
+                currentToken
+              );
+              pushedTxIds.add(rec.id);
+            } catch (pushErr: any) {
+              console.error(`Error auto-pushing transaction ${rec.id}:`, pushErr);
+              if (
+                pushErr?.message &&
+                (pushErr.message.includes('TOKEN_EXPIRED') || pushErr.message.includes('401'))
+              ) {
+                throw pushErr;
+              }
             }
           }
-        }
-
-        if (pushedTxIds.size > 0) {
+        } finally {
           setLocalNewRecords((prev) => {
-            const remaining = prev.filter((r) => !pushedTxIds.has(r.id));
+            const remaining = prev
+              .filter((r) => !pushedTxIds.has(r.id))
+              .map((r) => (pendingMap.has(r.id) ? { ...r, syncing: false } : r));
             try {
               localStorage.setItem(LOCAL_NEW_ROWS_KEY, JSON.stringify(remaining));
             } catch {}
@@ -1296,6 +1332,7 @@ export default function App() {
                 toCategory: transfer.toCategory,
                 amount: transfer.amount,
                 description: transfer.description,
+                txId: transfer.txId || transfer.id,
               },
               currentToken
             );
@@ -1327,7 +1364,7 @@ export default function App() {
       // --- 3. FETCH ALL LATEST ROWS DIRECTLY FROM GOOGLE SHEETS ---
       let expensesRows: TransactionRecord[];
       let incomeRows: TransactionRecord[];
-      let checkTien: any = null;
+      let checkTien: CheckTienSheetData | null = null;
       let liveTransfers: BudgetTransferRecord[] = [];
 
       if (isAppsScript) {
@@ -1335,12 +1372,14 @@ export default function App() {
           expensesRows = preloadedExpenses;
           incomeRows = preloadedIncome;
           liveTransfers = preloadedTransfers;
+          checkTien = preloadedCheckTien;
         } else {
           // Exactly 1 single call to appsScriptSyncAll instead of calling 3 times via Promise.all
           const syncRes = await appsScriptSyncAll(meta.spreadsheetId);
           expensesRows = syncRes.expenses;
           incomeRows = syncRes.income;
           liveTransfers = syncRes.budgetTransfers;
+          checkTien = syncRes.checkTien || null;
         }
       } else {
         const [exp, inc, ct, bt] = await Promise.all([
@@ -1363,12 +1402,13 @@ export default function App() {
       if (checkTien) {
         setCheckTienData(checkTien);
       }
-      if (liveTransfers && liveTransfers.length > 0) {
-        setBudgetTransfers(liveTransfers);
+      setBudgetTransfers((prev) => {
+        const merged = mergeBudgetTransfersOnSync(prev, liveTransfers, pushedBtIds);
         try {
-          localStorage.setItem(SAVED_BUDGET_TRANSFERS_KEY, JSON.stringify(liveTransfers));
+          localStorage.setItem(SAVED_BUDGET_TRANSFERS_KEY, JSON.stringify(merged));
         } catch {}
-      }
+        return merged;
+      });
 
       const nowStr = new Date().toLocaleTimeString('vi-VN', {
         hour: '2-digit',
@@ -1455,8 +1495,10 @@ export default function App() {
   }) => {
     const parts = transfer.date.split('/');
     const monthKey = parts.length === 3 ? `${parts[2]}-${parts[0].padStart(2, '0')}` : selectedMonth;
+    const txId = generateTxId('bt');
     const newTransfer: BudgetTransferRecord = {
-      id: `local-bt-${Date.now()}`,
+      id: txId,
+      txId,
       date: transfer.date,
       isoDate: transfer.isoDate,
       monthKey,
@@ -1476,7 +1518,7 @@ export default function App() {
     if ((accessToken || isAppsScript) && effectiveSheetId) {
       const tabName = sheetMeta?.budgetTransfersTab || 'Budget Transfers';
       try {
-        await appendBudgetTransferToSheet(
+        const appendRes = await appendBudgetTransferToSheet(
           effectiveSheetId,
           tabName,
           {
@@ -1485,11 +1527,16 @@ export default function App() {
             toCategory: transfer.toCategory,
             amount: transfer.amount,
             description: transfer.description,
+            txId,
           },
           accessToken || ''
         );
         setBudgetTransfers((prev) =>
-          prev.map((t) => (t.id === newTransfer.id ? { ...t, syncedToSheet: true } : t))
+          prev.map((t) =>
+            t.id === newTransfer.id
+              ? { ...t, syncedToSheet: true, rowIndex: appendRes?.rowIndex ?? t.rowIndex }
+              : t
+          )
         );
         showToast('success', `Đã chuyển ngân sách thành công vào tab "${tabName}" trên Google Sheet!`);
       } catch (err: any) {
@@ -1505,10 +1552,12 @@ export default function App() {
 
   const scheduleDebouncedBackgroundSync = useCallback(
     (sheetId: string, token: string, delayMs = 2500) => {
+      if (!isUnlockedRef.current) return;
       if (backgroundSyncTimerRef.current) {
         clearTimeout(backgroundSyncTimerRef.current);
       }
       backgroundSyncTimerRef.current = setTimeout(() => {
+        if (!isUnlockedRef.current) return;
         handleConnectAndSyncSheet(sheetId, token, true).catch(console.error);
       }, delayMs);
     },
@@ -1660,16 +1709,17 @@ export default function App() {
     }
   };
 
-  // Edit transaction handler
+  // Edit transaction handler (targeted rollback + atomic tab move)
   const handleSaveEditedTransaction = async (updated: TransactionRecord) => {
     const effectiveToken = accessToken || getStoredAccessToken() || '';
     const effectiveSheetId = sheetMeta?.spreadsheetId || extractSpreadsheetId(spreadsheetInput);
     const isAppsScript = isAppsScriptUrl(effectiveSheetId);
 
-    // Save snapshot state for rollback if network/API fails
-    const snapshotSheetRecords = sheetRecords;
-    const snapshotLocalNewRecords = localNewRecords;
-    const snapshotAttachedRecords = attachedRecords;
+    // Capture ONLY the original record per list for targeted functional rollback (never overwrite concurrent edits/adds)
+    const originalSheetRecord = (sheetRecordsRef.current || []).find((r) => r.id === updated.id);
+    const originalLocalRecord = (localNewRecordsRef.current || []).find((r) => r.id === updated.id);
+    const originalAttachedRecord = attachedRecords.find((r) => r.id === updated.id);
+    const originalRecord = originalSheetRecord || originalLocalRecord || originalAttachedRecord;
 
     // 1. Optimistic update
     setSheetRecords((prev) =>
@@ -1687,45 +1737,44 @@ export default function App() {
       try {
         const expensesTab = sheetMeta?.expensesTab || 'Expenses';
         const incomeTab = sheetMeta?.incomeTab || 'Income';
-        const originalRecord = (snapshotSheetRecords || []).find((r) => r.id === updated.id);
         const originalSheetType = originalRecord?.sheetType ?? updated.sheetType;
         const originalTab = originalSheetType === 'Income' ? incomeTab : expensesTab;
         const targetTab = updated.sheetType === 'Income' ? incomeTab : expensesTab;
+        const expectedSignature = buildRowSignature(originalRecord);
+        const effectiveTxId = updated.txId || updated.id;
 
         if (originalTab !== targetTab) {
-          // Tab changed: append to new tab FIRST, only delete from old tab if append succeeds
-          const appendRes = await appendTransactionToSheet(
+          // Tab changed: atomic moveTransaction inside single LockService on Apps Script (safe append+delete on OAuth)
+          const oldSheetId =
+            sheetMeta?.sheetIdsByName?.[originalTab] ??
+            (originalSheetType === 'Income' ? 392215035 : 1528073380);
+          const moveRes = await moveTransactionOnSheet(
             effectiveSheetId,
-            targetTab,
             {
-              sheetType: updated.sheetType,
-              purchaseDate: updated.purchaseDate,
-              category: updated.category,
-              purchaseItem: updated.purchaseItem,
-              amount: updated.amount,
-              beCorp: updated.beCorp,
-              credit: updated.credit,
-              note: updated.note,
-              txId: updated.txId || updated.id,
+              fromTab: originalTab,
+              toTab: targetTab,
+              fromSheetId: oldSheetId,
+              rowIndex: updated.rowIndex,
+              txId: effectiveTxId,
+              record: {
+                sheetType: updated.sheetType,
+                purchaseDate: updated.purchaseDate,
+                category: updated.category,
+                purchaseItem: updated.purchaseItem,
+                amount: updated.amount,
+                beCorp: updated.beCorp,
+                credit: updated.credit,
+                note: updated.note,
+                txId: effectiveTxId,
+              },
+              expectedSignature,
             },
             effectiveToken
           );
 
-          const oldSheetId =
-            sheetMeta?.sheetIdsByName?.[originalTab] ??
-            (originalRecord?.sheetType === 'Income' ? 392215035 : 1528073380);
-          await deleteTransactionFromSheet(
-            effectiveSheetId,
-            oldSheetId,
-            updated.rowIndex,
-            effectiveToken,
-            originalTab,
-            updated.txId || updated.id
-          );
-
-          if (appendRes?.rowIndex) {
+          if (moveRes?.rowIndex) {
             setSheetRecords((prev) =>
-              prev ? prev.map((r) => (r.id === updated.id ? { ...r, rowIndex: appendRes.rowIndex } : r)) : prev
+              prev ? prev.map((r) => (r.id === updated.id ? { ...r, rowIndex: moveRes.rowIndex } : r)) : prev
             );
           }
         } else {
@@ -1742,28 +1791,38 @@ export default function App() {
               beCorp: updated.beCorp,
               credit: updated.credit,
               note: updated.note,
-              txId: updated.txId || updated.id,
+              txId: effectiveTxId,
             },
             effectiveToken,
-            updated.txId || updated.id
+            effectiveTxId,
+            expectedSignature
           );
         }
 
         showToast('success', `✓ Đã cập nhật "${updated.purchaseItem}" trên Google Sheet!`);
         scheduleDebouncedBackgroundSync(effectiveSheetId, effectiveToken);
       } catch (err: any) {
-        // Rollback snapshot on failure
-        setSheetRecords(snapshotSheetRecords);
-        setLocalNewRecords(snapshotLocalNewRecords);
-        setAttachedRecords(snapshotAttachedRecords);
-        showToast('warning', `Không thể cập nhật giao dịch trên Google Sheet: ${err?.message || 'Lỗi kết nối'}`);
+        // Targeted functional rollback: restore ONLY the failed record without clobbering concurrent changes
+        setSheetRecords((prev) => rollbackEditedRecord(prev, originalSheetRecord, updated.id));
+        setLocalNewRecords((prev) => rollbackEditedListRecord(prev, originalLocalRecord, updated.id));
+        setAttachedRecords((prev) => rollbackEditedListRecord(prev, originalAttachedRecord, updated.id));
+
+        if (isSyncConflictError(err)) {
+          showToast(
+            'warning',
+            `Xung đột đồng bộ: ${err?.message || 'Dòng đã thay đổi ở thiết bị khác.'} Đang tự động đồng bộ lại...`
+          );
+          scheduleDebouncedBackgroundSync(effectiveSheetId, effectiveToken, 300);
+        } else {
+          showToast('warning', `Không thể cập nhật giao dịch trên Google Sheet: ${err?.message || 'Lỗi kết nối'}`);
+        }
       }
     } else {
       showToast('success', `✓ Đã cập nhật giao dịch "${updated.purchaseItem}"!`);
     }
   };
 
-  // Delete transaction handler
+  // Delete transaction handler (targeted rollback + conflict resync)
   const handleConfirmDelete = async () => {
     if (!deletingTransaction) return;
     const target = deletingTransaction;
@@ -1771,10 +1830,10 @@ export default function App() {
     const effectiveSheetId = sheetMeta?.spreadsheetId || extractSpreadsheetId(spreadsheetInput);
     const isAppsScript = isAppsScriptUrl(effectiveSheetId);
 
-    // Save snapshot state for rollback on API failure
-    const snapshotSheetRecords = sheetRecords;
-    const snapshotLocalNewRecords = localNewRecords;
-    const snapshotAttachedRecords = attachedRecords;
+    // Capture ONLY the deleted record presence per list for targeted functional rollback
+    const originalSheetRecord = (sheetRecordsRef.current || []).find((r) => r.id === target.id);
+    const originalLocalRecord = (localNewRecordsRef.current || []).find((r) => r.id === target.id);
+    const originalAttachedRecord = attachedRecords.find((r) => r.id === target.id);
 
     setIsDeleting(true);
     try {
@@ -1814,7 +1873,8 @@ export default function App() {
           target.rowIndex,
           effectiveToken,
           tabName,
-          target.txId || target.id
+          target.txId || target.id,
+          buildRowSignature(originalSheetRecord || target)
         );
         showToast('success', `✓ Đã xóa vĩnh viễn dòng #${target.rowIndex} ("${target.purchaseItem}") khỏi Google Sheet!`);
         scheduleDebouncedBackgroundSync(effectiveSheetId, effectiveToken);
@@ -1824,15 +1884,43 @@ export default function App() {
 
       setDeletingTransaction(null);
     } catch (err: any) {
-      // Rollback to snapshots
-      setSheetRecords(snapshotSheetRecords);
-      setLocalNewRecords(snapshotLocalNewRecords);
-      setAttachedRecords(snapshotAttachedRecords);
-      showToast('warning', `Không thể xóa giao dịch: ${err?.message || 'Lỗi không xác định'}`);
+      // Targeted functional rollback: restore ONLY the deleted record & reverse rowIndex shifts
+      setSheetRecords((prev) => rollbackDeletedRecord(prev, originalSheetRecord));
+      setLocalNewRecords((prev) => rollbackDeletedListRecord(prev, originalLocalRecord));
+      setAttachedRecords((prev) => rollbackDeletedListRecord(prev, originalAttachedRecord));
+
+      if (isSyncConflictError(err)) {
+        showToast(
+          'warning',
+          `Xung đột đồng bộ: ${err?.message || 'Dòng đã bị xóa/thay đổi ở thiết bị khác.'} Đang tự động đồng bộ lại...`
+        );
+        scheduleDebouncedBackgroundSync(effectiveSheetId, effectiveToken, 300);
+      } else {
+        showToast('warning', `Không thể xóa giao dịch: ${err?.message || 'Lỗi không xác định'}`);
+      }
     } finally {
       setIsDeleting(false);
     }
   };
+
+  // Sync edited Check tiền wallets back to Google Sheet when connected & Check tiền tab exists
+  const handleSyncWalletsToSheet = useCallback(
+    async (wallets: AppsScriptWalletPayload) => {
+      const effectiveToken = accessToken || getStoredAccessToken() || '';
+      const effectiveSheetId = sheetMeta?.spreadsheetId || extractSpreadsheetId(spreadsheetInput);
+      const isAppsScript = isAppsScriptUrl(effectiveSheetId);
+      const checkTienTab = sheetMeta?.checkTienTab;
+      if (!effectiveSheetId || (!effectiveToken && !isAppsScript) || !checkTienTab) {
+        return;
+      }
+      try {
+        await updateCheckTienWalletsOnSheet(effectiveSheetId, checkTienTab, wallets, effectiveToken);
+      } catch (err) {
+        console.warn('Could not sync Check tiền wallets to Google Sheet:', err);
+      }
+    },
+    [accessToken, sheetMeta, spreadsheetInput]
+  );
 
   const handleOpenAddModal = useCallback(() => {
     setAddModalPreset(null);
@@ -1967,7 +2055,15 @@ export default function App() {
   );
 
   const handleLockApp = useCallback(() => {
+    if (backgroundSyncTimerRef.current) {
+      clearTimeout(backgroundSyncTimerRef.current);
+      backgroundSyncTimerRef.current = null;
+    }
+    queuedAuthSyncRef.current = null;
+    isUnlockedRef.current = false;
+    // Wipes RAM OAuth token & unlock flag while keeping Web App URL + API_SECRET_KEY configured on device
     lockDevice();
+    setAccessToken(null);
     setIsUnlocked(false);
     showToast('success', 'Đã khóa ứng dụng an toàn');
   }, [showToast]);
@@ -2519,6 +2615,7 @@ export default function App() {
                       }}
                       checkTienData={checkTienData}
                       onEditTransaction={(tx) => setEditingTransaction(tx)}
+                      onSyncWalletsToSheet={handleSyncWalletsToSheet}
                     />
                   </Suspense>
                 </div>

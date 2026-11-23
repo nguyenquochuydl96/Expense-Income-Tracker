@@ -341,6 +341,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 placeholder="50,000"
                 theme={sheetType === 'Expenses' ? 'rose' : 'emerald'}
                 size="sm"
+                allowNegative={sheetType === 'Expenses'}
                 required
                 inputClassName="font-semibold text-slate-900 bg-slate-50 dark:bg-slate-800 dark:text-slate-100"
               />
@@ -356,14 +357,14 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                         (→ tự điền chi)
                       </span>
                     </label>
-                    {parsedAmount > 0 && (
+                    {parsedAmount !== 0 && (
                       <button
                         type="button"
                         onClick={() =>
                           setBeCorpStr(
                             parsedBeCorp === parsedAmount
                               ? ''
-                              : formatNumberForSheet(parsedAmount)
+                              : formatNumberForSheet(parsedAmount, false, true)
                           )
                         }
                         className="text-[11px] text-amber-700 dark:text-amber-400 hover:underline font-medium"
@@ -378,6 +379,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                     placeholder="Để trống nếu 0"
                     theme="amber"
                     size="sm"
+                    allowNegative={true}
                     inputClassName="text-amber-900 bg-amber-50/40 dark:bg-amber-950/30 dark:text-amber-200"
                   />
                 </div>
@@ -391,14 +393,14 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                         (→ tự điền chi)
                       </span>
                     </label>
-                    {parsedAmount > 0 && (
+                    {parsedAmount !== 0 && (
                       <button
                         type="button"
                         onClick={() =>
                           setCreditStr(
                             parsedCredit === parsedAmount
                               ? ''
-                              : formatNumberForSheet(parsedAmount)
+                              : formatNumberForSheet(parsedAmount, false, true)
                           )
                         }
                         className="text-[11px] text-indigo-700 dark:text-indigo-400 hover:underline font-medium"
@@ -413,6 +415,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                     placeholder="Để trống nếu 0"
                     theme="indigo"
                     size="sm"
+                    allowNegative={true}
                     inputClassName="text-indigo-900 bg-indigo-50/40 dark:bg-indigo-950/30 dark:text-indigo-200"
                   />
                 </div>

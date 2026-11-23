@@ -11,6 +11,7 @@ import {
 } from '../types/finance';
 import {
   formatNumberForSheet,
+  getTodayIsoDate,
   isoToSheetDate,
   parseSheetNumber,
 } from '../utils/csvParser';
@@ -47,14 +48,6 @@ interface AddTransactionModalProps {
   expensesTabName?: string;
   incomeTabName?: string;
 }
-
-const getTodayIsoDate = (): string => {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-};
 
 // Predefined category-specific common transaction suggestions
 const CATEGORY_DEFAULT_SUGGESTIONS: Record<string, { item: string; typicalAmount?: number }[]> = {
@@ -875,6 +868,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   placeholder="VD: 50,000"
                   theme="rose"
                   size="md"
+                  allowNegative={true}
                   required
                 />
               </div>
@@ -887,14 +881,14 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                       (→ tự điền chi)
                     </span>
                   </label>
-                  {parsedAmount > 0 && (
+                  {parsedAmount !== 0 && (
                     <button
                       type="button"
                       onClick={() =>
                         setBeCorpStr(
                           parsedBeCorp === parsedAmount
                             ? ''
-                            : formatNumberForSheet(parsedAmount)
+                            : formatNumberForSheet(parsedAmount, false, true)
                         )
                       }
                       className="text-[11px] text-amber-700 dark:text-amber-400 hover:underline font-medium"
@@ -909,6 +903,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   placeholder="Để trống nếu không"
                   theme="amber"
                   size="md"
+                  allowNegative={true}
                 />
               </div>
 
@@ -920,14 +915,14 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                       (→ tự điền chi)
                     </span>
                   </label>
-                  {parsedAmount > 0 && (
+                  {parsedAmount !== 0 && (
                     <button
                       type="button"
                       onClick={() =>
                         setCreditStr(
                           parsedCredit === parsedAmount
                             ? ''
-                            : formatNumberForSheet(parsedAmount)
+                            : formatNumberForSheet(parsedAmount, false, true)
                         )
                       }
                       className="text-[11px] text-indigo-700 dark:text-indigo-400 hover:underline font-medium"
@@ -942,6 +937,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   placeholder="Để trống nếu không"
                   theme="indigo"
                   size="md"
+                  allowNegative={true}
                 />
               </div>
             </div>

@@ -2,7 +2,7 @@ import { ItemSuggestion, SheetTabType, TransactionRecord } from '../types/financ
 import { isPrivacyActive } from './privacyService';
 
 /**
- * Parses a number formatted like "6,548,000", "-4,100,000", "193,600", or "79000"
+ * Parses a number formatted like "6,548,000", "-4,100,000", "1.500.000", "193,600", or "79000"
  */
 export function parseSheetNumber(raw: string | number | undefined | null): number {
   if (raw === undefined || raw === null || raw === '') return 0;
@@ -19,8 +19,7 @@ export function parseSheetNumber(raw: string | number | undefined | null): numbe
     isNegative = true;
   }
 
-  const cleaned = str
-    .replace(/,/g, '')
+  let cleaned = str
     .replace(/\s+/g, '')
     .replace(/[$₫đ]/g, '')
     .replace(/VND/gi, '')
@@ -28,6 +27,17 @@ export function parseSheetNumber(raw: string | number | undefined | null): numbe
     .replace(/-/g, '');
 
   if (!cleaned) return 0;
+
+  // Support Vietnamese thousand-separator dots (e.g., "50.000", "1.500.000", "1.500.000,50")
+  if (/(?<=\d)\.(?=\d{3}(?:\.|,|$))/.test(cleaned)) {
+    cleaned = cleaned.replace(/(?<=\d)\.(?=\d{3}(?:\.|,|$))/g, '');
+    if (cleaned.includes(',') && !cleaned.includes('.')) {
+      cleaned = cleaned.replace(/,/g, '.');
+    }
+  } else {
+    cleaned = cleaned.replace(/,/g, '');
+  }
+
   const parsed = Number(cleaned);
   if (!Number.isFinite(parsed)) return 0;
   return isNegative ? -parsed : parsed;
@@ -63,6 +73,16 @@ export function formatCurrency(val: number, showSign = false, forceVisible = fal
   if (val < 0) return `-${absFormatted} ₫`;
   if (val > 0 && showSign) return `+${absFormatted} ₫`;
   return `${absFormatted} ₫`;
+}
+
+/**
+ * Returns today's local date in YYYY-MM-DD format (prevents UTC day-shift between 00:00–06:59 VN time)
+ */
+export function getTodayIsoDate(referenceDate: Date = new Date()): string {
+  const y = referenceDate.getFullYear();
+  const m = String(referenceDate.getMonth() + 1).padStart(2, '0');
+  const d = String(referenceDate.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 /**
@@ -262,13 +282,19 @@ export function parseDateString(rawDate: string): {
     };
   }
 
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1;
+  const d = now.getDate();
+  const mm = String(m).padStart(2, '0');
+  const dd = String(d).padStart(2, '0');
   return {
-    isoDate: `${currentYear}-10-25`,
-    monthKey: `${currentYear}-10`,
-    displayDate: `10/25/${currentYear}`,
-    year: currentYear,
-    month: 10,
-    day: 25,
+    isoDate: `${y}-${mm}-${dd}`,
+    monthKey: `${y}-${mm}`,
+    displayDate: `${m}/${d}/${y}`,
+    year: y,
+    month: m,
+    day: d,
   };
 }
 

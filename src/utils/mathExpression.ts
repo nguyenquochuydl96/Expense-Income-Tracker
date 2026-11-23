@@ -243,6 +243,220 @@ export function parseMoneyNumber(val: string | number): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+interface ScaleToken {
+  type: 'num' | 'op';
+  value?: number;
+  hasScale?: boolean;
+  op?: string;
+}
+
+/**
+ * Tokenizes an expression preserving whether each numeric literal already carried
+ * an explicit currency unit (k/tr/m) or thousand separator (100.000 / 100,000),
+ * so mixed x1k expressions like "50k + 20" (= 70,000) and "50k * 2" (= 100,000)
+ * evaluate accurately without scaling scalar multipliers/divisors.
+ */
+function tokenizeScaleAware(raw: string): ScaleToken[] | null {
+  let s = raw.trim().replace(/[+\-*/xX×÷:\s]+$/, '');
+  if (!s) return null;
+
+  // Normalize multiplication / division symbols
+  s = s.replace(/[xX×]/g, '*').replace(/[÷:]/g, '/');
+
+  const tokens: ScaleToken[] = [];
+  let i = 0;
+
+  while (i < s.length) {
+    const c = s[i];
+    if (/\s/.test(c)) {
+      i++;
+      continue;
+    }
+    if (c === '+' || c === '-' || c === '*' || c === '/' || c === '(' || c === ')') {
+      tokens.push({ type: 'op', op: c });
+      i++;
+      continue;
+    }
+
+    if (/\d/.test(c) || c === '.') {
+      const rest = s.slice(i);
+
+      // 1. Spoken Vietnamese million format: e.g. 1tr5, 2tr25, 1m5
+      const spokenMatch = rest.match(/^(\d+)\s*(tr|trieu|triệu|m)\s*(\d+)\b/i);
+      if (spokenMatch) {
+        const val = parseFloat(`${spokenMatch[1]}.${spokenMatch[3]}`) * 1000000;
+        if (!Number.isFinite(val)) return null;
+        tokens.push({ type: 'num', value: val, hasScale: true });
+        i += spokenMatch[0].length;
+        continue;
+      }
+
+      // 2. Explicit million unit: e.g. 1.5tr, 1,5tr, 2m, 2trieu
+      const milMatch = rest.match(/^(\d+(?:[.,]\d+)?)\s*(tr|trieu|triệu|m)\b/i);
+      if (milMatch) {
+        const val = parseFloat(milMatch[1].replace(',', '.')) * 1000000;
+        if (!Number.isFinite(val)) return null;
+        tokens.push({ type: 'num', value: val, hasScale: true });
+        i += milMatch[0].length;
+        continue;
+      }
+
+      // 3. Explicit thousand unit: e.g. 50k, 50.5k, 50,5k, 50nghin
+      const kMatch = rest.match(/^(\d+(?:[.,]\d+)?)\s*(k|nghin|nghìn|ngan|ngàn)\b/i);
+      if (kMatch) {
+        const val = parseFloat(kMatch[1].replace(',', '.')) * 1000;
+        if (!Number.isFinite(val)) return null;
+        tokens.push({ type: 'num', value: val, hasScale: true });
+        i += kMatch[0].length;
+        continue;
+      }
+
+      // 4. Number with thousand separators (e.g. 100.000, 1,250,550, 100,000.5)
+      const sepMatch = rest.match(/^(\d{1,3}(?:([.,])\d{3})+(?:[.,]\d+)?)/);
+      if (sepMatch) {
+        const rawNum = sepMatch[1];
+        const sep = sepMatch[2];
+        let normalized = rawNum;
+        if (sep === '.') {
+          normalized = normalized
+            .replace(/(?<=\d)\.(?=\d{3}(?:\.|,|$))/g, '')
+            .replace(/,/g, '.');
+        } else {
+          normalized = normalized.replace(/(?<=\d),(?=\d{3}(?:,|\.|$))/g, '');
+        }
+        const val = parseFloat(normalized);
+        if (!Number.isFinite(val)) return null;
+        tokens.push({ type: 'num', value: val, hasScale: true });
+        i += sepMatch[0].length;
+        continue;
+      }
+
+      // 5. Plain number (with optional decimal dot or comma, e.g. 20, 48.5, 48,5)
+      const plainMatch = rest.match(/^(\d+(?:[.,]\d+)?|\.\d+)/);
+      if (plainMatch) {
+        const val = parseFloat(plainMatch[1].replace(',', '.'));
+        if (!Number.isFinite(val)) return null;
+        tokens.push({ type: 'num', value: val, hasScale: false });
+        i += plainMatch[0].length;
+        continue;
+      }
+
+      return null;
+    }
+
+    return null;
+  }
+
+  return tokens;
+}
+
+/**
+ * Evaluates a mixed expression under autoThousands (x1k) mode.
+ * Plain additive terms mixed with explicit-unit or thousand-separated terms
+ * (e.g., "50k + 20" or "100.000 + 50") are scaled by 1,000, whereas scalar
+ * multipliers/divisors (e.g., "50k * 2", "2 * 50k", "100k / 2") remain unscaled.
+ */
+function evaluateMixedAutoThousands(raw: string): number | null {
+  const tokens = tokenizeScaleAware(raw);
+  if (!tokens || tokens.length === 0) return null;
+
+  type ScaleNode = { value: number; hasScale: boolean };
+  let pos = 0;
+
+  const parsePrimary = (): ScaleNode | null => {
+    if (pos >= tokens.length) return null;
+    const tok = tokens[pos];
+    if (tok.type === 'num') {
+      pos++;
+      return { value: tok.value!, hasScale: !!tok.hasScale };
+    }
+    if (tok.type === 'op' && tok.op === '(') {
+      pos++;
+      const inner: ScaleNode | null = parseExpr();
+      if (!inner) return null;
+      if (pos >= tokens.length || tokens[pos].type !== 'op' || tokens[pos].op !== ')') {
+        return null;
+      }
+      pos++;
+      return inner;
+    }
+    return null;
+  };
+
+  const parseUnary = (): ScaleNode | null => {
+    if (pos < tokens.length && tokens[pos].type === 'op' && tokens[pos].op === '-') {
+      pos++;
+      const inner: ScaleNode | null = parseUnary();
+      if (!inner) return null;
+      return { value: -inner.value, hasScale: inner.hasScale };
+    }
+    if (pos < tokens.length && tokens[pos].type === 'op' && tokens[pos].op === '+') {
+      pos++;
+      return parseUnary();
+    }
+    return parsePrimary();
+  };
+
+  const parseTerm = (): ScaleNode | null => {
+    let left: ScaleNode | null = parseUnary();
+    if (!left) return null;
+
+    while (pos < tokens.length && tokens[pos].type === 'op' && (tokens[pos].op === '*' || tokens[pos].op === '/')) {
+      const op = tokens[pos].op!;
+      pos++;
+      const right: ScaleNode | null = parseUnary();
+      if (!right) return null;
+
+      if (op === '/') {
+        if (right.value === 0) return null;
+        left = {
+          value: left.value / right.value,
+          hasScale: left.hasScale || right.hasScale,
+        };
+      } else {
+        left = {
+          value: left.value * right.value,
+          hasScale: left.hasScale || right.hasScale,
+        };
+      }
+    }
+
+    return left;
+  };
+
+  const parseExpr = (): ScaleNode | null => {
+    let left: ScaleNode | null = parseTerm();
+    if (!left) return null;
+
+    while (pos < tokens.length && tokens[pos].type === 'op' && (tokens[pos].op === '+' || tokens[pos].op === '-')) {
+      const op = tokens[pos].op!;
+      pos++;
+      const right: ScaleNode | null = parseTerm();
+      if (!right) return null;
+
+      let lv: number = left.value;
+      let rv: number = right.value;
+      const scaled: boolean = left.hasScale || right.hasScale;
+      if (left.hasScale && !right.hasScale) {
+        rv *= 1000;
+      } else if (!left.hasScale && right.hasScale) {
+        lv *= 1000;
+      }
+      left = {
+        value: op === '+' ? lv + rv : lv - rv,
+        hasScale: scaled,
+      };
+    }
+
+    return left;
+  };
+
+  const result = parseExpr();
+  if (!result || pos !== tokens.length || !Number.isFinite(result.value)) return null;
+
+  return result.hasScale ? result.value : result.value * 1000;
+}
+
 /**
  * Computes the effective numeric and formatted value for an input string,
  * taking into account the autoThousands multiplier mode and allowNegative constraint.
@@ -257,12 +471,35 @@ export function computeEffectiveMoneyValue(
     return { num: 0, formatted: '' };
   }
 
+  const hasUnit = hasExplicitUnit(text);
+  const hasSeparators = hasThousandSeparator(text);
+
   let evaluated: number | null = null;
+  let alreadyScaled = false;
+
   if (isExpression(text)) {
-    evaluated = evaluateMoneyExpression(text, false);
+    if (isAutoThousands && (hasUnit || hasSeparators)) {
+      evaluated = evaluateMixedAutoThousands(text);
+      if (evaluated !== null) {
+        alreadyScaled = true;
+      }
+    }
+    if (evaluated === null) {
+      evaluated = evaluateMoneyExpression(text, false);
+    }
   } else {
-    // Normal numeric entry (handles decimals like 48.5 or 48,5)
-    const normalized = text.replace(/,/g, '.');
+    // Non-expression numeric entry: strip thousand separators BEFORE parseFloat
+    // so "100,000" -> 100000 and "1,250,550" -> 1250550 instead of 100 / 1.25
+    let normalized = text;
+    if (hasSeparators) {
+      normalized = normalized
+        .replace(/(?<=\d)\.(?=\d{3}(?:\.|,|\b))/g, '')
+        .replace(/(?<=\d),(?=\d{3}(?:,|\.|\b))/g, '')
+        .replace(/,/g, '.');
+    } else {
+      normalized = normalized.replace(/,/g, '.');
+    }
+
     const parsedFloat = parseFloat(normalized);
     if (!isNaN(parsedFloat) && Number.isFinite(parsedFloat)) {
       evaluated = parsedFloat;
@@ -280,11 +517,9 @@ export function computeEffectiveMoneyValue(
   }
 
   let finalNum = evaluated;
-  const hasUnit = hasExplicitUnit(text);
-  const hasSeparators = hasThousandSeparator(text);
 
   // If autoThousands is ON and user did not specify explicit units or thousand separators:
-  if (isAutoThousands && !hasUnit && !hasSeparators) {
+  if (!alreadyScaled && isAutoThousands && !hasUnit && !hasSeparators) {
     finalNum = Math.round(evaluated * 1000);
   } else {
     finalNum = Math.round(evaluated);

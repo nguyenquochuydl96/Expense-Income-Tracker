@@ -14,9 +14,13 @@ import {
   Copy,
   Check,
   Key,
+  KeyRound,
   Globe,
   ChevronDown,
   ChevronUp,
+  Eye,
+  EyeOff,
+  Wand2,
 } from 'lucide-react';
 import type { User } from 'firebase/auth';
 import { SpreadsheetMetadata } from '../services/googleSheetsService';
@@ -30,6 +34,7 @@ import {
   getConnectionMode,
   setConnectionMode,
 } from '../services/appsScriptService';
+import { changePin, hasConfiguredPin, isValidPinFormat } from './AppLockScreen';
 
 interface SheetSyncPanelProps {
   user: User | null;
@@ -96,11 +101,45 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = React.memo(({
 
   const [showGuide, setShowGuide] = useState<boolean>(false);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
+  const [showApiKey, setShowApiKey] = useState<boolean>(false);
+  const [copiedApiKey, setCopiedApiKey] = useState<boolean>(false);
+
+  // Device PIN change state (completely independent from API_SECRET_KEY)
+  const [currentPinInput, setCurrentPinInput] = useState<string>('');
+  const [newPinInput, setNewPinInput] = useState<string>('');
+  const [confirmPinInput, setConfirmPinInput] = useState<string>('');
+  const [pinChangeStatus, setPinChangeStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [isChangingPin, setIsChangingPin] = useState<boolean>(false);
 
   // Sync mode state
   const handleModeChange = (mode: 'webapp' | 'oauth') => {
     setActiveMode(mode);
     setConnectionMode(mode);
+  };
+
+  // Generate cryptographically random 36-char API_SECRET_KEY
+  const handleGenerateStrongKey = () => {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    const bytes = new Uint8Array(36);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      crypto.getRandomValues(bytes);
+    } else {
+      for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+    }
+    const generated = Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
+    setWebAppKeyInput(generated);
+    setShowApiKey(true);
+  };
+
+  const handleCopyApiKey = async () => {
+    if (!webAppKeyInput.trim()) return;
+    try {
+      await navigator.clipboard.writeText(webAppKeyInput.trim());
+      setCopiedApiKey(true);
+      setTimeout(() => setCopiedApiKey(false), 2500);
+    } catch {
+      setCopiedApiKey(false);
+    }
   };
 
   // Connect via Web App API
@@ -112,6 +151,37 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = React.memo(({
     saveStoredWebAppKey(webAppKeyInput.trim());
     onChangeSpreadsheetInput(cleanUrl);
     await onConnectAndSyncSheet(cleanUrl);
+  };
+
+  // Change local device PIN (4-6 digits, salted SHA-256 hash only)
+  const handleChangePinSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPinChangeStatus(null);
+    if (!isValidPinFormat(newPinInput)) {
+      setPinChangeStatus({ type: 'error', message: 'Mã PIN mới phải gồm từ 4 đến 6 chữ số.' });
+      return;
+    }
+    if (newPinInput.trim() !== confirmPinInput.trim()) {
+      setPinChangeStatus({ type: 'error', message: 'Mã PIN xác nhận không khớp.' });
+      return;
+    }
+    setIsChangingPin(true);
+    try {
+      const res = await changePin(currentPinInput, newPinInput);
+      if (res.success) {
+        setCurrentPinInput('');
+        setNewPinInput('');
+        setConfirmPinInput('');
+        setPinChangeStatus({
+          type: 'success',
+          message: 'Đã cập nhật mã PIN khóa thiết bị (băm SHA-256). Khóa API Google Sheet không bị ảnh hưởng.',
+        });
+      } else {
+        setPinChangeStatus({ type: 'error', message: res.error || 'Không thể đổi mã PIN.' });
+      }
+    } finally {
+      setIsChangingPin(false);
+    }
   };
 
   // Connect via OAuth
@@ -258,12 +328,12 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = React.memo(({
 
                   <div className="pt-2 flex flex-wrap items-center gap-3">
                     <a
-                      href="https://docs.google.com/spreadsheets/d/1CTSEC-J52yGD-VIxOuzyNZ8Qddg0bmOIzMSzRVM6ZTI/edit"
+                      href="https://sheets.google.com"
                       target="_blank"
                       rel="noreferrer"
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-medium text-xs hover:bg-emerald-700 transition-colors shadow-2xs"
                     >
-                      <span>Mở Google Sheet của bạn</span>
+                      <span>Mở Google Sheets</span>
                       <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                     <button
@@ -297,30 +367,79 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = React.memo(({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1">
-                  <div className="sm:col-span-8 space-y-1">
-                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">
-                      Mã bảo vệ gia đình (Tùy chọn - Nếu bạn có đặt trong file Code.gs):
-                    </label>
+                  <div className="sm:col-span-8 space-y-1.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                        Khóa bí mật <code>API_SECRET_KEY</code> (Độc lập với mã PIN · Khuyến nghị ≥ 32 ký tự):
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={handleGenerateStrongKey}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-slate-700 cursor-pointer"
+                          title="Tạo chuỗi bí mật ngẫu nhiên 36 ký tự để dán vào Code.gs"
+                        >
+                          <Wand2 className="w-3 h-3 text-emerald-600" />
+                          <span>Tạo khóa mạnh</span>
+                        </button>
+                        {webAppKeyInput.trim().length > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleCopyApiKey}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
+                          >
+                            {copiedApiKey ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                            <span>{copiedApiKey ? 'Đã chép' : 'Chép'}</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
                     <div className="relative">
                       <Key className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
-                        type="password"
-                        placeholder="Để trống nếu không đặt mã bảo vệ..."
+                        type={showApiKey ? 'text' : 'password'}
+                        placeholder="Nhập API_SECRET_KEY khớp với CONFIG.API_SECRET_KEY trong Code.gs..."
                         value={webAppKeyInput}
                         onChange={(e) => setWebAppKeyInput(e.target.value)}
-                        className="w-full pl-8 pr-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:outline-none focus:border-emerald-600 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        className="w-full pl-8 pr-9 py-2 text-xs font-mono border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:outline-none focus:border-emerald-600 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowApiKey((v) => !v)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                        aria-label={showApiKey ? 'Ẩn khóa API' : 'Hiện khóa API'}
+                      >
+                        {showApiKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                      <span className="text-slate-500 dark:text-slate-400">
+                        Lưu 1 lần trên máy, không bị xóa khi khóa app bằng mã PIN.
+                      </span>
+                      {webAppKeyInput.trim().length > 0 && (
+                        <span
+                          className={
+                            webAppKeyInput.trim().length >= 32
+                              ? 'text-emerald-700 dark:text-emerald-400 font-semibold'
+                              : 'text-amber-700 dark:text-amber-400 font-medium'
+                          }
+                        >
+                          {webAppKeyInput.trim().length >= 32
+                            ? `✓ Độ dài an toàn (${webAppKeyInput.trim().length} ký tự)`
+                            : `Hiện tại ${webAppKeyInput.trim().length} ký tự (khuyến nghị ≥ 32)`}
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  <div className="sm:col-span-4 flex items-end">
+                  <div className="sm:col-span-4 flex items-end pb-5">
                     <button
                       type="submit"
                       disabled={isSyncing || !webAppUrlInput.trim()}
                       className="w-full py-2.5 px-4 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                      <span>{isSyncing ? 'Đang đồng bộ...' : 'Đồng bộ qua Web App API'}</span>
+                      <span>{isSyncing ? 'Đang đồng bộ...' : 'Lưu & Đồng bộ Web App'}</span>
                     </button>
                   </div>
                 </div>
@@ -563,6 +682,97 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = React.memo(({
                 <span>Đẩy {pendingLocalRecords.length} dòng chờ lên Google Sheet</span>
               </button>
             )}
+          </div>
+        )}
+      </section>
+
+      {/* DEVICE PIN SETTINGS (SEPARATE FROM API_SECRET_KEY) */}
+      <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xs">
+        <div className="flex items-start gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
+          <div className="w-9 h-9 rounded-xl bg-teal-600 text-white flex items-center justify-center shrink-0">
+            <KeyRound className="w-4 h-4" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              Đổi mã PIN khóa thiết bị (4–6 số)
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Mã PIN chỉ dùng để mở khóa giao diện trên thiết bị này (lưu dưới dạng mã băm SHA-256 kèm salt), hoàn toàn tách biệt với <code>API_SECRET_KEY</code> ở trên.
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleChangePinSubmit} className="mt-4 grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+          {hasConfiguredPin() && (
+            <div className="space-y-1">
+              <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+                Mã PIN hiện tại
+              </label>
+              <input
+                type="password"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="4–6 chữ số"
+                value={currentPinInput}
+                onChange={(e) => setCurrentPinInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                className="w-full px-3 py-2 text-xs font-mono border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-600"
+              />
+            </div>
+          )}
+
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+              Mã PIN mới
+            </label>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="4–6 chữ số"
+              value={newPinInput}
+              onChange={(e) => setNewPinInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              className="w-full px-3 py-2 text-xs font-mono border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-600"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-300">
+              Xác nhận PIN mới
+            </label>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="Nhập lại PIN mới"
+              value={confirmPinInput}
+              onChange={(e) => setConfirmPinInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              className="w-full px-3 py-2 text-xs font-mono border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-600"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isChangingPin || newPinInput.length < 4 || confirmPinInput.length < 4}
+            className="w-full py-2 px-4 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 disabled:opacity-50 rounded-xl transition-colors cursor-pointer"
+          >
+            {isChangingPin ? 'Đang lưu...' : 'Cập nhật mã PIN'}
+          </button>
+        </form>
+
+        {pinChangeStatus && (
+          <div
+            className={`mt-3 p-2.5 rounded-xl text-xs flex items-center gap-2 border ${
+              pinChangeStatus.type === 'success'
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+                : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300'
+            }`}
+          >
+            {pinChangeStatus.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 shrink-0" />
+            )}
+            <span>{pinChangeStatus.message}</span>
           </div>
         )}
       </section>

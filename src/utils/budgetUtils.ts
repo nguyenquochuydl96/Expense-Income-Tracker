@@ -317,7 +317,95 @@ export function computeMultiMonthRollover(
     }
   }
 
-  // 5. Chain rollover
+  // 5. Pre-allocate monthly base budgets across categories using Largest Remainder Method
+  //    so the sum of baseFromGeneral matches 100% of generalMonthlyIncomes[mKey] with zero rounding drift.
+  const monthlyRatioMap: Record<string, Record<string, { ratio: number; pct: number }>> = {};
+  const monthlyBaseFromGeneral: Record<string, Record<string, number>> = {};
+
+  for (const mKey of allChronologicalMonths) {
+    const mGeneralIncome = generalMonthlyIncomes[mKey] || 0;
+    const era = getBudgetEraForMonth(mKey);
+    monthlyRatioMap[mKey] = {};
+    monthlyBaseFromGeneral[mKey] = {};
+
+    let totalRatio = 0;
+    for (const cat of allCategories) {
+      let ratio: number;
+      let pct: number;
+
+      // Historical months (T4-T7) are locked historical eras synchronized to Google Sheet Section 2 (R20:R23)
+      // They MUST NEVER be retroactively modified by Phase 2 or custom percentages!
+      if (mKey <= '2026-07') {
+        ratio = era.ratios[cat] ?? 0;
+        pct = era.percentages[cat] ?? (ratio * 100);
+      } else if (hasCustomPercentages && customPercentages[cat] !== undefined) {
+        pct = customPercentages[cat];
+        ratio = pct / 100;
+      } else {
+        ratio = era.ratios[cat] ?? 0;
+        pct = era.percentages[cat] ?? (ratio * 100);
+      }
+
+      monthlyRatioMap[mKey][cat] = { ratio, pct };
+      if (ratio > 0) {
+        totalRatio += ratio;
+      }
+    }
+
+    if (mGeneralIncome === 0 || totalRatio <= 0) {
+      for (const cat of allCategories) {
+        monthlyBaseFromGeneral[mKey][cat] = 0;
+      }
+      continue;
+    }
+
+    const targetTotal =
+      Math.abs(totalRatio - 1) < 1e-6
+        ? Math.round(mGeneralIncome)
+        : Math.round(mGeneralIncome * totalRatio);
+
+    const sign = targetTotal < 0 ? -1 : 1;
+    const absTarget = Math.abs(targetTotal);
+    const absIncome = Math.abs(mGeneralIncome);
+
+    const allocations = allCategories.map((cat, idx) => {
+      const ratio = Math.max(0, monthlyRatioMap[mKey][cat].ratio);
+      const rawExact = absIncome * ratio;
+      // Snap IEEE-754 floating-point dust within 1e-9 of an integer
+      const nearest = Math.round(rawExact);
+      const exact = Math.abs(rawExact - nearest) < 1e-9 ? nearest : rawExact;
+      const floored = Math.floor(exact);
+      const remainder = exact - floored;
+      return { cat, idx, ratio, floored, remainder };
+    });
+
+    const sumFloored = allocations.reduce((sum, item) => sum + item.floored, 0);
+    let diff = absTarget - sumFloored;
+
+    if (diff > 0) {
+      const eligible = allocations
+        .filter((item) => item.ratio > 0)
+        .sort((a, b) => (b.remainder - a.remainder) || (b.ratio - a.ratio) || (a.idx - b.idx));
+      for (let k = 0; k < eligible.length && diff > 0; k++) {
+        eligible[k].floored += 1;
+        diff -= 1;
+      }
+    } else if (diff < 0) {
+      const eligible = allocations
+        .filter((item) => item.floored > 0)
+        .sort((a, b) => (a.remainder - b.remainder) || (a.idx - b.idx));
+      for (let k = 0; k < eligible.length && diff < 0; k++) {
+        eligible[k].floored -= 1;
+        diff += 1;
+      }
+    }
+
+    for (const item of allocations) {
+      monthlyBaseFromGeneral[mKey][item.cat] = sign * item.floored;
+    }
+  }
+
+  // 6. Chain rollover
   const chain: Record<string, Record<string, CategoryMonthBudgetStats>> = {};
 
   for (const cat of allCategories) {
@@ -326,33 +414,12 @@ export function computeMultiMonthRollover(
 
     for (let i = 0; i < allChronologicalMonths.length; i++) {
       const mKey = allChronologicalMonths[i];
-      const mGeneralIncome = generalMonthlyIncomes[mKey] || 0;
-
-      let ratio: number;
-      let pct: number;
-
-      // Era determination via BUDGET_ERAS
-      const era = getBudgetEraForMonth(mKey);
-
-      // Historical months (T4-T7) are locked historical eras synchronized to Google Sheet Section 2 (R20:R23)
-      // They MUST NEVER be retroactively modified by Phase 2 or custom percentages!
-      if (mKey <= '2026-07') {
-        ratio = era.ratios[cat] ?? 0;
-        pct = era.percentages[cat] ?? (ratio * 100);
-      } else {
-        if (hasCustomPercentages && customPercentages[cat] !== undefined) {
-          pct = customPercentages[cat];
-          ratio = pct / 100;
-        } else {
-          ratio = era.ratios[cat] ?? 0;
-          pct = era.percentages[cat] ?? (ratio * 100);
-        }
-      }
+      const pct = monthlyRatioMap[mKey]?.[cat]?.pct ?? 0;
 
       // Base budget calculation:
-      // Uses exact formula ratio matching Google Sheet (=SUMIFS(...) * XLOOKUP(...)) for general income,
+      // Uses Largest Remainder Method allocation from general income,
       // PLUS 100% of any dedicated income designated specifically for this category!
-      const baseFromGeneral = Math.round(mGeneralIncome * ratio);
+      const baseFromGeneral = monthlyBaseFromGeneral[mKey]?.[cat] ?? 0;
       const dedicatedIncome = dedicatedMonthlyIncomes[mKey]?.[cat] || 0;
       const baseBudget = baseFromGeneral + dedicatedIncome;
 
