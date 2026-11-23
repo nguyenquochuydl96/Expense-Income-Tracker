@@ -150,7 +150,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-[60] flex items-start sm:items-center justify-center bg-slate-900/50 backdrop-blur-xs p-3 sm:p-4 py-4 sm:py-8 overflow-y-auto cursor-pointer"
+          className="fixed inset-0 z-[60] flex items-start sm:items-center justify-center bg-slate-900/50 backdrop-blur-xs p-3 sm:p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:py-8 overflow-y-auto cursor-pointer"
           onClick={onClose}
         >
           <motion.div

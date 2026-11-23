@@ -338,6 +338,8 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
     lg: 'w-4 h-4',
   }[size];
 
+  const prClass = size === 'xs' ? 'pr-20' : size === 'sm' ? 'pr-20' : 'pr-24';
+
   return (
     <div className={`relative inline-block w-full ${className}`}>
       {/* Input Box with x1k Toggle and Calculator Button */}
@@ -356,7 +358,7 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
           required={required}
           title={title}
           autoFocus={autoFocus}
-          className={`w-full pr-24 rounded-lg border bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700 transition-colors focus:outline-none focus:ring-1 ${styleTheme.border} ${sizeClasses} ${inputClassName}`}
+          className={`w-full ${prClass} rounded-lg border bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border-slate-300 dark:border-slate-700 transition-colors focus:outline-none focus:ring-1 ${styleTheme.border} ${sizeClasses} ${inputClassName}`}
         />
 
         {/* Right-aligned action buttons and x1k suffix */}
@@ -421,7 +423,7 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
       {/* INTERACTIVE CALCULATOR MODAL OVERLAY */}
       {isCalcOpen && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] animate-in fade-in duration-150"
           onClick={closeCalculator}
         >
           <div

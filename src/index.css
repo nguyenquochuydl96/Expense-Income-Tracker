@@ -66,6 +66,12 @@
     --tile-slate: rgba(214, 226, 238, 0.72);
     --tile-sage: rgba(208, 232, 216, 0.72);
     --tile-peach: rgba(250, 214, 198, 0.72);
+
+    /* iOS PWA Safe Area Insets */
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
   }
 
   [data-theme="dark"], html.dark {
@@ -216,6 +222,23 @@ html {
 .overflow-x-auto,
 .overflow-y-auto {
   -webkit-overflow-scrolling: touch;
+}
+
+/* iOS PWA Safe Area Utilities */
+.pt-safe-top {
+  padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+}
+.pt-safe-top-modal {
+  padding-top: max(1rem, env(safe-area-inset-top, 0px));
+}
+.pb-safe-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+}
+.pb-safe-bottom-modal {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+.pb-safe-content {
+  padding-bottom: max(7rem, calc(5rem + env(safe-area-inset-bottom, 0px)));
 }
 
 /* Kinlo Floating Delta Tag */

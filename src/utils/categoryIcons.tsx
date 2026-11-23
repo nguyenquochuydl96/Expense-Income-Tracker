@@ -193,218 +193,218 @@ export const CATEGORY_ICONS: Record<string, CategoryIcon> = {
   // Heo & Mèo giải trí & cá nhân
   'Giải trí Heo': {
     icon: PigIcon,
-    color: 'text-rose-700',
-    bgColor: 'bg-rose-100',
+    color: 'text-rose-700 dark:text-rose-300',
+    bgColor: 'bg-rose-100 border-rose-200/70 dark:bg-rose-500/15 dark:border-rose-500/25',
     label: 'Giải trí Heo',
   },
   'Giải trí Mèo': {
     icon: SiameseCatIcon,
-    color: 'text-amber-950',
-    bgColor: 'bg-[#F5EBE1]',
+    color: 'text-amber-900 dark:text-amber-300',
+    bgColor: 'bg-amber-100/80 border-amber-200/70 dark:bg-amber-500/15 dark:border-amber-500/25',
     label: 'Giải trí Mèo',
   },
   'Lương Heo': {
     icon: PigIcon,
-    color: 'text-rose-700',
-    bgColor: 'bg-rose-100',
+    color: 'text-rose-700 dark:text-rose-300',
+    bgColor: 'bg-rose-100 border-rose-200/70 dark:bg-rose-500/15 dark:border-rose-500/25',
     label: 'Lương Heo',
   },
   'Lương Mèo': {
     icon: SiameseCatIcon,
-    color: 'text-amber-950',
-    bgColor: 'bg-[#F5EBE1]',
+    color: 'text-amber-900 dark:text-amber-300',
+    bgColor: 'bg-amber-100/80 border-amber-200/70 dark:bg-amber-500/15 dark:border-amber-500/25',
     label: 'Lương Mèo',
   },
   'Heo': {
     icon: PigIcon,
-    color: 'text-rose-700',
-    bgColor: 'bg-rose-100',
+    color: 'text-rose-700 dark:text-rose-300',
+    bgColor: 'bg-rose-100 border-rose-200/70 dark:bg-rose-500/15 dark:border-rose-500/25',
     label: 'Heo',
   },
   'Mèo': {
     icon: SiameseCatIcon,
-    color: 'text-amber-950',
-    bgColor: 'bg-[#F5EBE1]',
+    color: 'text-amber-900 dark:text-amber-300',
+    bgColor: 'bg-amber-100/80 border-amber-200/70 dark:bg-amber-500/15 dark:border-amber-500/25',
     label: 'Mèo',
   },
 
   // Ăn uống & Thực phẩm
   'Ăn uống': {
     icon: Utensils,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-100',
+    color: 'text-orange-700 dark:text-orange-300',
+    bgColor: 'bg-orange-100 border-orange-200/70 dark:bg-orange-500/15 dark:border-orange-500/25',
     label: 'Ăn uống',
   },
   'Đồ ăn': {
     icon: Utensils,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-100',
+    color: 'text-orange-700 dark:text-orange-300',
+    bgColor: 'bg-orange-100 border-orange-200/70 dark:bg-orange-500/15 dark:border-orange-500/25',
     label: 'Đồ ăn',
   },
   'Cà phê': {
     icon: Coffee,
-    color: 'text-amber-700',
-    bgColor: 'bg-amber-100',
+    color: 'text-amber-800 dark:text-amber-300',
+    bgColor: 'bg-amber-100 border-amber-200/70 dark:bg-amber-500/15 dark:border-amber-500/25',
     label: 'Cà phê',
   },
 
   // Mua sắm
   'Mua sắm': {
     icon: ShoppingCart,
-    color: 'text-pink-600',
-    bgColor: 'bg-pink-100',
+    color: 'text-pink-700 dark:text-pink-300',
+    bgColor: 'bg-pink-100 border-pink-200/70 dark:bg-pink-500/15 dark:border-pink-500/25',
     label: 'Mua sắm',
   },
   'Shopping': {
     icon: ShoppingCart,
-    color: 'text-pink-600',
-    bgColor: 'bg-pink-100',
+    color: 'text-pink-700 dark:text-pink-300',
+    bgColor: 'bg-pink-100 border-pink-200/70 dark:bg-pink-500/15 dark:border-pink-500/25',
     label: 'Shopping',
   },
   'Quần áo': {
     icon: Shirt,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-100',
+    color: 'text-purple-700 dark:text-purple-300',
+    bgColor: 'bg-purple-100 border-purple-200/70 dark:bg-purple-500/15 dark:border-purple-500/25',
     label: 'Quần áo',
   },
 
   // Nhà cửa & Sinh hoạt
   'Nhà cửa': {
     icon: Home,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100',
+    color: 'text-blue-700 dark:text-blue-300',
+    bgColor: 'bg-blue-100 border-blue-200/70 dark:bg-blue-500/15 dark:border-blue-500/25',
     label: 'Nhà cửa',
   },
   'Tiền nhà': {
     icon: Home,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100',
+    color: 'text-blue-700 dark:text-blue-300',
+    bgColor: 'bg-blue-100 border-blue-200/70 dark:bg-blue-500/15 dark:border-blue-500/25',
     label: 'Tiền nhà',
   },
   'Điện nước': {
     icon: Lightbulb,
-    color: 'text-yellow-600',
-    bgColor: 'bg-yellow-100',
+    color: 'text-yellow-800 dark:text-yellow-300',
+    bgColor: 'bg-yellow-100 border-yellow-200/70 dark:bg-yellow-500/15 dark:border-yellow-500/25',
     label: 'Điện nước',
   },
   'Hóa đơn': {
     icon: Package,
-    color: 'text-slate-600',
-    bgColor: 'bg-slate-100',
+    color: 'text-slate-700 dark:text-slate-300',
+    bgColor: 'bg-slate-100 border-slate-200/70 dark:bg-slate-500/15 dark:border-slate-500/25',
     label: 'Hóa đơn',
   },
 
   // Di chuyển
   'Di chuyển': {
     icon: Car,
-    color: 'text-sky-600',
-    bgColor: 'bg-sky-100',
+    color: 'text-sky-700 dark:text-sky-300',
+    bgColor: 'bg-sky-100 border-sky-200/70 dark:bg-sky-500/15 dark:border-sky-500/25',
     label: 'Di chuyển',
   },
   'Xe': {
     icon: Car,
-    color: 'text-sky-600',
-    bgColor: 'bg-sky-100',
+    color: 'text-sky-700 dark:text-sky-300',
+    bgColor: 'bg-sky-100 border-sky-200/70 dark:bg-sky-500/15 dark:border-sky-500/25',
     label: 'Xe',
   },
   'Xăng xe': {
     icon: Car,
-    color: 'text-sky-700',
-    bgColor: 'bg-sky-100',
+    color: 'text-sky-800 dark:text-sky-300',
+    bgColor: 'bg-sky-100 border-sky-200/70 dark:bg-sky-500/15 dark:border-sky-500/25',
     label: 'Xăng xe',
   },
 
   // Sức khỏe
   'Sức khỏe': {
     icon: Heart,
-    color: 'text-red-600',
-    bgColor: 'bg-red-100',
+    color: 'text-red-700 dark:text-red-300',
+    bgColor: 'bg-red-100 border-red-200/70 dark:bg-red-500/15 dark:border-red-500/25',
     label: 'Sức khỏe',
   },
   'Y tế': {
     icon: Heart,
-    color: 'text-red-600',
-    bgColor: 'bg-red-100',
+    color: 'text-red-700 dark:text-red-300',
+    bgColor: 'bg-red-100 border-red-200/70 dark:bg-red-500/15 dark:border-red-500/25',
     label: 'Y tế',
   },
 
   // Giải trí & Du lịch
   'Giải trí': {
     icon: Smile,
-    color: 'text-green-600',
-    bgColor: 'bg-green-100',
+    color: 'text-emerald-700 dark:text-emerald-300',
+    bgColor: 'bg-emerald-100 border-emerald-200/70 dark:bg-emerald-500/15 dark:border-emerald-500/25',
     label: 'Giải trí',
   },
   'Phim ảnh': {
     icon: Film,
-    color: 'text-indigo-600',
-    bgColor: 'bg-indigo-100',
+    color: 'text-indigo-700 dark:text-indigo-300',
+    bgColor: 'bg-indigo-100 border-indigo-200/70 dark:bg-indigo-500/15 dark:border-indigo-500/25',
     label: 'Phim ảnh',
   },
   'Du lịch': {
     icon: Plane,
-    color: 'text-cyan-600',
-    bgColor: 'bg-cyan-100',
+    color: 'text-cyan-700 dark:text-cyan-300',
+    bgColor: 'bg-cyan-100 border-cyan-200/70 dark:bg-cyan-500/15 dark:border-cyan-500/25',
     label: 'Du lịch',
   },
 
   // Học tập
   'Học tập': {
     icon: GraduationCap,
-    color: 'text-violet-600',
-    bgColor: 'bg-violet-100',
+    color: 'text-violet-700 dark:text-violet-300',
+    bgColor: 'bg-violet-100 border-violet-200/70 dark:bg-violet-500/15 dark:border-violet-500/25',
     label: 'Học tập',
   },
 
   // Công việc
   'Công việc': {
     icon: Briefcase,
-    color: 'text-gray-700',
-    bgColor: 'bg-gray-100',
+    color: 'text-slate-700 dark:text-slate-300',
+    bgColor: 'bg-slate-100 border-slate-200/70 dark:bg-slate-500/15 dark:border-slate-500/25',
     label: 'Công việc',
   },
 
   // Quà tặng
   'Quà tặng': {
     icon: Gift,
-    color: 'text-rose-600',
-    bgColor: 'bg-rose-100',
+    color: 'text-rose-700 dark:text-rose-300',
+    bgColor: 'bg-rose-100 border-rose-200/70 dark:bg-rose-500/15 dark:border-rose-500/25',
     label: 'Quà tặng',
   },
 
   // Tiết kiệm
   'Tiết kiệm': {
     icon: PiggyBank,
-    color: 'text-blue-700',
-    bgColor: 'bg-blue-50',
+    color: 'text-teal-700 dark:text-teal-300',
+    bgColor: 'bg-teal-100 border-teal-200/70 dark:bg-teal-500/15 dark:border-teal-500/25',
     label: 'Tiết kiệm',
   },
 
   // Công nghệ
   'Công nghệ': {
     icon: Smartphone,
-    color: 'text-slate-700',
-    bgColor: 'bg-slate-100',
+    color: 'text-slate-700 dark:text-slate-300',
+    bgColor: 'bg-slate-100 border-slate-200/70 dark:bg-slate-500/15 dark:border-slate-500/25',
     label: 'Công nghệ',
   },
 
   // Thu nhập
   'Lương': {
     icon: DollarSign,
-    color: 'text-emerald-600',
-    bgColor: 'bg-emerald-100',
+    color: 'text-emerald-700 dark:text-emerald-300',
+    bgColor: 'bg-emerald-100 border-emerald-200/70 dark:bg-emerald-500/15 dark:border-emerald-500/25',
     label: 'Lương',
   },
   'Thu nhập': {
     icon: TrendingUp,
-    color: 'text-teal-600',
-    bgColor: 'bg-teal-100',
+    color: 'text-teal-700 dark:text-teal-300',
+    bgColor: 'bg-teal-100 border-teal-200/70 dark:bg-teal-500/15 dark:border-teal-500/25',
     label: 'Thu nhập',
   },
   'Thưởng': {
     icon: TrendingUp,
-    color: 'text-green-700',
-    bgColor: 'bg-green-100',
+    color: 'text-green-700 dark:text-green-300',
+    bgColor: 'bg-green-100 border-green-200/70 dark:bg-green-500/15 dark:border-green-500/25',
     label: 'Thưởng',
   },
 };
@@ -412,8 +412,8 @@ export const CATEGORY_ICONS: Record<string, CategoryIcon> = {
 // Default fallback icon cho danh mục không match
 export const DEFAULT_CATEGORY_ICON: CategoryIcon = {
   icon: Wallet,
-  color: 'text-slate-600',
-  bgColor: 'bg-slate-100',
+  color: 'text-slate-700 dark:text-slate-300',
+  bgColor: 'bg-slate-100 border-slate-200/70 dark:bg-slate-500/15 dark:border-slate-500/25',
   label: 'Khác',
 };
 
@@ -478,7 +478,7 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = ({
       <button
         type="button"
         onClick={onClick}
-        className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md ${iconData.bgColor} ${iconData.color} hover:opacity-80 transition-opacity text-xs font-medium`}
+        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border ${iconData.bgColor} ${iconData.color} hover:opacity-85 transition-opacity text-xs font-medium`}
       >
         <Icon className="w-3.5 h-3.5 shrink-0" />
         <span className="truncate">{category}</span>
@@ -490,7 +490,7 @@ export const CategoryBadge: React.FC<CategoryBadgeProps> = ({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg ${iconData.bgColor} ${iconData.color} hover:opacity-80 transition-opacity text-sm font-semibold`}
+      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border ${iconData.bgColor} ${iconData.color} hover:opacity-85 transition-opacity text-sm font-semibold`}
     >
       <Icon className="w-4 h-4 shrink-0" />
       <span className="truncate">{category}</span>

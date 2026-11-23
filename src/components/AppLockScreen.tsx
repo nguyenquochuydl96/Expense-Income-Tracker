@@ -239,7 +239,7 @@ export const AppLockScreen: React.FC<AppLockScreenProps> = ({ onUnlock }) => {
   }, [lockoutRemaining, pin, handlePressDigit, handleDeleteDigit, handleClearAll, handleVerifyPin]);
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-900 text-white flex flex-col items-center justify-center p-4 sm:p-6 select-none">
+    <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-900 text-white flex flex-col items-center justify-center p-4 sm:p-6 pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(1.5rem,env(safe-area-inset-bottom))] select-none">
       {/* Background glowing aura */}
       <div className="absolute top-1/4 w-72 h-72 sm:w-96 sm:h-96 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
 

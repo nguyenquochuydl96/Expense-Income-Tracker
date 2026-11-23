@@ -660,9 +660,9 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                 </div>
 
                 {/* Sub-cards for Heo & Mèo */}
-                <div className="grid grid-cols-2 gap-3 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                   {/* Heo mini card */}
-                  <div className="p-3 bg-rose-50/50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 rounded-xl space-y-2">
+                  <div className="p-3 bg-rose-50/50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 rounded-xl space-y-2.5">
                     <div className="flex items-center justify-between border-b border-rose-200 dark:border-rose-900/60 pb-1.5">
                       <span className="text-xs font-bold text-rose-950 dark:text-rose-200 flex items-center gap-1">
                         <span>🐷</span> Heo
@@ -672,18 +672,20 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                       </strong>
                     </div>
 
-                    <div className="space-y-1.5 text-[11px]">
+                    <div className="space-y-2 text-[11px]">
                       {WALLET_FIELDS.map((f) => (
-                        <div key={f.key} className="flex items-center justify-between gap-1">
-                          <span className="text-slate-600 dark:text-slate-400 truncate">{f.label}:</span>
+                        <div key={f.key} className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-700 dark:text-slate-300 font-semibold">{f.label}:</span>
+                          </div>
                           <MoneyCalculatorInput
                             value={wallets.heo[f.key] === 0 ? '' : formatNumberForSheet(wallets.heo[f.key], false, true)}
                             onChange={(_str, num) => handleWalletChange('heo', f.key, num)}
-                            placeholder="0"
+                            placeholder="0 ₫"
                             size="xs"
                             theme="rose"
-                            className="w-28 shrink-0"
-                            inputClassName={`text-right font-bold text-rose-950 dark:text-rose-200 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
+                            className="w-full"
+                            inputClassName={`text-right font-mono-tabular font-bold text-rose-950 dark:text-rose-200 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                           />
                         </div>
                       ))}
@@ -691,7 +693,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                   </div>
 
                   {/* Mèo mini card */}
-                  <div className="p-3 bg-sky-50/50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/60 rounded-xl space-y-2">
+                  <div className="p-3 bg-sky-50/50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900/60 rounded-xl space-y-2.5">
                     <div className="flex items-center justify-between border-b border-sky-200 dark:border-sky-900/60 pb-1.5">
                       <span className="text-xs font-bold text-sky-950 dark:text-sky-200 flex items-center gap-1">
                         <span>🐱</span> Mèo
@@ -701,18 +703,20 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                       </strong>
                     </div>
 
-                    <div className="space-y-1.5 text-[11px]">
+                    <div className="space-y-2 text-[11px]">
                       {WALLET_FIELDS.map((f) => (
-                        <div key={f.key} className="flex items-center justify-between gap-1">
-                          <span className="text-slate-600 dark:text-slate-400 truncate">{f.label}:</span>
+                        <div key={f.key} className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-700 dark:text-slate-300 font-semibold">{f.label}:</span>
+                          </div>
                           <MoneyCalculatorInput
                             value={wallets.meo[f.key] === 0 ? '' : formatNumberForSheet(wallets.meo[f.key], false, true)}
                             onChange={(_str, num) => handleWalletChange('meo', f.key, num)}
-                            placeholder="0"
+                            placeholder="0 ₫"
                             size="xs"
                             theme="sky"
-                            className="w-28 shrink-0"
-                            inputClassName={`text-right font-bold text-sky-950 dark:text-sky-200 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
+                            className="w-full"
+                            inputClassName={`text-right font-mono-tabular font-bold text-sky-950 dark:text-sky-200 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                           />
                         </div>
                       ))}

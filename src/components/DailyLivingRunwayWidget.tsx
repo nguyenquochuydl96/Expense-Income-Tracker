@@ -611,7 +611,7 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
                       {/* Remaining vs Safe daily */}
                       <div className="space-y-1 font-mono-tabular">
                         <div className="flex items-baseline justify-between">
-                          <span className="text-[11px] text-slate-500 dark:text-slate-400">Còn lại:</span>
+                          <span className="text-[11px] text-slate-500 dark:text-slate-300 font-medium">Còn lại:</span>
                           <span
                             className={`text-sm font-bold ${
                               item.remaining < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-slate-100'
@@ -622,16 +622,16 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
                         </div>
                         {!dateMetrics.isPast && (
                           <div className="flex items-baseline justify-between">
-                            <span className="text-[11px] text-teal-700 dark:text-teal-300 font-medium">Tiêu tối đa:</span>
+                            <span className="text-[11px] text-teal-700 dark:text-teal-300 font-semibold">Tiêu tối đa:</span>
                             <span className="text-xs font-bold text-teal-700 dark:text-teal-300">
                               {formatCurrency(safeDaily)}
                               <span className="text-[10px] font-normal">/ngày</span>
                             </span>
                           </div>
                         )}
-                        <div className="flex items-baseline justify-between text-slate-400 dark:text-slate-500 text-[10px]">
+                        <div className="flex items-baseline justify-between text-slate-500 dark:text-slate-300 text-[10px] font-medium">
                           <span>Tốc độ đã qua:</span>
-                          <span>{formatCurrency(burnRate)}/ngày</span>
+                          <span className="text-slate-700 dark:text-slate-200 font-semibold">{formatCurrency(burnRate)}/ngày</span>
                         </div>
                       </div>
                     </div>
@@ -640,12 +640,12 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
                     <div
                       className={`mt-2 pt-1.5 border-t text-[10px] font-medium leading-tight ${
                         statusBadge.type === 'danger'
-                          ? 'border-rose-100 text-rose-700'
+                          ? 'border-rose-100 dark:border-rose-900/40 text-rose-700 dark:text-rose-300'
                           : statusBadge.type === 'warning'
-                          ? 'border-amber-100 text-amber-700'
+                          ? 'border-amber-100 dark:border-amber-900/40 text-amber-700 dark:text-amber-300'
                           : statusBadge.type === 'safe'
-                          ? 'border-emerald-100 text-emerald-700'
-                          : 'border-slate-100 text-slate-500'
+                          ? 'border-emerald-100 dark:border-emerald-900/40 text-emerald-700 dark:text-emerald-300'
+                          : 'border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400'
                       }`}
                     >
                       {statusBadge.runwayText}
@@ -746,7 +746,7 @@ export const DailyLivingRunwayWidget: React.FC<DailyLivingRunwayWidgetProps> = R
       {/* Settings Modal (Tùy chọn danh mục tính vào chi tiêu hằng ngày) */}
       {isSettingsOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs cursor-pointer"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] bg-slate-900/40 backdrop-blur-xs cursor-pointer"
           onClick={() => setIsSettingsOpen(false)}
         >
           <div

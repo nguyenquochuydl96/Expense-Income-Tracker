@@ -462,7 +462,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-[60] flex items-start sm:items-center justify-center bg-slate-900/50 backdrop-blur-xs p-3 sm:p-4 py-4 sm:py-8 overflow-y-auto cursor-pointer"
+          className="fixed inset-0 z-[60] flex items-start sm:items-center justify-center bg-slate-900/50 backdrop-blur-xs p-3 sm:p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:py-8 overflow-y-auto cursor-pointer"
           onClick={onClose}
         >
           <motion.div
@@ -512,7 +512,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               <button
                 type="button"
                 onClick={() => handleModeChange('Expenses')}
-                className={`py-2 px-2.5 text-xs font-semibold rounded-lg transition-all truncate cursor-pointer ${
+                className={`py-2 px-1 sm:px-2.5 text-xs font-semibold rounded-lg transition-all text-center cursor-pointer whitespace-nowrap ${
                   modalMode === 'Expenses'
                     ? 'bg-white dark:bg-rose-950/80 text-rose-700 dark:text-rose-200 shadow-xs font-bold border border-slate-200/80 dark:border-rose-700/80'
                     : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
@@ -523,7 +523,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               <button
                 type="button"
                 onClick={() => handleModeChange('Income')}
-                className={`py-2 px-2.5 text-xs font-semibold rounded-lg transition-all truncate cursor-pointer ${
+                className={`py-2 px-1 sm:px-2.5 text-xs font-semibold rounded-lg transition-all text-center cursor-pointer whitespace-nowrap ${
                   modalMode === 'Income'
                     ? 'bg-white dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-200 shadow-xs font-bold border border-slate-200/80 dark:border-emerald-700/80'
                     : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
@@ -534,13 +534,13 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               <button
                 type="button"
                 onClick={() => handleModeChange('Transfer')}
-                className={`py-2 px-2.5 text-xs font-semibold rounded-lg transition-all truncate cursor-pointer ${
+                className={`py-2 px-1 sm:px-2.5 text-xs font-semibold rounded-lg transition-all text-center cursor-pointer whitespace-nowrap ${
                   modalMode === 'Transfer'
                     ? 'bg-white dark:bg-purple-950/80 text-purple-700 dark:text-purple-200 shadow-xs font-bold border border-slate-200/80 dark:border-purple-700/80'
                     : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
                 }`}
               >
-                🔄 Chuyển Budget
+                🔄 Chuyển quỹ
               </button>
             </div>
           </div>

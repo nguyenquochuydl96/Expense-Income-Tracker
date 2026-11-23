@@ -100,15 +100,15 @@ export const TransactionMobileCard: React.FC<TransactionRowProps> = React.memo((
           {rec.purchaseItem?.trim() || rec.category || '(Không ghi nội dung)'}
         </div>
         <div
-          className={`text-sm font-extrabold font-mono-tabular text-right shrink-0 ${
+          className={`text-sm font-extrabold font-mono-tabular tabular-nums text-right shrink-0 ${
             isIncome
-              ? 'text-emerald-700 dark:text-emerald-400'
+              ? 'text-emerald-600 dark:text-emerald-400'
               : rec.amount < 0
-              ? 'text-teal-700 dark:text-teal-400'
+              ? 'text-teal-600 dark:text-teal-400'
               : 'text-slate-900 dark:text-slate-100'
           }`}
         >
-          {formatNumberForSheet(rec.amount, true, false, isIncome)}
+          {formatCurrency(rec.amount, isIncome)}
         </div>
       </div>
 
@@ -194,15 +194,15 @@ export const TransactionRow: React.FC<TransactionRowProps> = React.memo(({
         {rec.purchaseItem?.trim() || rec.category || '(Không ghi nội dung)'}
       </td>
       <td
-        className={`py-2.5 px-4 text-right font-mono-tabular font-semibold whitespace-nowrap ${
+        className={`py-2.5 px-4 text-right font-mono-tabular font-bold tabular-nums whitespace-nowrap ${
           rec.sheetType === 'Income'
-            ? 'text-emerald-700 dark:text-emerald-400'
+            ? 'text-emerald-600 dark:text-emerald-400'
             : rec.amount < 0
-            ? 'text-teal-700 dark:text-teal-400'
+            ? 'text-teal-600 dark:text-teal-400'
             : 'text-slate-900 dark:text-slate-100'
         }`}
       >
-        {formatNumberForSheet(rec.amount, true, false, rec.sheetType === 'Income')}
+        {formatCurrency(rec.amount, rec.sheetType === 'Income')}
       </td>
       <td className="py-2.5 px-4 text-right font-mono-tabular text-amber-700 dark:text-amber-400 whitespace-nowrap">
         {rec.beCorp !== 0 ? formatNumberForSheet(rec.beCorp, true) : ''}
@@ -471,10 +471,11 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
           <button
             type="button"
             onClick={onOpenAddModal}
-            className="px-3.5 py-2 text-xs font-semibold text-white bg-teal-700 hover:bg-teal-800 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0"
+            className="px-3 py-1.5 text-xs font-medium text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-950/40 border border-teal-200 dark:border-teal-800 rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
+            title="Thêm nhanh giao dịch"
           >
-            <Plus className="w-4 h-4" />
-            <span>Thêm dòng giao dịch mới</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>Thêm nhanh</span>
           </button>
         </div>
 
@@ -742,10 +743,10 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-              <th className="py-2.5 px-4 w-28">Purchase Date</th>
-              <th className="py-2.5 px-4 w-40">Category</th>
-              <th className="py-2.5 px-4">Purchase Item</th>
-              <th className="py-2.5 px-4 text-right w-36">Amount</th>
+              <th className="py-2.5 px-4 w-28">Ngày</th>
+              <th className="py-2.5 px-4 w-40">Danh mục</th>
+              <th className="py-2.5 px-4">Nội dung</th>
+              <th className="py-2.5 px-4 text-right w-36">Số tiền</th>
               <th className="py-2.5 px-4 text-right w-32 text-amber-800 dark:text-amber-400">BE Corp</th>
               <th className="py-2.5 px-4 text-right w-32 text-indigo-800 dark:text-indigo-400">Credit</th>
               <th className="py-2.5 px-4 w-36">Phân loại / Ghi chú</th>

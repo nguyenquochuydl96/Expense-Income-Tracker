@@ -484,17 +484,17 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* View Tab Switcher */}
-          <div className="flex items-center bg-slate-200/80 dark:bg-slate-800/90 p-1 rounded-lg text-xs border border-slate-300/60 dark:border-slate-700/80">
+        {/* Action Controls - Decluttered & Grouped */}
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Group 1: View Tab Switcher (Chi tiết tháng / Ma trận Đa tháng / Xem biểu đồ) */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl text-xs border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
             <button
               type="button"
               onClick={() => setViewTab('month_detail')}
-              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
                 viewTab === 'month_detail'
-                  ? 'theme-btn-active'
-                  : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
+                  ? 'theme-btn-active font-semibold shadow-xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/60'
               }`}
             >
               Chi tiết tháng
@@ -502,107 +502,115 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
             <button
               type="button"
               onClick={() => setViewTab('multi_month_matrix')}
-              className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
                 viewTab === 'multi_month_matrix'
-                  ? 'theme-btn-active'
-                  : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
+                  ? 'theme-btn-active font-semibold shadow-xs'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/60'
               }`}
             >
               Ma trận Đa tháng ({allChronologicalMonths.length}T)
             </button>
-          </div>
-
-          {/* Rollover Mode Selector */}
-          <div className="flex items-center text-xs border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-800 shadow-xs">
-            <button
-              type="button"
-              onClick={() => handleRolloverModeChange('full')}
-              className={`px-2.5 py-1 text-[11px] font-medium transition-colors cursor-pointer ${
-                rolloverMode === 'full'
-                  ? 'bg-teal-600 text-white font-bold shadow-2xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border-r border-slate-100 dark:border-slate-700'
-              }`}
-              title="Cấn trừ toàn bộ số dư (+ dư / - bội chi) từ tháng trước sang tháng sau liên tục"
-            >
-              Lũy kế đầy đủ
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRolloverModeChange('deficit_only')}
-              className={`px-2 py-1 text-[11px] font-medium transition-colors cursor-pointer ${
-                rolloverMode === 'deficit_only'
-                  ? 'bg-amber-500 text-white font-bold shadow-2xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border-r border-slate-100 dark:border-slate-700'
-              }`}
-              title="Chỉ cấn trừ khi tháng trước bị BỘI CHI (âm tiền), không cộng dồn tiền dư"
-            >
-              Chỉ trừ bội chi
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRolloverModeChange('none')}
-              className={`px-2 py-1 text-[11px] font-medium transition-colors cursor-pointer ${
-                rolloverMode === 'none'
-                  ? 'bg-slate-700 text-white font-bold shadow-2xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-              title="Không cấn trừ qua các tháng (tính độc lập từng tháng)"
-            >
-              Độc lập
-            </button>
-          </div>
-
-          {/* Edit Percentages button */}
-          {!isEditingBudgets ? (
-            <button
-              type="button"
-              onClick={handleStartEdit}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-700 shadow-xs transition-colors cursor-pointer"
-            >
-              <Edit3 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-              <span>Chỉnh % Budget</span>
-            </button>
-          ) : (
-            <div className="flex items-center gap-1.5">
-              <span
-                className={`text-xs px-2 py-1 rounded font-bold ${
-                  Math.abs(currentTempSum - 100) < 0.1
-                    ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300'
-                    : 'bg-rose-100 dark:bg-rose-950/70 text-rose-800 dark:text-rose-300'
-                }`}
-                title="Tổng các tỷ lệ phải bằng 100%"
-              >
-                Tổng: {currentTempSum.toFixed(1)}%
-              </span>
+            {showChartsButton && onShowCharts && (
               <button
                 type="button"
-                onClick={handleSaveBudgets}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-xs transition-colors cursor-pointer"
+                onClick={onShowCharts}
+                className="px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer text-slate-600 dark:text-slate-300 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/50 flex items-center gap-1.5"
+                title="Bật / tắt biểu đồ tỷ trọng & dòng tiền"
               >
-                <Check className="w-3.5 h-3.5" />
-                <span>Lưu</span>
+                <BarChart3 className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
+                <span>Xem biểu đồ</span>
+              </button>
+            )}
+          </div>
+
+          {/* Group 2: Rollover Mode Segmented Control (Lũy kế đầy đủ / Chỉ trừ bội chi / Độc lập) */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl text-xs border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
+            <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 pl-2 pr-1 flex items-center gap-1 shrink-0">
+              <History className="w-3.5 h-3.5 text-slate-400" />
+              <span className="hidden md:inline">Lũy kế:</span>
+            </span>
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => handleRolloverModeChange('full')}
+                className={`px-2.5 py-1 text-[11px] rounded-lg transition-all cursor-pointer ${
+                  rolloverMode === 'full'
+                    ? 'bg-teal-600 text-white font-bold shadow-2xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50'
+                }`}
+                title="Cấn trừ toàn bộ số dư (+ dư / - bội chi) từ tháng trước sang tháng sau liên tục"
+              >
+                Lũy kế đầy đủ
               </button>
               <button
                 type="button"
-                onClick={handleResetBudgets}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
-                title="Khôi phục mặc định"
+                onClick={() => handleRolloverModeChange('deficit_only')}
+                className={`px-2 py-1 text-[11px] rounded-lg transition-all cursor-pointer ${
+                  rolloverMode === 'deficit_only'
+                    ? 'bg-amber-500 text-white font-bold shadow-2xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50'
+                }`}
+                title="Chỉ cấn trừ khi tháng trước bị BỘI CHI (âm tiền), không cộng dồn tiền dư"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                Chỉ trừ bội chi
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRolloverModeChange('none')}
+                className={`px-2 py-1 text-[11px] rounded-lg transition-all cursor-pointer ${
+                  rolloverMode === 'none'
+                    ? 'bg-slate-700 text-white font-bold shadow-2xs'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-700/50'
+                }`}
+                title="Không cấn trừ qua các tháng (tính độc lập từng tháng)"
+              >
+                Độc lập
               </button>
             </div>
-          )}
+          </div>
 
-          {showChartsButton && onShowCharts && (
-            <button
-              type="button"
-              onClick={onShowCharts}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-sky-700 dark:text-sky-300 bg-sky-50 dark:bg-sky-950/50 hover:bg-sky-100 dark:hover:bg-sky-900/50 rounded-lg border border-sky-200 dark:border-sky-800 transition-colors cursor-pointer"
-            >
-              <BarChart3 className="w-3.5 h-3.5" />
-              <span>Xem biểu đồ</span>
-            </button>
-          )}
+          {/* Group 3: Settings Action (Chỉnh % Budget) */}
+          <div className="flex items-center">
+            {!isEditingBudgets ? (
+              <button
+                type="button"
+                onClick={handleStartEdit}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 rounded-xl border border-slate-300/80 dark:border-slate-700 shadow-2xs transition-all cursor-pointer hover:border-slate-400"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+                <span>Chỉnh % Budget</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs">
+                <span
+                  className={`text-xs px-2 py-1 rounded-lg font-bold ${
+                    Math.abs(currentTempSum - 100) < 0.1
+                      ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300'
+                      : 'bg-rose-100 dark:bg-rose-950/70 text-rose-800 dark:text-rose-300'
+                  }`}
+                  title="Tổng các tỷ lệ phải bằng 100%"
+                >
+                  Tổng: {currentTempSum.toFixed(1)}%
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSaveBudgets}
+                  className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-xs transition-colors cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Lưu</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetBudgets}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-lg transition-colors cursor-pointer"
+                  title="Khôi phục mặc định"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -392,7 +392,7 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.mem
       {/* Selected Day Detail Popover / Modal */}
       {selectedDay && (
         <div
-          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-2xs flex items-center justify-center p-4 animate-in fade-in cursor-pointer"
+          className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-2xs flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] animate-in fade-in cursor-pointer"
           onClick={() => setSelectedDateStr(null)}
         >
           <div

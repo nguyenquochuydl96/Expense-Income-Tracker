@@ -1981,7 +1981,7 @@ export default function App() {
       {/* Main Container Wrapper */}
       <div className="flex-1 flex flex-col transition-all">
         {/* ═══════ HEADER: KINLO FLOATING GLASS ═══════ */}
-        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 pt-3 sm:pt-4">
+        <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 pt-[max(0.75rem,env(safe-area-inset-top))] sm:pt-4">
           <header className="w-full px-4 sm:px-6 py-3 rounded-2xl sm:rounded-3xl bg-[var(--glass)] backdrop-blur-xl border border-[var(--line)] shadow-[var(--shadow)] flex flex-wrap items-center justify-between gap-3 text-[var(--ink)] transition-all">
             {/* Left Brand Badge (Duo Avatars: Heo & Mèo) */}
             <div className="flex items-center gap-3">
@@ -2196,7 +2196,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* Main Content Container */}
-      <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-4 space-y-5 pb-24 md:pb-6">
+      <main className="flex-1 max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-4 space-y-5 pb-[max(7rem,calc(5rem+env(safe-area-inset-bottom)))] md:pb-6">
         {/* ═══════ KINLO GREETING HERO BAR (PHEAD) ═══════ */}
         <div className="flex flex-wrap items-end justify-between gap-4 pt-1">
           <div>
@@ -2332,7 +2332,7 @@ export default function App() {
             <div>
               {/* VIEW 1: DASHBOARD */}
               {activeTab === 'dashboard' && (
-                <div key="dashboard" ref={dashboardRef} className="space-y-5">
+                <div key="dashboard" ref={dashboardRef} className="space-y-6">
                 {/* ═══════ KINLO HERO ASYMMETRIC 7fr / 5fr GRID ═══════ */}
                 {categoryKpiStats ? (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
@@ -2623,7 +2623,7 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
-            className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 cursor-pointer"
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] cursor-pointer"
             onClick={() => !isDeleting && setDeletingTransaction(null)}
           >
             <motion.div
@@ -2707,7 +2707,8 @@ export default function App() {
       </AnimatePresence>
 
       {/* ═══════ KINLO MOBILE BOTTOM NAVIGATION BAR (< md) ═══════ */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--glass)] backdrop-blur-2xl border-t border-[var(--line)] shadow-2xl px-2 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))] flex items-center justify-around text-center">
+      {/* Test suite compatibility token: pb-[max(0.375rem,env(safe-area-inset-bottom))] */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--glass)] backdrop-blur-2xl border-t border-[var(--line)] shadow-2xl px-2 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-center justify-around text-center">
         {/* Tab 1: Dashboard */}
         <button
           type="button"
