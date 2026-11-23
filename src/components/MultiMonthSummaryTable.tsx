@@ -328,14 +328,14 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
         {/* Right Controls: Time Range Presets + Shift Arrows + Collapse */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Preset Buttons */}
-          <div className="flex items-center gap-1 p-1 bg-slate-200/80 dark:bg-slate-800/90 rounded-xl text-xs font-semibold border border-slate-300/60 dark:border-slate-700/80">
+          <div className="flex items-center gap-1 p-1 bg-slate-200/80 dark:bg-slate-800/90 rounded-xl text-xs font-semibold border border-slate-300/60 dark:border-slate-700/80 overflow-x-auto max-w-full flex-nowrap">
             <button
               type="button"
               onClick={() => {
                 setRangePreset('3m');
                 setWindowEndIndex(allMonthlyData.length - 1);
               }}
-              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 rangePreset === '3m'
                   ? 'theme-btn-active'
                   : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
@@ -350,7 +350,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
                 setRangePreset('6m');
                 setWindowEndIndex(allMonthlyData.length - 1);
               }}
-              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 rangePreset === '6m'
                   ? 'theme-btn-active'
                   : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
@@ -365,7 +365,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
                 setRangePreset('12m');
                 setWindowEndIndex(allMonthlyData.length - 1);
               }}
-              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 rangePreset === '12m'
                   ? 'theme-btn-active'
                   : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
@@ -377,7 +377,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
             <button
               type="button"
               onClick={() => setRangePreset('all')}
-              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 rangePreset === 'all'
                   ? 'theme-btn-active'
                   : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'
@@ -389,7 +389,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
             <button
               type="button"
               onClick={() => setRangePreset('custom')}
-              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 rangePreset === 'custom'
                   ? 'theme-btn-active'
                   : 'text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/50'

@@ -49,6 +49,19 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = React.memo(({
   const _effectiveIsPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
   const renderCurrency = (val: number, showSign = false) =>
     formatCurrency(val, showSign, !_effectiveIsPrivate);
+  const renderCompactAxis = (num: number) => {
+    if (num === 0) return '0';
+    if (_effectiveIsPrivate) return '••••••';
+    if (Math.abs(num) >= 1_000_000) {
+      const tr = num / 1_000_000;
+      return tr % 1 === 0 ? `${tr.toFixed(0)}tr` : `${tr.toFixed(1)}tr`;
+    }
+    if (Math.abs(num) >= 1_000) {
+      const k = num / 1_000;
+      return k % 1 === 0 ? `${k.toFixed(0)}k` : `${k.toFixed(1)}k`;
+    }
+    return String(num);
+  };
   const [excludeSavingsInPie, setExcludeSavingsInPie] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
   const [activeChartTab, setActiveChartTab] = useState<'categories' | 'monthly'>('categories');
@@ -300,12 +313,12 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = React.memo(({
                           onSelectCategoryFilter(selectedCategoryFilter === item.category ? 'ALL' : item.category);
                         }
                       }}
-                      className={`group flex items-center gap-3 cursor-pointer py-0.5 transition-opacity ${
+                      className={`group flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-3 cursor-pointer py-1 sm:py-0.5 transition-opacity ${
                         hasCategoryFilter && !isSelected ? 'opacity-40' : ''
                       }`}
                     >
-                      {/* Category Label (Right aligned on Y-axis) */}
-                      <div className="w-32 sm:w-36 text-right shrink-0">
+                      {/* Category Label & Mobile Amount (Top line on mobile, Y-axis on desktop) */}
+                      <div className="flex items-center justify-between sm:w-36 sm:text-right shrink-0">
                         <span
                           className={`text-xs truncate block ${
                             isSelected
@@ -316,10 +329,13 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = React.memo(({
                         >
                           {item.category}
                         </span>
+                        <span className="sm:hidden text-xs font-mono-tabular font-bold text-slate-800 dark:text-slate-200">
+                          {renderCurrency(item.amount)}
+                        </span>
                       </div>
 
                       {/* Bar Container */}
-                      <div className="flex-1 bg-slate-50 dark:bg-slate-800 rounded-sm h-7 relative flex items-center overflow-hidden">
+                      <div className="w-full sm:flex-1 bg-slate-50 dark:bg-slate-800 rounded-sm h-6 sm:h-7 relative flex items-center overflow-hidden">
                         <div
                           className={`h-full rounded-r-sm transition-all duration-300 flex items-center justify-end pr-2.5 ${
                             isSelected
@@ -332,7 +348,9 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = React.memo(({
                           }}
                         >
                           {/* Value on Bar */}
-                          <span className="text-[11px] font-bold font-mono-tabular text-slate-800 whitespace-nowrap">
+                          <span className={`text-[11px] font-bold font-mono-tabular whitespace-nowrap ${
+                            isSelected ? 'text-white' : 'text-slate-800'
+                          }`}>
                             {renderCurrency(item.amount)}
                           </span>
                         </div>
@@ -342,21 +360,21 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = React.memo(({
                 })
               )}
 
-              {/* X-Axis Ticks */}
+              {/* X-Axis Ticks (Rút gọn 5tr, 10tr trên mobile) */}
               {categoryStats.topItems.length > 0 && (
-                <div className="flex items-center justify-between pl-36 sm:pl-40 pt-2 text-[10px] font-mono-tabular text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between pl-0 sm:pl-40 pt-2 text-[10px] font-mono-tabular text-slate-400 dark:text-slate-500 border-t border-slate-100 dark:border-slate-800">
                   <span>0</span>
-                  <span>{renderCurrency(maxCategoryAmount * 0.25)}</span>
-                  <span>{renderCurrency(maxCategoryAmount * 0.5)}</span>
-                  <span>{renderCurrency(maxCategoryAmount * 0.75)}</span>
-                  <span>{renderCurrency(maxCategoryAmount)}</span>
+                  <span>{renderCompactAxis(maxCategoryAmount * 0.25)}</span>
+                  <span>{renderCompactAxis(maxCategoryAmount * 0.5)}</span>
+                  <span>{renderCompactAxis(maxCategoryAmount * 0.75)}</span>
+                  <span>{renderCompactAxis(maxCategoryAmount)}</span>
                 </div>
               )}
             </div>
           ) : (
             /* Monthly Cashflow Bar Chart */
             <div className="pt-2">
-              <div className="grid grid-cols-7 gap-2 items-end h-44 pt-4 px-2 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex sm:grid sm:grid-cols-7 gap-2 items-end h-44 pt-4 px-2 border-b border-slate-100 dark:border-slate-800 overflow-x-auto pb-1 sm:pb-0">
                 {monthlyCashflow.map((m) => {
                   const isSelected =
                     selectedMonths && selectedMonths.length > 0
@@ -376,7 +394,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = React.memo(({
                           onSelectMonth(selectedMonth === m.monthKey ? 'ALL' : m.monthKey);
                         }
                       }}
-                      className={`flex flex-col items-center cursor-pointer rounded-t p-1 transition-colors ${
+                      className={`flex flex-col items-center cursor-pointer rounded-t p-1 transition-colors min-w-[56px] sm:min-w-0 flex-1 shrink-0 ${
                         isSelected ? 'bg-sky-50 dark:bg-sky-950/40' : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
                       }`}
                       title={`Nhấp để chọn / bỏ chọn ${m.label} vào bộ lọc`}

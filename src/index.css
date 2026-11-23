@@ -202,6 +202,12 @@
   background: rgba(255, 255, 255, 0.95);
   transform: translateY(-1px);
 }
+html.dark .kinlo-btn-secondary:hover,
+[data-theme="dark"] .kinlo-btn-secondary:hover {
+  background: var(--card-3);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
 
 /* Kinlo Magnetic & Interactive Elements (GPU Layer Optimization) */
 .magnetic {
@@ -291,6 +297,15 @@ html {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #94A3B8;
+}
+html.dark ::-webkit-scrollbar-thumb,
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 9999px;
+}
+html.dark ::-webkit-scrollbar-thumb:hover,
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.45);
 }
 
 /* ═══════ COMPREHENSIVE DARK & LIGHT MODE COLOR HARMONY ═══════ */

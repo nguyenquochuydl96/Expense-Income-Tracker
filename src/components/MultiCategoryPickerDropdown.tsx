@@ -95,17 +95,19 @@ export const MultiCategoryPickerDropdown: React.FC<MultiCategoryPickerDropdownPr
     };
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
       document.addEventListener('mousedown', handleOutsideClick);
-      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('keydown', handleKeyDown, true);
     }
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown, true);
     };
   }, [isOpen]);
 
@@ -213,7 +215,7 @@ export const MultiCategoryPickerDropdown: React.FC<MultiCategoryPickerDropdownPr
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -6 }}
             transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute left-0 top-full mt-1.5 z-50 w-72 sm:w-84 max-w-[calc(100vw-2rem)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden"
+            className="fixed inset-x-3 top-[max(5rem,calc(3.5rem+env(safe-area-inset-top)))] sm:absolute sm:inset-auto sm:left-0 sm:top-full sm:mt-1.5 z-50 sm:w-84 max-w-[calc(100vw-1.5rem)] sm:max-w-none bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden"
           >
             {/* Header */}
           <div className="p-3 bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-200/80 dark:border-slate-700 space-y-2.5">
@@ -339,11 +341,11 @@ export const MultiCategoryPickerDropdown: React.FC<MultiCategoryPickerDropdownPr
                         </div>
                       )}
 
-                      {/* "Chỉ xem" button on hover */}
+                      {/* "Chỉ xem" button on hover / always visible on touch */}
                       <button
                         type="button"
                         onClick={(e) => handleSelectOnly(cat, e)}
-                        className="opacity-0 group-hover:opacity-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/60 dark:text-indigo-200 rounded transition-all cursor-pointer whitespace-nowrap"
+                        className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-100 hover:bg-indigo-200 dark:bg-indigo-900/60 dark:text-indigo-200 rounded transition-all cursor-pointer whitespace-nowrap"
                         title={`Chỉ xem riêng danh mục ${cat}`}
                       >
                         Chỉ xem

@@ -178,7 +178,10 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.mem
   useEffect(() => {
     if (!selectedDateStr) return;
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
       if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
         setSelectedDateStr(null);
       }
     };

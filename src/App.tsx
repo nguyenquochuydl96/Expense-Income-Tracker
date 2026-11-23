@@ -302,7 +302,7 @@ export default function App() {
 
   // Toast notification
   const [toast, setToast] = useState<{
-    type: 'success' | 'warning';
+    type: 'success' | 'warning' | 'error';
     message: string;
   } | null>(null);
 
@@ -336,24 +336,35 @@ export default function App() {
         setIsAddModalOpen(true);
         return;
       }
+      if (e.defaultPrevented) return;
       if (e.key === 'Escape') {
         if (deletingTransaction) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
           setDeletingTransaction(null);
           return;
         }
         if (editingTransaction) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
           setEditingTransaction(null);
           return;
         }
         if (isAddModalOpen) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
           setIsAddModalOpen(false);
           return;
         }
         if (isReportModalOpen) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
           setIsReportModalOpen(false);
           return;
         }
         if (isInstallModalOpen) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
           setIsInstallModalOpen(false);
           return;
         }
@@ -492,7 +503,7 @@ export default function App() {
     }
   }, [checkTienData]);
 
-  const showToast = useCallback((type: 'success' | 'warning', message: string) => {
+  const showToast = useCallback((type: 'success' | 'warning' | 'error', message: string) => {
     setToast({ type, message });
     setTimeout(() => {
       setToast((prev) => (prev?.message === message ? null : prev));
@@ -1472,7 +1483,14 @@ export default function App() {
         }
       }
     } catch (err: any) {
-      setSyncError(err?.message || 'Không thể đồng bộ dữ liệu từ Google Sheet.');
+      const errMsg = err?.message || 'Không thể đồng bộ dữ liệu từ Google Sheet.';
+      setSyncError(errMsg);
+      if (!silent) {
+        showToast(
+          'error',
+          `❌ Đồng bộ thất bại: ${errMsg}. Vui lòng kiểm tra mạng hoặc mở tab "Đồng bộ" để kiểm tra kết nối.`
+        );
+      }
     } finally {
       isSyncingRef.current = false;
       activeSyncHasTokenRef.current = false;
@@ -1915,11 +1933,16 @@ export default function App() {
       }
       try {
         await updateCheckTienWalletsOnSheet(effectiveSheetId, checkTienTab, wallets, effectiveToken);
-      } catch (err) {
+      } catch (err: any) {
         console.warn('Could not sync Check tiền wallets to Google Sheet:', err);
+        const errMsg = err?.message || 'Không thể kết nối Google Sheet';
+        showToast(
+          'error',
+          `❌ Lưu ví Check tiền thất bại: ${errMsg}. Vui lòng kiểm tra mạng hoặc mở tab "Đồng bộ" để kiểm tra kết nối.`
+        );
       }
     },
-    [accessToken, sheetMeta, spreadsheetInput]
+    [accessToken, sheetMeta, spreadsheetInput, showToast]
   );
 
   const handleOpenAddModal = useCallback(() => {
@@ -2260,7 +2283,7 @@ export default function App() {
                   setAddModalPreset(null);
                   setIsAddModalOpen(true);
                 }}
-                className="magnetic kinlo-btn-primary min-h-[44px] px-3 sm:px-4 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-md active:scale-95 transition-transform"
+                className="magnetic kinlo-btn-primary min-h-[44px] px-3 sm:px-4 py-2 text-xs font-bold hidden md:inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-md active:scale-95 transition-transform"
                 aria-label="Thêm giao dịch mới"
               >
                 <Plus className="w-4 h-4" />
@@ -2279,10 +2302,12 @@ export default function App() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.92 }}
             transition={{ type: 'spring', stiffness: 450, damping: 28 }}
-            className="fixed bottom-5 right-5 z-50 max-w-md bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 flex items-center gap-2.5 text-xs pointer-events-none"
+            className="fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] md:bottom-5 left-3 right-3 sm:left-auto sm:right-5 z-50 max-w-md bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-700 flex items-center gap-2.5 text-xs pointer-events-none"
           >
             {toast.type === 'success' ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : toast.type === 'error' ? (
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
             ) : (
               <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
             )}
@@ -2616,6 +2641,7 @@ export default function App() {
                       checkTienData={checkTienData}
                       onEditTransaction={(tx) => setEditingTransaction(tx)}
                       onSyncWalletsToSheet={handleSyncWalletsToSheet}
+                      onShowToast={showToast}
                     />
                   </Suspense>
                 </div>

@@ -194,7 +194,12 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.defaultPrevented) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        onClose();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -576,7 +581,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   value={isoDate}
                   onChange={(e) => setIsoDate(e.target.value)}
                   required
-                  className="w-full px-3 py-2 text-sm font-mono-tabular border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600"
+                  className="w-full px-3 py-2 text-base sm:text-sm font-mono-tabular border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-purple-600 focus:ring-1 focus:ring-purple-600"
                 />
               </div>
 
@@ -588,7 +593,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   <select
                     value={fromCategory}
                     onChange={(e) => setFromCategory(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-amber-300 dark:border-amber-700 rounded-lg bg-amber-50/30 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-600 font-medium"
+                    className="w-full px-3 py-2 text-base sm:text-sm border border-amber-300 dark:border-amber-700 rounded-lg bg-amber-50/30 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-600 font-medium"
                   >
                     <option value="Thu nhập riêng">✨ Thu nhập riêng / Nạp thêm ngoài</option>
                     <optgroup label="Danh mục chi tiêu">
@@ -608,7 +613,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   <select
                     value={toCategory}
                     onChange={(e) => setToCategory(e.target.value)}
-                    className="w-full px-3 py-2 text-sm border border-emerald-300 dark:border-emerald-700 rounded-lg bg-emerald-50/30 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-600 font-medium"
+                    className="w-full px-3 py-2 text-base sm:text-sm border border-emerald-300 dark:border-emerald-700 rounded-lg bg-emerald-50/30 dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-600 font-medium"
                   >
                     {EXPENSE_CATEGORIES.map((cat) => (
                       <option key={cat} value={cat}>
@@ -643,7 +648,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   placeholder="VD: Cho Mèo, Nhường đi xem phim, Mượn tạm..."
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-purple-600"
+                  className="w-full px-3 py-2 text-base sm:text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-purple-600"
                 />
               </div>
 
@@ -697,7 +702,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 value={isoDate}
                 onChange={(e) => setIsoDate(e.target.value)}
                 required
-                className="w-full px-3 py-2 text-sm font-mono-tabular border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-base sm:text-sm font-mono-tabular border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
               />
             </div>
 
@@ -708,7 +713,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+                className="w-full px-3 py-2 text-base sm:text-sm border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
               >
                 {sheetType === 'Expenses' ? (
                   <>
@@ -745,7 +750,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                   placeholder="Nhập tên danh mục..."
                   value={customCategory}
                   onChange={(e) => setCustomCategory(e.target.value)}
-                  className="mt-2 w-full px-3 py-1.5 text-sm border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-teal-600"
+                  className="mt-2 w-full px-3 py-1.5 text-base sm:text-sm border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-teal-600"
                 />
               )}
 
@@ -804,7 +809,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
                 }, 200);
               }}
               onChange={(e) => setPurchaseItem(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
+              className="w-full px-3 py-2 text-base sm:text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600"
             />
 
             {showSuggestions && filteredSuggestions.length > 0 && (
@@ -969,7 +974,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               placeholder="VD: Mua chung với bạn, tiền thưởng dự án..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-teal-600"
+              className="w-full px-3 py-2 text-base sm:text-xs border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-teal-600"
             />
           </div>
 

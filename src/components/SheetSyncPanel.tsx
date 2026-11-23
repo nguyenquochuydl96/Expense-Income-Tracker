@@ -357,11 +357,12 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = React.memo(({
                   <div className="relative">
                     <Link2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
-                      type="text"
+                      type="url"
+                      inputMode="url"
                       placeholder="Dán link https://script.google.com/macros/s/.../exec vào đây..."
                       value={webAppUrlInput}
                       onChange={(e) => setWebAppUrlInput(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2.5 text-xs font-mono border border-emerald-300 dark:border-emerald-700 rounded-xl bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                      className="w-full pl-9 pr-3 py-2.5 text-base sm:text-xs font-mono border border-emerald-300 dark:border-emerald-700 rounded-xl bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     />
                   </div>
                 </div>
@@ -401,7 +402,7 @@ export const SheetSyncPanel: React.FC<SheetSyncPanelProps> = React.memo(({
                         placeholder="Nhập API_SECRET_KEY khớp với CONFIG.API_SECRET_KEY trong Code.gs..."
                         value={webAppKeyInput}
                         onChange={(e) => setWebAppKeyInput(e.target.value)}
-                        className="w-full pl-8 pr-9 py-2 text-xs font-mono border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:outline-none focus:border-emerald-600 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        className="w-full pl-8 pr-9 py-2 text-base sm:text-xs font-mono border border-slate-300 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 focus:outline-none focus:border-emerald-600 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       />
                       <button
                         type="button"

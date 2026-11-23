@@ -45,7 +45,12 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.defaultPrevented) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        onClose();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -248,7 +253,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 required
                 value={isoDate}
                 onChange={(e) => setIsoDate(e.target.value)}
-                className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 font-mono-tabular"
+                className="w-full text-base sm:text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 font-mono-tabular"
               />
               <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5 block">
                 Định dạng: {sheetDatePreview}
@@ -263,7 +268,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
+                className="w-full text-base sm:text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
               >
                 {sheetType === 'Expenses' ? (
                   <>
@@ -307,7 +312,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
                 placeholder="Nhập tên danh mục mới..."
                 value={customCategory}
                 onChange={(e) => setCustomCategory(e.target.value)}
-                className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
+                className="w-full text-base sm:text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
               />
             </div>
           )}
@@ -324,7 +329,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
               placeholder="VD: Grab car, Cơm trưa, Siêu thị..."
               value={purchaseItem}
               onChange={(e) => setPurchaseItem(e.target.value)}
-              className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
+              className="w-full text-base sm:text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
             />
           </div>
 
@@ -439,7 +444,7 @@ export const EditTransactionModal: React.FC<EditTransactionModalProps> = ({
               placeholder="VD: Mua chung, hoàn tiền..."
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              className="w-full text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
+              className="w-full text-base sm:text-xs px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500"
             />
           </div>
 

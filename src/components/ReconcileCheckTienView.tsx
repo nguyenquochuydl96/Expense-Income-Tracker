@@ -49,6 +49,7 @@ interface ReconcileCheckTienViewProps {
   checkTienData?: CheckTienSheetData | null;
   onEditTransaction?: (tx: TransactionRecord) => void;
   onSyncWalletsToSheet?: (wallets: HeoMeoWallets) => Promise<void> | void;
+  onShowToast?: (type: 'success' | 'warning' | 'error', message: string) => void;
 }
 
 type ReconcileSubTab = 'reconcile' | 'accounts' | 'becorp' | 'credit';
@@ -80,6 +81,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
   checkTienData,
   onEditTransaction,
   onSyncWalletsToSheet,
+  onShowToast,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<ReconcileSubTab>('reconcile');
   const { isPrivate } = usePrivacyMode();
@@ -215,8 +217,17 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
         if (walletSyncTimerRef.current) {
           clearTimeout(walletSyncTimerRef.current);
         }
-        walletSyncTimerRef.current = setTimeout(() => {
-          onSyncWalletsToSheet(next);
+        walletSyncTimerRef.current = setTimeout(async () => {
+          try {
+            await onSyncWalletsToSheet(next);
+          } catch (err: any) {
+            console.warn('Could not sync Check tiền wallets to Google Sheet:', err);
+            const errMsg = err?.message || 'Không thể kết nối Google Sheet';
+            onShowToast?.(
+              'error',
+              `❌ Lưu ví Check tiền thất bại: ${errMsg}. Vui lòng kiểm tra mạng hoặc mở tab "Đồng bộ" để kiểm tra kết nối.`
+            );
+          }
         }, 1200);
       }
       return next;
@@ -556,7 +567,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
 
             {/* Cycle Preset Selector */}
             <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-200/80 dark:border-slate-700">
+              <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-lg border border-slate-200/80 dark:border-slate-700 overflow-x-auto max-w-full">
                 <button
                   type="button"
                   onClick={() => {
@@ -622,10 +633,49 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
             </div>
           </div>
 
+          {/* Sticky Compact Discrepancy Bar on Mobile (< lg) */}
+          <div className="block lg:hidden sticky top-2 z-20 mb-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-md">
+            <div className="flex items-center justify-between gap-2 text-xs">
+              <div className="min-w-0">
+                <span className="text-[10px] text-slate-400 uppercase font-semibold block">Độ lệch Check tiền:</span>
+                <div className="flex items-center gap-1.5 font-mono-tabular">
+                  <span className={`text-sm font-black ${
+                    Math.abs(cycleReconcileStats.discrepancy) < 1000
+                      ? 'text-teal-700 dark:text-teal-300'
+                      : cycleReconcileStats.discrepancy > 0
+                      ? 'text-emerald-700 dark:text-emerald-300'
+                      : 'text-rose-700 dark:text-rose-300'
+                  }`}>
+                    {cycleReconcileStats.discrepancy > 0
+                      ? `+${formatCurrency(cycleReconcileStats.discrepancy)}`
+                      : formatCurrency(cycleReconcileStats.discrepancy)}
+                  </span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+                    Math.abs(cycleReconcileStats.discrepancy) < 1000
+                      ? 'bg-teal-100 dark:bg-teal-950 text-teal-800 dark:text-teal-300'
+                      : cycleReconcileStats.discrepancy > 0
+                      ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300'
+                      : 'bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300'
+                  }`}>
+                    {Math.abs(cycleReconcileStats.discrepancy) < 1000
+                      ? 'Khớp'
+                      : cycleReconcileStats.discrepancy > 0
+                      ? 'Thừa'
+                      : 'Thiếu'}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right text-[11px] font-mono-tabular text-slate-500 dark:text-slate-400">
+                <div>Thực tế: <strong className="text-slate-800 dark:text-slate-200">{formatCurrency(totalRealMoney)}</strong></div>
+                <div>Lý thuyết: <strong className="text-slate-800 dark:text-slate-200">{formatCurrency(cycleReconcileStats.theoreticalRemaining)}</strong></div>
+              </div>
+            </div>
+          </div>
+
           {/* 3-Column Reconciliation Workbench */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Column 1: Automated Book Balance Calculation (Income - Expense + Credit) */}
-            <div className="lg:col-span-4 border border-slate-200 dark:border-slate-800 rounded-xl p-5 flex flex-col justify-between bg-slate-50/70 dark:bg-slate-800/40 shadow-2xs">
+            <div className="lg:col-span-4 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 flex flex-col justify-between bg-slate-50/70 dark:bg-slate-800/40 shadow-2xs">
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
                   <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
@@ -726,7 +776,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
             </div>
 
             {/* Column 2: Actual Real-World Money of Heo & Mèo */}
-            <div className="lg:col-span-5 border border-slate-200 dark:border-slate-800 rounded-xl p-5 flex flex-col justify-between bg-white dark:bg-slate-800/40 shadow-2xs">
+            <div className="lg:col-span-5 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 flex flex-col justify-between bg-white dark:bg-slate-800/40 shadow-2xs">
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
                   <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
@@ -827,7 +877,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
             </div>
 
             {/* Column 3: Discrepancy Verdict & 1-Click Adjustment */}
-            <div className="lg:col-span-3 border border-slate-200 dark:border-slate-800 rounded-xl p-5 flex flex-col justify-between bg-slate-50/60 dark:bg-slate-800/40 shadow-2xs">
+            <div className="lg:col-span-3 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 flex flex-col justify-between bg-slate-50/60 dark:bg-slate-800/40 shadow-2xs">
               <div>
                 <h3 className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider pb-3 border-b border-slate-200 dark:border-slate-700">
                   03. Kết Quả Check Tiền
@@ -930,7 +980,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
           {/* Dual Columns: Heo vs Mèo (Each has exactly 4 ready-to-input fields) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* ═══════ COLUMN HEO ═══════ */}
-            <div className="border border-rose-200 dark:border-rose-900/60 rounded-2xl p-6 bg-rose-50/30 dark:bg-rose-950/20 space-y-5">
+            <div className="border border-rose-200 dark:border-rose-900/60 rounded-2xl p-4 sm:p-6 bg-rose-50/30 dark:bg-rose-950/20 space-y-5">
               <div className="flex items-center justify-between pb-3.5 border-b border-rose-200 dark:border-rose-900/60">
                 <div className="flex items-center gap-2.5">
                   <span className="text-2xl">🐷</span>
@@ -954,7 +1004,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                   return (
                     <div
                       key={f.key}
-                      className="p-3.5 bg-white dark:bg-slate-800/90 border border-rose-100 dark:border-rose-900/40 rounded-xl flex items-center justify-between gap-3 shadow-2xs hover:border-rose-300 dark:hover:border-rose-700 transition-colors"
+                      className="p-3 sm:p-3.5 bg-white dark:bg-slate-800/90 border border-rose-100 dark:border-rose-900/40 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 shadow-2xs hover:border-rose-300 dark:hover:border-rose-700 transition-colors"
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div className={`p-2 rounded-xl border shrink-0 ${f.color}`}>
@@ -966,7 +1016,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
                         <MoneyCalculatorInput
                           value={wallets.heo[f.key] === 0 ? '' : formatNumberForSheet(wallets.heo[f.key], false, true)}
                           onChange={(_str, num) => handleWalletChange('heo', f.key, num)}
@@ -974,7 +1024,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                           size="md"
                           theme="rose"
                           allowNegative={true}
-                          className="w-44 shrink-0"
+                          className="w-full sm:w-44 shrink-0"
                           inputClassName={`text-right text-sm font-extrabold text-slate-900 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/60 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                         />
                       </div>
@@ -985,7 +1035,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
             </div>
 
             {/* ═══════ COLUMN MÈO ═══════ */}
-            <div className="border border-sky-200 dark:border-sky-900/60 rounded-2xl p-6 bg-sky-50/30 dark:bg-sky-950/20 space-y-5">
+            <div className="border border-sky-200 dark:border-sky-900/60 rounded-2xl p-4 sm:p-6 bg-sky-50/30 dark:bg-sky-950/20 space-y-5">
               <div className="flex items-center justify-between pb-3.5 border-b border-sky-200 dark:border-sky-900/60">
                 <div className="flex items-center gap-2.5">
                   <span className="text-2xl">🐱</span>
@@ -1009,7 +1059,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                   return (
                     <div
                       key={f.key}
-                      className="p-3.5 bg-white dark:bg-slate-800/90 border border-sky-100 dark:border-sky-900/40 rounded-xl flex items-center justify-between gap-3 shadow-2xs hover:border-sky-300 dark:hover:border-sky-700 transition-colors"
+                      className="p-3 sm:p-3.5 bg-white dark:bg-slate-800/90 border border-sky-100 dark:border-sky-900/40 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 shadow-2xs hover:border-sky-300 dark:hover:border-sky-700 transition-colors"
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div className={`p-2 rounded-xl border shrink-0 ${f.color}`}>
@@ -1021,7 +1071,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
                         <MoneyCalculatorInput
                           value={wallets.meo[f.key] === 0 ? '' : formatNumberForSheet(wallets.meo[f.key], false, true)}
                           onChange={(_str, num) => handleWalletChange('meo', f.key, num)}
@@ -1029,7 +1079,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                           size="md"
                           theme="sky"
                           allowNegative={true}
-                          className="w-44 shrink-0"
+                          className="w-full sm:w-44 shrink-0"
                           inputClassName={`text-right text-sm font-extrabold text-slate-900 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/60 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                         />
                       </div>

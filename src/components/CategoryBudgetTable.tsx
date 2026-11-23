@@ -485,9 +485,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
         </div>
 
         {/* Action Controls - Decluttered & Grouped */}
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2.5 flex-wrap overflow-x-auto max-w-full pb-1">
           {/* Group 1: View Tab Switcher (Chi tiết tháng / Ma trận Đa tháng / Xem biểu đồ) */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl text-xs border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl text-xs border border-slate-200/80 dark:border-slate-700/80 shadow-2xs shrink-0">
             <button
               type="button"
               onClick={() => setViewTab('month_detail')}
@@ -524,7 +524,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
           </div>
 
           {/* Group 2: Rollover Mode Segmented Control (Lũy kế đầy đủ / Chỉ trừ bội chi / Độc lập) */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl text-xs border border-slate-200/80 dark:border-slate-700/80 shadow-2xs">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl text-xs border border-slate-200/80 dark:border-slate-700/80 shadow-2xs shrink-0">
             <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 pl-2 pr-1 flex items-center gap-1 shrink-0">
               <History className="w-3.5 h-3.5 text-slate-400" />
               <span className="hidden md:inline">Lũy kế:</span>
@@ -570,7 +570,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
           </div>
 
           {/* Group 3: Settings Action (Chỉnh % Budget) */}
-          <div className="flex items-center">
+          <div className="flex items-center shrink-0">
             {!isEditingBudgets ? (
               <button
                 type="button"
@@ -719,9 +719,28 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                        {item.percentage.toFixed(1)}%
-                      </span>
+                      {isEditingBudgets ? (
+                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="number"
+                            inputMode="decimal"
+                            step="0.5"
+                            min="0"
+                            max="100"
+                            className="w-16 px-1.5 py-1 text-center text-sm font-bold border border-teal-300 dark:border-teal-500 rounded-lg focus:outline-teal-600 font-mono-tabular bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                            value={tempPercentages[item.category] ?? 0}
+                            onChange={(e) => {
+                              const val = parseFloat(e.target.value) || 0;
+                              setTempPercentages((prev) => ({ ...prev, [item.category]: val }));
+                            }}
+                          />
+                          <span className="text-slate-400 text-xs font-bold">%</span>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                          {item.percentage.toFixed(1)}%
+                        </span>
+                      )}
                       <span className="text-[10px] font-mono-tabular text-slate-400">
                         {item.txCount} gd
                       </span>
@@ -871,6 +890,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
                         <div className="flex items-center justify-center gap-1">
                           <input
                             type="number"
+                            inputMode="decimal"
                             step="0.5"
                             min="0"
                             max="100"
@@ -1070,6 +1090,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
               </tr>
             </tfoot>
           </table>
+        </div>
 
           {/* Drill-down transactions for selected category */}
           {hasCategoryFilter && (
@@ -1165,7 +1186,6 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
               )}
             </div>
           )}
-        </div>
         </>
       )}
 
@@ -1182,7 +1202,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/90 dark:bg-slate-800/80 text-xs font-bold text-slate-700 dark:text-slate-300">
-                <th className="py-2.5 px-3 sticky left-0 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 z-10 w-44 shadow-xs">
+                <th className="py-2.5 px-3 sticky left-0 bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 z-10 w-32 sm:w-44 shadow-xs">
                   Hạng mục tiêu dùng
                 </th>
                 <th className="py-2.5 px-2 text-center w-16 text-slate-700 dark:text-slate-300">Tỷ lệ</th>
@@ -1213,7 +1233,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
                 const pct = percentages[cat] ?? 0;
                 return (
                   <tr key={cat} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                    <td className="py-2.5 px-3 font-sans sticky left-0 bg-white dark:bg-slate-900 z-10 whitespace-nowrap shadow-xs">
+                    <td className="py-2.5 px-3 font-sans sticky left-0 bg-white dark:bg-slate-900 z-10 w-32 sm:w-44 whitespace-nowrap shadow-xs">
                       <CategoryBadge category={cat} compact />
                     </td>
                     <td className="py-2.5 px-2 text-center font-bold text-slate-600 dark:text-slate-400 text-[11px]">

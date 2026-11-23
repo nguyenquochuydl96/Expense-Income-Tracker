@@ -30,7 +30,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
   selectedMonth,
   allRecords,
 }) => {
-  const { isPrivate: _isPrivate } = usePrivacyMode();
+  const { isPrivate } = usePrivacyMode();
   const [copied, setCopied] = useState<boolean>(false);
   const [isGeneratingImg, setIsGeneratingImg] = useState<boolean>(false);
   const [mobileTab, setMobileTab] = useState<'cover' | 'insights'>('cover');
@@ -38,7 +38,10 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        e.stopImmediatePropagation();
+        onClose();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -541,7 +544,9 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       ctx.fillText(formatCurrency(totalExpense), 50 + cardW + 12, 258);
       ctx.fillStyle = '#94A3B8';
       ctx.font = '10px "Segoe UI", Arial, sans-serif';
-      const c2Sub = savingsAmount > 0 ? `Sinh hoạt: ${formatNumberForSheet(livingExpense)}` : '100% sinh hoạt';
+      const c2Sub = savingsAmount > 0
+        ? (isPrivate ? 'Sinh hoạt: ••••••' : `Sinh hoạt: ${formatNumberForSheet(livingExpense)}`)
+        : '100% sinh hoạt';
       ctx.fillText(c2Sub, 50 + cardW + 12, 280);
 
       // Card 3: Còn lại
@@ -563,7 +568,9 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
       ctx.fillText(formatCurrency(cashRemaining, cashRemaining > 0), 50 + (cardW + 12) * 2, 258);
       ctx.fillStyle = card3Color;
       ctx.font = '10px "Segoe UI", Arial, sans-serif';
-      const c3Sub = savingsAmount > 0 ? `Đã gửi TK: ${formatNumberForSheet(savingsAmount)}` : (cashRemaining >= 0 ? 'Thặng dư ví' : 'Bội chi');
+      const c3Sub = savingsAmount > 0
+        ? (isPrivate ? 'Đã gửi TK: ••••••' : `Đã gửi TK: ${formatNumberForSheet(savingsAmount)}`)
+        : (cashRemaining >= 0 ? 'Thặng dư ví' : 'Bội chi');
       ctx.fillText(c3Sub, 50 + (cardW + 12) * 2, 280);
 
       // 5. Savings Banner (if any) + Top Living Categories Section
@@ -753,13 +760,13 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
               className="relative bg-slate-950 text-white rounded-3xl shadow-2xl border border-slate-700/80 overflow-hidden max-h-[92vh] flex flex-col"
             >
               {/* Top Navigation Bar: Close & Mobile Tab Switcher */}
-              <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800/80 bg-slate-900/90 shrink-0">
-                <div className="flex items-center gap-2">
-                  <span id="monthly-report-modal-title" className="text-xs font-mono-tabular font-bold px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/30">
-                    Sổ tài chính Tháng {monthNum}/{yearNum}
+              <div className="flex items-center justify-between px-3 sm:px-5 py-2.5 sm:py-3.5 border-b border-slate-800/80 bg-slate-900/90 shrink-0">
+                <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                  <span id="monthly-report-modal-title" className="text-xs font-mono-tabular font-bold px-2.5 sm:px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/30 whitespace-nowrap">
+                    Tháng {monthNum}/{yearNum}
                   </span>
                   <span className="hidden sm:inline text-xs text-slate-400 font-serif italic">
-                    — Heo &amp; Mèo Edition
+                    — Sổ tài chính Heo &amp; Mèo
                   </span>
                 </div>
 
@@ -792,7 +799,7 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="min-h-[44px] min-w-[44px] p-2 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer flex items-center justify-center"
+                  className="min-h-[44px] min-w-[44px] p-2 rounded-full text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer flex items-center justify-center shrink-0"
                   title="Đóng sổ (Escape)"
                   aria-label="Đóng báo cáo tháng"
                 >
@@ -1117,38 +1124,44 @@ export const MonthlyReportCardModal: React.FC<MonthlyReportCardModalProps> = ({
                       </div>
                     </div>
                   </div>
-
-                  {/* Action Buttons */}
-                  <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800">
-                    <button
-                      type="button"
-                      onClick={handleCopySummary}
-                      className="py-2.5 px-4 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700"
-                    >
-                      {copied ? (
-                        <>
-                          <Check className="w-4 h-4 text-emerald-400" />
-                          <span className="text-emerald-400">Đã chép tóm tắt!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4 text-slate-300" />
-                          <span>Sao chép tóm tắt</span>
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleDownloadImage}
-                      disabled={isGeneratingImg}
-                      className="py-2.5 px-4 rounded-xl font-bold text-xs bg-gradient-to-r from-amber-500 via-teal-600 to-indigo-600 hover:opacity-95 text-white transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-                    >
-                      <Download className="w-4 h-4 text-amber-200" />
-                      <span>{isGeneratingImg ? 'Đang tạo...' : 'Lưu ảnh thiệp (PNG)'}</span>
-                    </button>
-                  </div>
                 </motion.div>
+              </div>
+
+              {/* Fixed Modal Footer: Export Actions always accessible */}
+              <div className="shrink-0 px-3.5 sm:px-6 py-2.5 sm:py-3 border-t border-slate-800/80 bg-slate-900/95 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3">
+                <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-400">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Báo cáo tháng tổng hợp tự động từ Google Sheet</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCopySummary}
+                    className="py-2.5 px-3 sm:px-4 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-slate-700 min-h-[40px]"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                        <span className="text-emerald-400 truncate">Đã chép tóm tắt!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 text-slate-300 shrink-0" />
+                        <span className="truncate">Sao chép tóm tắt</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadImage}
+                    disabled={isGeneratingImg}
+                    className="py-2.5 px-3 sm:px-4 rounded-xl font-bold text-xs bg-gradient-to-r from-amber-500 via-teal-600 to-indigo-600 hover:opacity-95 text-white transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 min-h-[40px]"
+                  >
+                    <Download className="w-4 h-4 text-amber-200 shrink-0" />
+                    <span className="truncate">{isGeneratingImg ? 'Đang tạo...' : 'Lưu ảnh PNG'}</span>
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>
