@@ -8,7 +8,7 @@ import {
 import { CategoryBadge } from '../utils/categoryIcons';
 import { CATEGORY_COLORS } from '../types/finance';
 import { formatCurrency } from '../utils/csvParser';
-import { usePrivacyMode } from '../utils/privacyService';
+import { usePrivacyMode, isPrivacyActive } from '../utils/privacyService';
 import { motion, AnimatePresence } from 'motion/react';
 
 export interface MultiCategoryPickerDropdownProps {
@@ -73,7 +73,8 @@ export const MultiCategoryPickerDropdown: React.FC<MultiCategoryPickerDropdownPr
   categorySpentTotals = {},
   totalRecordCount = 0,
 }) => {
-  const { isPrivate: _isPrivate } = usePrivacyMode();
+  const { isPrivate: hookIsPrivate } = usePrivacyMode();
+  const _isPrivate = hookIsPrivate || isPrivacyActive();
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -330,7 +331,7 @@ export const MultiCategoryPickerDropdown: React.FC<MultiCategoryPickerDropdownPr
                         <div className="text-right text-[11px] font-mono-tabular">
                           {spent !== undefined && spent > 0 && (
                             <div className="font-bold text-slate-700 dark:text-slate-300">
-                              {formatCurrency(spent)}
+                              {_isPrivate ? '•••••• ₫' : formatCurrency(spent)}
                             </div>
                           )}
                           {count !== undefined && (

@@ -699,9 +699,12 @@ describe('Tier 1 - Feature 8: Money Mathematical Expressions Evaluator', () => {
 // Feature 9: Privacy Masking Engine (>= 5 tests)
 // =========================================================================
 describe('Tier 1 - Feature 9: Financial Privacy Masking Engine', () => {
-  test('T1.F9.1: Privacy mode defaults to enabled on startup', () => {
+  test('T1.F9.1: Privacy mode defaults to disabled (visible numbers) on app launch and can be activated', () => {
+    setPrivacyMode(false);
+    expect(isPrivacyActive()).toBe(false);
     setPrivacyMode(true);
     expect(isPrivacyActive()).toBe(true);
+    setPrivacyMode(false);
   });
 
   test('T1.F9.2: formatCurrency masks numbers when privacy mode is active', () => {
@@ -726,14 +729,14 @@ describe('Tier 1 - Feature 9: Financial Privacy Masking Engine', () => {
   });
 
   test('T1.F9.5: Toggling privacy mode off reveals unmasked formatted amounts', () => {
+    setPrivacyMode(true);
+    expect(isPrivacyActive()).toBe(true);
+    expect(formatCurrency(1500000)).toBe('•••••• ₫');
+
     setPrivacyMode(false);
     expect(isPrivacyActive()).toBe(false);
 
     const formatted = formatCurrency(1500000);
     expect(formatted).toBe('1,500,000 ₫');
-
-    // Reset back to secure default
-    setPrivacyMode(true);
-    expect(isPrivacyActive()).toBe(true);
   });
 });

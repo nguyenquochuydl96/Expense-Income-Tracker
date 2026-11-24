@@ -1,6 +1,6 @@
 import { BudgetTransferRecord, CheckTienSheetData, SheetTabType, TransactionRecord } from '../types/finance';
 import { parseDateString } from '../utils/csvParser';
-import { RowSignature, generateTxId } from '../utils/syncStateUtils';
+import { RowSignature, generateTxId, generateLegacyTxId } from '../utils/syncStateUtils';
 import { SpreadsheetMetadata } from './googleSheetsService';
 
 export const STORAGE_KEY_WEB_APP_URL = 'heomeo_apps_script_url_v1';
@@ -190,11 +190,12 @@ export async function appsScriptSyncAll(webAppUrl: string, apiKey?: string): Pro
     .map((r: any, idx: number) => {
       const parsedDate = parseDateString(r.purchaseDate);
       const rawTxId = (r.txId || r.id || '').trim();
-      const txId = rawTxId || generateTxId('exp');
+      const rowIdx = r.rowIndex || idx + 2;
+      const txId = rawTxId || generateLegacyTxId('Expenses', rowIdx, r.purchaseDate || parsedDate.displayDate, r.purchaseItem || '', Number(r.amount) || 0);
       return {
         id: txId,
         txId,
-        rowIndex: r.rowIndex || idx + 2,
+        rowIndex: rowIdx,
         sheetType: 'Expenses' as SheetTabType,
         purchaseDate: r.purchaseDate || '',
         isoDate: parsedDate.isoDate,
@@ -221,11 +222,12 @@ export async function appsScriptSyncAll(webAppUrl: string, apiKey?: string): Pro
     .map((r: any, idx: number) => {
       const parsedDate = parseDateString(r.purchaseDate);
       const rawTxId = (r.txId || r.id || '').trim();
-      const txId = rawTxId || generateTxId('inc');
+      const rowIdx = r.rowIndex || idx + 2;
+      const txId = rawTxId || generateLegacyTxId('Income', rowIdx, r.purchaseDate || parsedDate.displayDate, r.purchaseItem || '', Number(r.amount) || 0);
       return {
         id: txId,
         txId,
-        rowIndex: r.rowIndex || idx + 2,
+        rowIndex: rowIdx,
         sheetType: 'Income' as SheetTabType,
         purchaseDate: r.purchaseDate || '',
         isoDate: parsedDate.isoDate,
@@ -244,11 +246,12 @@ export async function appsScriptSyncAll(webAppUrl: string, apiKey?: string): Pro
   const budgetTransfers: BudgetTransferRecord[] = (res.budgetTransfers || []).map((t: any, idx: number) => {
     const parsedDate = parseDateString(t.date);
     const rawTxId = (t.txId || t.id || '').trim();
-    const txId = rawTxId || generateTxId('bt');
+    const rowIdx = t.rowIndex || idx + 2;
+    const txId = rawTxId || generateLegacyTxId('BudgetTransfers', rowIdx, t.date || parsedDate.displayDate, `${t.fromCategory}->${t.toCategory}`, Number(t.amount) || 0);
     return {
       id: txId,
       txId,
-      rowIndex: t.rowIndex || idx + 2,
+      rowIndex: rowIdx,
       date: t.date || '',
       isoDate: parsedDate.isoDate,
       monthKey: parsedDate.monthKey,

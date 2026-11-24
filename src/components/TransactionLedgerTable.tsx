@@ -20,7 +20,7 @@ import {
 import { formatCurrency, formatNumberForSheet } from '../utils/csvParser';
 import { CategoryBadge } from '../utils/categoryIcons';
 import { MultiCategoryPickerDropdown } from './MultiCategoryPickerDropdown';
-import { usePrivacyMode } from '../utils/privacyService';
+import { usePrivacyMode, isPrivacyActive } from '../utils/privacyService';
 
 interface TransactionLedgerTableProps {
   records: TransactionRecord[];
@@ -57,7 +57,7 @@ export const TransactionMobileCard: React.FC<TransactionRowProps> = React.memo((
   isPrivate: propIsPrivate,
 }) => {
   const { isPrivate: hookIsPrivate } = usePrivacyMode();
-  const isPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
+  const isPrivate = Boolean(propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate) || isPrivacyActive();
   const isIncome = rec.sheetType === 'Income';
   return (
     <div className="p-3.5 space-y-2 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all rounded-xl">
@@ -180,7 +180,7 @@ export const TransactionRow: React.FC<TransactionRowProps> = React.memo(({
   isPrivate: propIsPrivate,
 }) => {
   const { isPrivate: hookIsPrivate } = usePrivacyMode();
-  const isPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
+  const isPrivate = Boolean(propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate) || isPrivacyActive();
   return (
     <tr className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors">
       <td className="py-2.5 px-4 font-mono-tabular text-slate-600 dark:text-slate-400 whitespace-nowrap">
@@ -292,7 +292,14 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
   isPrivate: propIsPrivate,
 }) => {
   const { isPrivate: hookIsPrivate } = usePrivacyMode();
-  const _effectiveIsPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
+  const _effectiveIsPrivate = Boolean(propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate) || isPrivacyActive();
+
+  const renderToolbarMoney = (val: number, showPlus = false) => {
+    if (_effectiveIsPrivate) {
+      return showPlus && val > 0 ? '+•••••• ₫' : '•••••• ₫';
+    }
+    return formatCurrency(val, showPlus);
+  };
   const [searchQuery, setSearchQuery] = useState<string>('');
   const deferredSearchQuery = useDeferredValue(searchQuery);
   const [quickFilter, setQuickFilter] = useState<QuickLedgerFilter>('all');
@@ -441,35 +448,35 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
                 <>
                   {' '}· Tổng thu nhập:{' '}
                   <strong className="font-mono-tabular text-emerald-700 dark:text-emerald-400">
-                    {_effectiveIsPrivate ? '+•••••• ₫' : formatCurrency(totals.incomeSum, true)}
+                    {renderToolbarMoney(totals.incomeSum, true)}
                   </strong>
                 </>
               ) : quickFilter === 'expenses' ? (
                 <>
                   {' '}· Tổng chi tiêu:{' '}
                   <strong className="font-mono-tabular text-slate-900 dark:text-slate-200">
-                    {_effectiveIsPrivate ? '•••••• ₫' : formatCurrency(totals.expenseSum)}
+                    {renderToolbarMoney(totals.expenseSum)}
                   </strong>
                   {' '}· Tổng BE Corp:{' '}
                   <strong className="font-mono-tabular text-amber-700 dark:text-amber-400">
-                    {_effectiveIsPrivate ? '•••••• ₫' : formatCurrency(totals.beCorp)}
+                    {renderToolbarMoney(totals.beCorp)}
                   </strong>
                   {' '}· Tổng Credit:{' '}
                   <strong className="font-mono-tabular text-indigo-700 dark:text-indigo-400">
-                    {_effectiveIsPrivate ? '•••••• ₫' : formatCurrency(totals.credit)}
+                    {renderToolbarMoney(totals.credit)}
                   </strong>
                 </>
               ) : (
                 <>
                   {' '}· Tổng chi:{' '}
                   <strong className="font-mono-tabular text-slate-900 dark:text-slate-200">
-                    {_effectiveIsPrivate ? '•••••• ₫' : formatCurrency(totals.expenseSum)}
+                    {renderToolbarMoney(totals.expenseSum)}
                   </strong>
                   {totals.incomeSum > 0 && (
                     <>
                       {' '}· Thu:{' '}
                       <strong className="font-mono-tabular text-emerald-700 dark:text-emerald-400">
-                        {_effectiveIsPrivate ? '+•••••• ₫' : formatCurrency(totals.incomeSum, true)}
+                        {renderToolbarMoney(totals.incomeSum, true)}
                       </strong>
                     </>
                   )}
@@ -477,7 +484,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
                     <>
                       {' '}· BE Corp:{' '}
                       <strong className="font-mono-tabular text-amber-700 dark:text-amber-400">
-                        {_effectiveIsPrivate ? '•••••• ₫' : formatCurrency(totals.beCorp)}
+                        {renderToolbarMoney(totals.beCorp)}
                       </strong>
                     </>
                   )}
@@ -485,7 +492,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
                     <>
                       {' '}· Credit:{' '}
                       <strong className="font-mono-tabular text-indigo-700 dark:text-indigo-400">
-                        {_effectiveIsPrivate ? '•••••• ₫' : formatCurrency(totals.credit)}
+                        {renderToolbarMoney(totals.credit)}
                       </strong>
                     </>
                   )}

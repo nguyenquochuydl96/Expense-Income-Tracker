@@ -15,7 +15,11 @@ import {
 } from '../../src/utils/budgetUtils';
 import {
   setPrivacyMode,
+  isPrivacyActive,
 } from '../../src/utils/privacyService';
+import {
+  generateLegacyTxId,
+} from '../../src/utils/syncStateUtils';
 import type { TransactionRecord } from '../../src/types/finance';
 
 test('MoneyCalculatorInput: computeEffectiveMoneyValue preserves thousand-separated non-expressions', () => {
@@ -160,4 +164,58 @@ test('budgetUtils: Largest Remainder Method handles historical era (T4-T7) and c
   );
   assert.equal(customRes.chain['Shopping']['2026-10'].baseFromGeneral, 0);
   assert.equal(customRes.chain['Ăn uống']['2026-10'].baseFromGeneral, 7000000);
+});
+
+test('csvParser: parseDateString adheres strictly to Google Sheets M/D convention', () => {
+  const currentYear = new Date().getFullYear();
+
+  // 1. "11/23": 11 <= 12, so treated as Month 11, Day 23 of currentYear
+  const d1 = parseDateString('11/23');
+  assert.equal(d1.month, 11);
+  assert.equal(d1.day, 23);
+  assert.equal(d1.year, currentYear);
+  assert.equal(d1.isoDate, `${currentYear}-11-23`);
+  assert.equal(d1.monthKey, `${currentYear}-11`);
+  assert.equal(d1.displayDate, `11/23/${currentYear}`);
+
+  // 2. "11/10": both <= 12, standard M/D prioritizes Month 11, Day 10
+  const d2 = parseDateString('11/10');
+  assert.equal(d2.month, 11);
+  assert.equal(d2.day, 10);
+  assert.equal(d2.isoDate, `${currentYear}-11-10`);
+  assert.equal(d2.monthKey, `${currentYear}-11`);
+
+  // 3. "23/11": 23 > 12, so flips to Month 11, Day 23
+  const d3 = parseDateString('23/11');
+  assert.equal(d3.month, 11);
+  assert.equal(d3.day, 23);
+  assert.equal(d3.isoDate, `${currentYear}-11-23`);
+  assert.equal(d3.monthKey, `${currentYear}-11`);
+
+  // 4. "11/23/2026": explicit 3-part M/D/YYYY
+  const d4 = parseDateString('11/23/2026');
+  assert.equal(d4.month, 11);
+  assert.equal(d4.day, 23);
+  assert.equal(d4.year, 2026);
+  assert.equal(d4.isoDate, '2026-11-23');
+  assert.equal(d4.monthKey, '2026-11');
+});
+
+test('syncStateUtils: generateLegacyTxId generates deterministic, collision-resistant IDs', () => {
+  const idA1 = generateLegacyTxId('Expenses', 15, '11/23/2026', 'Ăn tối Highlands', 65000);
+  const idA2 = generateLegacyTxId('Expenses', 15, '11/23/2026', 'Ăn tối Highlands', 65000);
+  assert.equal(idA1, idA2, 'Repeated calls with identical parameters must return identical ID');
+  assert.match(idA1, /^legacy_exp_15_[0-9a-f]{8}$/);
+
+  // Different rowIndex -> different ID
+  const idB = generateLegacyTxId('Expenses', 16, '11/23/2026', 'Ăn tối Highlands', 65000);
+  assert.notEqual(idA1, idB);
+
+  // Different amount -> different ID
+  const idC = generateLegacyTxId('Expenses', 15, '11/23/2026', 'Ăn tối Highlands', 75000);
+  assert.notEqual(idA1, idC);
+
+  // Different tab -> different ID prefix and hash
+  const idIncome = generateLegacyTxId('Income', 5, '11/23/2026', 'Lương', 50000000);
+  assert.match(idIncome, /^legacy_inc_5_[0-9a-f]{8}$/);
 });

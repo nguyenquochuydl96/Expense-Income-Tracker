@@ -2,9 +2,9 @@ import { useSyncExternalStore } from 'react';
 
 export const STORAGE_KEY_PRIVACY = 'heomeo_privacy_mode_v1';
 
-// Mặc định luôn là TRUE (Ẩn số tiền) mỗi khi mở app hoặc tải lại trang
-// Bảo vệ dữ liệu tài chính cá nhân khỏi người xung quanh khi mở ở cơ quan, văn phòng hay nơi công cộng
-let globalPrivacyMode = true;
+// Mặc định luôn là FALSE (Hiện số bình thường) mỗi khi mở app hoặc tải lại trang
+// Chỉ ẩn tạm thời khi người dùng chủ động bấm "Ẩn số" trong phiên làm việc
+let globalPrivacyMode = false;
 
 const listeners = new Set<() => void>();
 
@@ -40,7 +40,7 @@ function getPrivacySnapshot(): boolean {
  * Hook to consume and toggle privacy mode anywhere in the app
  */
 export function usePrivacyMode() {
-  const isPrivate = useSyncExternalStore(subscribePrivacy, getPrivacySnapshot, () => true);
+  const isPrivate = useSyncExternalStore(subscribePrivacy, getPrivacySnapshot, () => false);
 
   return {
     isPrivate,

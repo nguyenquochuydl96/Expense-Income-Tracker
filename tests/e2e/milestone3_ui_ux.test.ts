@@ -229,6 +229,23 @@ describe('Milestone 3 UI/UX Polish, Themes, Mobile Safe Areas & Accessibility', 
     expect(reportModal.includes('biggestExpenseLabel')).toBe(true);
     expect(reportModal.includes('Món chi lớn nhất:')).toBe(true);
   });
+
+  /* ═════════════════════════════════════════════════════════════════════
+     9. Privacy Masking & Header UX Toggle Verification
+     ═════════════════════════════════════════════════════════════════════ */
+  it('M3.17: TransactionLedgerTable and Header consistently mask toolbar totals and row items with •••••• when Privacy Mode is active', () => {
+    const ledgerCode = readProjectFile('src/components/TransactionLedgerTable.tsx');
+    expect(ledgerCode.includes('renderToolbarMoney')).toBe(true);
+    expect(ledgerCode.includes('isPrivacyActive')).toBe(true);
+    expect(ledgerCode.includes('_effectiveIsPrivate')).toBe(true);
+
+    const appCode = readProjectFile('src/App.tsx');
+    expect(appCode.includes('Đang ẩn')).toBe(true);
+    expect(appCode.includes('Ẩn số')).toBe(true);
+
+    const privacyCode = readProjectFile('src/utils/privacyService.ts');
+    expect(privacyCode.includes('let globalPrivacyMode = false;')).toBe(true);
+  });
 });
 
 // Auto-run if executed directly via tsx/ts-node or node

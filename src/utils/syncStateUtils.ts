@@ -17,6 +17,28 @@ export function generateTxId(prefix = 'tx'): string {
 }
 
 /**
+ * Generate a deterministic legacy txId for remote Google Sheet rows that do not yet have a UUID txId.
+ * Uses a djb2-like hash on tab + rowIndex + date + item + amount so repeated fetches produce identical IDs.
+ */
+export function generateLegacyTxId(
+  tab: string,
+  rowIndex: number,
+  date: string,
+  item: string,
+  amount: number
+): string {
+  const str = `${(tab || '').trim().toLowerCase()}|${rowIndex}|${(date || '').trim()}|${(item || '').trim()}|${Number(amount) || 0}`;
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  const hex = Math.abs(hash).toString(16).padStart(8, '0');
+  const safeTab = (tab || 'row').toLowerCase().slice(0, 3);
+  return `legacy_${safeTab}_${rowIndex}_${hex}`;
+}
+
+/**
  * Build a minimal row signature used for safe legacy rowIndex verification on Google Sheets.
  */
 export function buildRowSignature(

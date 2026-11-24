@@ -2296,7 +2296,7 @@ export default function App() {
                 }}
                 className={`magnetic min-h-[44px] min-w-[44px] p-2 sm:px-3 sm:py-2 text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 border cursor-pointer ${
                   isPrivate
-                    ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30'
+                    ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-200 border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/30'
                     : 'bg-[var(--card-2)] hover:bg-[var(--card-3)] text-[var(--ink)] border-[var(--line)]'
                 }`}
                 title={isPrivate ? 'Đang ẩn số tiền — Bấm để hiện' : 'Đang hiện số tiền — Bấm để ẩn'}
@@ -2304,13 +2304,13 @@ export default function App() {
               >
                 {isPrivate ? (
                   <>
-                    <EyeOff className="w-4 h-4 text-amber-500 shrink-0" />
+                    <EyeOff className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
                     <span className="hidden md:inline">Đang ẩn</span>
                   </>
                 ) : (
                   <>
                     <Eye className="w-4 h-4 text-[var(--muted)] shrink-0" />
-                    <span className="hidden md:inline">Hiện số</span>
+                    <span className="hidden md:inline">Ẩn số</span>
                   </>
                 )}
               </button>
@@ -2544,7 +2544,7 @@ export default function App() {
                   {' · '}
                   Tổng chi:{' '}
                   <strong className="font-mono-tabular font-bold text-sky-950 dark:text-sky-100 text-sm">
-                    {formatCurrency(categoryKpiStats?.spent || 0)}
+                    {isPrivate ? '•••••• ₫' : formatCurrency(categoryKpiStats?.spent || 0)}
                   </strong>
                 </span>
               </div>
