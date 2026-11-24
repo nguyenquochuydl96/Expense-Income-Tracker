@@ -57,7 +57,7 @@ export const TransactionMobileCard: React.FC<TransactionRowProps> = React.memo((
   isPrivate: propIsPrivate,
 }) => {
   const { isPrivate: hookIsPrivate } = usePrivacyMode();
-  const isPrivate = Boolean(propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate) || isPrivacyActive();
+  const isPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
   const isIncome = rec.sheetType === 'Income';
   return (
     <div className="p-3.5 space-y-2 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all rounded-xl">
@@ -112,7 +112,7 @@ export const TransactionMobileCard: React.FC<TransactionRowProps> = React.memo((
               : 'text-slate-900 dark:text-slate-100'
           }`}
         >
-          {isPrivate ? (isIncome ? '+•••••• ₫' : '•••••• ₫') : formatCurrency(rec.amount, isIncome)}
+          {isPrivate ? (isIncome ? '+•••••• ₫' : '•••••• ₫') : formatCurrency(rec.amount, isIncome, true)}
         </div>
       </div>
 
@@ -121,12 +121,12 @@ export const TransactionMobileCard: React.FC<TransactionRowProps> = React.memo((
         <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
           {rec.beCorp !== 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[11px] font-mono-tabular font-semibold border border-amber-200/60 dark:border-amber-900/60">
-              Ví BE: {isPrivate ? '••••••' : formatNumberForSheet(rec.beCorp, true)}
+              Ví BE: {isPrivate ? '••••••' : formatNumberForSheet(rec.beCorp, true, true)}
             </span>
           )}
           {rec.credit !== 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 text-[11px] font-mono-tabular font-semibold border border-indigo-200/60 dark:border-indigo-900/60">
-              Credit: {isPrivate ? '••••••' : formatNumberForSheet(rec.credit, true)}
+              Credit: {isPrivate ? '••••••' : formatNumberForSheet(rec.credit, true, true)}
             </span>
           )}
           {rec.note && (
@@ -180,7 +180,7 @@ export const TransactionRow: React.FC<TransactionRowProps> = React.memo(({
   isPrivate: propIsPrivate,
 }) => {
   const { isPrivate: hookIsPrivate } = usePrivacyMode();
-  const isPrivate = Boolean(propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate) || isPrivacyActive();
+  const isPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
   return (
     <tr className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors">
       <td className="py-2.5 px-4 font-mono-tabular text-slate-600 dark:text-slate-400 whitespace-nowrap">
@@ -209,13 +209,13 @@ export const TransactionRow: React.FC<TransactionRowProps> = React.memo(({
             : 'text-slate-900 dark:text-slate-100'
         }`}
       >
-        {isPrivate ? (rec.sheetType === 'Income' ? '+•••••• ₫' : '•••••• ₫') : formatCurrency(rec.amount, rec.sheetType === 'Income')}
+        {isPrivate ? (rec.sheetType === 'Income' ? '+•••••• ₫' : '•••••• ₫') : formatCurrency(rec.amount, rec.sheetType === 'Income', true)}
       </td>
       <td className="py-2.5 px-4 text-right font-mono-tabular text-amber-700 dark:text-amber-400 whitespace-nowrap">
-        {rec.beCorp !== 0 ? (isPrivate ? '••••••' : formatNumberForSheet(rec.beCorp, true)) : ''}
+        {rec.beCorp !== 0 ? (isPrivate ? '••••••' : formatNumberForSheet(rec.beCorp, true, true)) : ''}
       </td>
       <td className="py-2.5 px-4 text-right font-mono-tabular text-indigo-700 dark:text-indigo-400 whitespace-nowrap">
-        {rec.credit !== 0 ? (isPrivate ? '••••••' : formatNumberForSheet(rec.credit, true)) : ''}
+        {rec.credit !== 0 ? (isPrivate ? '••••••' : formatNumberForSheet(rec.credit, true, true)) : ''}
       </td>
       <td className="py-2.5 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
         <span>{rec.sheetType}</span>
@@ -292,13 +292,13 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
   isPrivate: propIsPrivate,
 }) => {
   const { isPrivate: hookIsPrivate } = usePrivacyMode();
-  const _effectiveIsPrivate = Boolean(propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate) || isPrivacyActive();
+  const _effectiveIsPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
 
   const renderToolbarMoney = (val: number, showPlus = false) => {
     if (_effectiveIsPrivate) {
       return showPlus && val > 0 ? '+•••••• ₫' : '•••••• ₫';
     }
-    return formatCurrency(val, showPlus);
+    return formatCurrency(val, showPlus, true);
   };
   const [searchQuery, setSearchQuery] = useState<string>('');
   const deferredSearchQuery = useDeferredValue(searchQuery);

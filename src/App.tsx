@@ -2305,12 +2305,12 @@ export default function App() {
                 {isPrivate ? (
                   <>
                     <EyeOff className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <span className="hidden md:inline">Đang ẩn</span>
+                    <span className="inline text-xs font-semibold">Đang ẩn</span>
                   </>
                 ) : (
                   <>
                     <Eye className="w-4 h-4 text-[var(--muted)] shrink-0" />
-                    <span className="hidden md:inline">Ẩn số</span>
+                    <span className="inline text-xs font-semibold">Ẩn số</span>
                   </>
                 )}
               </button>

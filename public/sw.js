@@ -1,5 +1,5 @@
 // Heo & Mèo Service Worker for PWA
-const CACHE_NAME = 'heomeo-pwa-v1';
+const CACHE_NAME = 'heomeo-pwa-v2';
 
 const STATIC_ASSETS = [
   './',

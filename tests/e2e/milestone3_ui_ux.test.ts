@@ -1,6 +1,11 @@
 import { describe, it, expect, registry } from './testHarness';
 import * as fs from 'fs';
 import * as path from 'path';
+import React from 'react';
+import ReactDOMServer from 'react-dom/server';
+import { TransactionLedgerTable, TransactionRow } from '../../src/components/TransactionLedgerTable';
+import { isPrivacyActive, setPrivacyMode, togglePrivacyMode } from '../../src/utils/privacyService';
+import type { TransactionRecord } from '../../src/types/finance';
 
 describe('Milestone 3 UI/UX Polish, Themes, Mobile Safe Areas & Accessibility', () => {
   // Robust root resolver checking for vite.config.ts (which only exists at project root)
@@ -233,18 +238,129 @@ describe('Milestone 3 UI/UX Polish, Themes, Mobile Safe Areas & Accessibility', 
   /* ═════════════════════════════════════════════════════════════════════
      9. Privacy Masking & Header UX Toggle Verification
      ═════════════════════════════════════════════════════════════════════ */
-  it('M3.17: TransactionLedgerTable and Header consistently mask toolbar totals and row items with •••••• when Privacy Mode is active', () => {
-    const ledgerCode = readProjectFile('src/components/TransactionLedgerTable.tsx');
-    expect(ledgerCode.includes('renderToolbarMoney')).toBe(true);
-    expect(ledgerCode.includes('isPrivacyActive')).toBe(true);
-    expect(ledgerCode.includes('_effectiveIsPrivate')).toBe(true);
+  it('M3.17: DOM Text Assertion: Privacy Mode cycle unmasks numbers by default, masks both Toolbar and rows when ON, and unmasks when OFF', () => {
+    // 0. Ensure reset to fresh launch state (isPrivate = false)
+    setPrivacyMode(false);
+    expect(isPrivacyActive()).toBe(false);
 
-    const appCode = readProjectFile('src/App.tsx');
-    expect(appCode.includes('Đang ẩn')).toBe(true);
-    expect(appCode.includes('Ẩn số')).toBe(true);
+    const testRecords: TransactionRecord[] = [
+      {
+        id: 'tx-test-1',
+        sheetType: 'Expenses',
+        purchaseDate: '11/24/2026',
+        isoDate: '2026-11-24',
+        monthKey: '2026-11',
+        category: 'Ăn uống',
+        purchaseItem: 'Cơm tấm Sài Gòn',
+        amount: 45000,
+        beCorp: 0,
+        credit: 0,
+        source: 'google_sheet',
+      },
+    ];
 
-    const privacyCode = readProjectFile('src/utils/privacyService.ts');
-    expect(privacyCode.includes('let globalPrivacyMode = false;')).toBe(true);
+    // Helper to render Header Privacy Toggle button markup
+    const renderHeaderPrivacyButton = (privateState: boolean): string => {
+      return ReactDOMServer.renderToStaticMarkup(
+        React.createElement(
+          'button',
+          {
+            type: 'button',
+            className: privateState ? 'bg-amber-100 text-amber-900 border-amber-400' : 'bg-card text-ink',
+            'aria-label': privateState ? 'Đang ẩn số tiền. Bấm để hiển thị' : 'Đang hiện số tiền. Bấm để bảo mật ẩn',
+          },
+          privateState
+            ? React.createElement('span', { className: 'inline text-xs font-semibold' }, 'Đang ẩn')
+            : React.createElement('span', { className: 'inline text-xs font-semibold' }, 'Ẩn số')
+        )
+      );
+    };
+
+    // Helper to render Ledger Table markup
+    const renderLedger = (privateState: boolean): string => {
+      return ReactDOMServer.renderToStaticMarkup(
+        React.createElement(TransactionLedgerTable, {
+          records: testRecords,
+          selectedCategory: 'ALL',
+          onSelectCategory: () => {},
+          onOpenAddModal: () => {},
+          isPrivate: privateState,
+        })
+      );
+    };
+
+    // --- PHASE 1: Mở trang lần đầu (không bấm gì) ---
+    const btn1 = renderHeaderPrivacyButton(isPrivacyActive());
+    expect(btn1.includes('Ẩn số')).toBe(true);
+    expect(btn1.includes('Đang ẩn')).toBe(false);
+    expect(btn1.includes('Hiện số')).toBe(false);
+
+    const ledger1 = renderLedger(isPrivacyActive());
+    // Assert dòng tổng Toolbar có chữ số tiền thật và KHÔNG chứa ••••
+    expect(ledger1.includes('45,000 ₫')).toBe(true);
+    expect(ledger1.includes('••••')).toBe(false);
+
+    // Assert dòng giao dịch ĐẦU TIÊN trong bảng (TransactionRow) ở cột Số tiền có chữ số thật và KHÔNG chứa ••••
+    const row1 = ReactDOMServer.renderToStaticMarkup(
+      React.createElement(TransactionRow, {
+        rec: testRecords[0],
+        selectedCategory: 'ALL',
+        onSelectCategory: () => {},
+        isPrivate: isPrivacyActive(),
+      })
+    );
+    expect(row1.includes('45,000 ₫')).toBe(true);
+    expect(/\d+,\d+\s*₫/.test(row1)).toBe(true);
+    expect(row1.includes('••••')).toBe(false);
+
+    // --- PHASE 2: Bấm nút "Ẩn số" ---
+    togglePrivacyMode();
+    expect(isPrivacyActive()).toBe(true);
+
+    const btn2 = renderHeaderPrivacyButton(isPrivacyActive());
+    expect(btn2.includes('Đang ẩn')).toBe(true);
+    expect(btn2.includes('Ẩn số')).toBe(false);
+
+    const ledger2 = renderLedger(isPrivacyActive());
+    // Assert CẢ dòng tổng Toolbar LẪN bảng đều chứa •••• và KHÔNG chứa số tiền thật
+    expect(ledger2.includes('•••••• ₫')).toBe(true);
+    expect(ledger2.includes('45,000 ₫')).toBe(false);
+
+    const row2 = ReactDOMServer.renderToStaticMarkup(
+      React.createElement(TransactionRow, {
+        rec: testRecords[0],
+        selectedCategory: 'ALL',
+        onSelectCategory: () => {},
+        isPrivate: isPrivacyActive(),
+      })
+    );
+    expect(row2.includes('•••••• ₫')).toBe(true);
+    expect(row2.includes('45,000 ₫')).toBe(false);
+
+    // --- PHASE 3: Bấm nút "Đang ẩn" lần nữa để tắt ẩn ---
+    togglePrivacyMode();
+    expect(isPrivacyActive()).toBe(false);
+
+    const btn3 = renderHeaderPrivacyButton(isPrivacyActive());
+    expect(btn3.includes('Ẩn số')).toBe(true);
+    expect(btn3.includes('Đang ẩn')).toBe(false);
+
+    const ledger3 = renderLedger(isPrivacyActive());
+    // Assert CẢ dòng tổng Toolbar LẪN dòng giao dịch đầu tiên đều HIỆN LẠI chữ số thật và KHÔNG còn ••••
+    expect(ledger3.includes('45,000 ₫')).toBe(true);
+    expect(ledger3.includes('••••')).toBe(false);
+
+    const row3 = ReactDOMServer.renderToStaticMarkup(
+      React.createElement(TransactionRow, {
+        rec: testRecords[0],
+        selectedCategory: 'ALL',
+        onSelectCategory: () => {},
+        isPrivate: isPrivacyActive(),
+      })
+    );
+    expect(row3.includes('45,000 ₫')).toBe(true);
+    expect(/\d+,\d+\s*₫/.test(row3)).toBe(true);
+    expect(row3.includes('••••')).toBe(false);
   });
 });
 
