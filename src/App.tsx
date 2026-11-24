@@ -2463,14 +2463,61 @@ export default function App() {
                 type="button"
                 onClick={() => handleConnectAndSyncSheet(sheetMeta.spreadsheetId)}
                 disabled={isSyncing}
-                className="kinlo-btn-secondary px-3 py-2 text-xs flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 cursor-pointer"
+                className={`kinlo-btn-secondary px-3 py-2 text-xs flex items-center gap-1.5 cursor-pointer ${
+                  syncError
+                    ? 'text-rose-700 dark:text-rose-400 border-rose-300 dark:border-rose-800 bg-rose-50/60 dark:bg-rose-950/40 hover:bg-rose-100 dark:hover:bg-rose-900/60'
+                    : 'text-emerald-700 dark:text-emerald-400'
+                }`}
+                title={syncError ? `Lỗi đồng bộ: ${syncError}. Bấm để thử lại.` : 'Đồng bộ lại với Google Sheet'}
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                <span>Đồng bộ Sheet</span>
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : syncError ? 'text-rose-600 dark:text-rose-400' : ''}`} />
+                <span>{syncError ? 'Lỗi đồng bộ' : 'Đồng bộ Sheet'}</span>
               </button>
             ) : null}
           </div>
         </div>
+
+        {/* ═══════ SYNC ERROR WARNING BANNER ═══════ */}
+        {syncError && (
+          <div className="p-3.5 sm:p-4 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 text-rose-900 dark:text-rose-200 flex flex-wrap items-center justify-between gap-3 shadow-xs animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1 text-xs sm:text-sm font-medium">
+              <span className="text-base shrink-0">⚠️</span>
+              <div className="min-w-0">
+                <span className="font-bold">Lỗi đồng bộ:</span> Không thể kết nối với Google Sheet. Vui lòng kiểm tra mạng hoặc API Key trong tab Đồng bộ.
+                {syncError && typeof syncError === 'string' && !syncError.includes('Không thể') && (
+                  <span className="block text-[11px] text-rose-700 dark:text-rose-300 font-mono mt-0.5 truncate">
+                    Chi tiết: {syncError}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  const target = sheetMeta?.spreadsheetId || spreadsheetInput;
+                  if (target) {
+                    handleConnectAndSyncSheet(target);
+                  } else {
+                    setActiveTab('sync');
+                  }
+                }}
+                disabled={isSyncing}
+                className="px-3 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 active:bg-rose-800 rounded-lg transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                <span>Thử lại</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('sync')}
+                className="px-2.5 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900/40 rounded-lg border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer"
+              >
+                Mở tab Đồng bộ
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ═══════ ACTIVE CATEGORY FILTER BANNER ═══════ */}
         <AnimatePresence>

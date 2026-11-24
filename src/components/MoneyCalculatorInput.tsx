@@ -24,6 +24,7 @@ export interface MoneyCalculatorInputProps {
   autoFocus?: boolean;
   allowNegative?: boolean;
   autoThousands?: boolean;
+  isPrivate?: boolean;
   id?: string;
   name?: string;
 }
@@ -93,6 +94,7 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
   autoFocus = false,
   allowNegative = false,
   autoThousands = true,
+  isPrivate = false,
   id,
   name,
 }) => {
@@ -116,6 +118,7 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
 
   const [isCalcOpen, setIsCalcOpen] = useState<boolean>(false);
   const [calcExpr, setCalcExpr] = useState<string>('');
+  const [isFocused, setIsFocused] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const lastEmittedNumRef = useRef<number | null>(null);
 
@@ -219,7 +222,12 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
   };
 
   const handleBlur = () => {
+    setIsFocused(false);
     handleCommit();
+  };
+
+  const handleFocus = () => {
+    setIsFocused(true);
   };
 
   // Calculator Popover Methods
@@ -364,9 +372,10 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
           id={id}
           name={name}
           type="text"
-          value={text}
+          value={isPrivate && !isFocused && text.trim() !== '' ? '••••••' : text}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder={placeholder}
           disabled={disabled}
@@ -379,7 +388,8 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
         {/* Right-aligned action buttons and x1k suffix */}
         <div className="absolute right-1.5 flex items-center gap-1.5 sm:gap-1">
           {/* Faint ,000 d suffix */}
-          {isAutoThousands &&
+          {!isPrivate &&
+            isAutoThousands &&
             !hasExplicitUnit(text) &&
             !hasThousandSeparator(text) &&
             text.trim() !== '' &&
@@ -424,7 +434,7 @@ export const MoneyCalculatorInput: React.FC<MoneyCalculatorInputProps> = ({
       </div>
 
       {/* Floating Live Expression Preview Badge */}
-      {liveEffective !== null && isExpression(text) && (
+      {!(isPrivate && !isFocused) && liveEffective !== null && isExpression(text) && (
         <div
           onClick={handleCommit}
           className={`absolute left-0 -bottom-6 z-20 flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-mono-tabular font-semibold rounded-md border shadow-xs cursor-pointer animate-in fade-in zoom-in-95 duration-100 ${styleTheme.badge}`}

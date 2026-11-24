@@ -231,22 +231,45 @@ export function parseDateString(rawDate: string): {
   }
 
   if (slashParts.length === 2) {
-    let m = parseInt(slashParts[0], 10);
-    let y = parseInt(slashParts[1], 10);
-    if (m > 100 && y <= 12) {
-      const temp = m;
-      m = y;
-      y = temp;
+    let p0 = parseInt(slashParts[0], 10);
+    let p1 = parseInt(slashParts[1], 10);
+
+    // If one of the parts is clearly a year (> 31, e.g. "10/2026" or "2026/10")
+    if (p0 > 31 || p1 > 31) {
+      let m = p0;
+      let y = p1;
+      if (m > 31 && y <= 12) {
+        m = p1;
+        y = p0;
+      }
+      if (y < 100) y += 2000;
+      const mm = String(Math.max(1, Math.min(12, m || 1))).padStart(2, '0');
+      return {
+        isoDate: `${y}-${mm}-01`,
+        monthKey: `${y}-${mm}`,
+        displayDate: `${m}/1/${y}`,
+        year: y,
+        month: m,
+        day: 1,
+      };
     }
-    if (y < 100) y += 2000;
+
+    // Both parts are <= 31: this is Month/Day or Day/Month of currentYear (e.g. "11/23" or "23/11")
+    let m = p0;
+    let d = p1;
+    if (m > 12 && d <= 12) {
+      m = p1;
+      d = p0;
+    }
     const mm = String(Math.max(1, Math.min(12, m || 1))).padStart(2, '0');
+    const dd = String(Math.max(1, Math.min(31, d || 1))).padStart(2, '0');
     return {
-      isoDate: `${y}-${mm}-01`,
-      monthKey: `${y}-${mm}`,
-      displayDate: `${m}/1/${y}`,
-      year: y,
+      isoDate: `${currentYear}-${mm}-${dd}`,
+      monthKey: `${currentYear}-${mm}`,
+      displayDate: `${m}/${d}/${currentYear}`,
+      year: currentYear,
       month: m,
-      day: 1,
+      day: d,
     };
   }
 

@@ -1,6 +1,6 @@
 import { BudgetTransferRecord, CheckTienSheetData, SheetTabType, TransactionRecord } from '../types/finance';
 import { parseDateString, parseSheetNumber } from '../utils/csvParser';
-import { RowSignature } from '../utils/syncStateUtils';
+import { RowSignature, generateTxId } from '../utils/syncStateUtils';
 import {
   isAppsScriptUrl,
   appsScriptSyncAll,
@@ -247,10 +247,10 @@ export async function fetchTabTransactions(
       continue;
     }
 
-    const stableId = rawTxId || `sheet-${sheetType}-${i + 1}`;
+    const stableId = rawTxId || generateTxId(sheetType === 'Income' ? 'inc' : 'exp');
     records.push({
       id: stableId,
-      txId: rawTxId || undefined,
+      txId: stableId,
       rowIndex: i + 1,
       sheetType,
       purchaseDate: rawDate || parsedDate.displayDate,

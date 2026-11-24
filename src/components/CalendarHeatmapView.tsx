@@ -360,7 +360,7 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.mem
                       <div>
                         <div className="text-[10px] sm:text-xs font-bold font-mono-tabular truncate">
                           <span className="sm:hidden">{formatCompactMobileMoney(d.totalSpent, false, _effectiveIsPrivate)}</span>
-                          <span className="hidden sm:inline">{formatCurrency(d.totalSpent)}</span>
+                          <span className="hidden sm:inline">{_effectiveIsPrivate ? '•••••• ₫' : formatCurrency(d.totalSpent)}</span>
                         </div>
                         <div className="text-[9px] text-slate-500 dark:text-slate-400 hidden sm:block">
                           {d.transactions.filter((t) => t.sheetType === 'Expenses').length} khoản
@@ -369,7 +369,7 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.mem
                     ) : d.totalIncome > 0 ? (
                       <div className="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 font-mono-tabular truncate">
                         <span className="sm:hidden">{formatCompactMobileMoney(d.totalIncome, true, _effectiveIsPrivate)}</span>
-                        <span className="hidden sm:inline">{formatCurrency(d.totalIncome, true)}</span>
+                        <span className="hidden sm:inline">{_effectiveIsPrivate ? '+•••••• ₫' : formatCurrency(d.totalIncome, true)}</span>
                       </div>
                     ) : !d.isFuture ? (
                       <div className="text-[10px] text-emerald-700/80 dark:text-emerald-400 font-semibold flex items-center justify-end gap-0.5">
@@ -407,7 +407,7 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.mem
             </div>
 
             <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono-tabular">
-              TB ngày chi: <strong>{formatCurrency(stats.avgDailySpent)}</strong>
+              TB ngày chi: <strong>{_effectiveIsPrivate ? '•••••• ₫' : formatCurrency(stats.avgDailySpent)}</strong>
             </div>
           </div>
         </div>
@@ -437,13 +437,13 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.mem
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Tổng chi:{' '}
                   <strong className="text-rose-700 dark:text-rose-400 font-mono-tabular">
-                    {formatCurrency(selectedDay.totalSpent)}
+                    {_effectiveIsPrivate ? '•••••• ₫' : formatCurrency(selectedDay.totalSpent)}
                   </strong>
                   {selectedDay.totalIncome > 0 && (
                     <>
                       {' · '}Thu:{' '}
                       <strong className="text-emerald-700 dark:text-emerald-400 font-mono-tabular">
-                        {formatCurrency(selectedDay.totalIncome, true)}
+                        {_effectiveIsPrivate ? '+•••••• ₫' : formatCurrency(selectedDay.totalIncome, true)}
                       </strong>
                     </>
                   )}
@@ -491,7 +491,7 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.mem
                         <div className="flex items-center gap-1.5 mt-0.5">
                           {tx.beCorp > 0 && (
                             <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/80">
-                              BE: {formatNumberForSheet(tx.beCorp)}
+                              BE: {_effectiveIsPrivate ? '••••••' : formatNumberForSheet(tx.beCorp)}
                             </span>
                           )}
                           {tx.credit > 0 && (
@@ -509,7 +509,7 @@ export const CalendarHeatmapView: React.FC<CalendarHeatmapViewProps> = React.mem
                           tx.sheetType === 'Income' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-900 dark:text-slate-100'
                         }`}
                       >
-                        {formatCurrency(tx.amount, tx.sheetType === 'Income')}
+                        {_effectiveIsPrivate ? (tx.sheetType === 'Income' ? '+•••••• ₫' : '•••••• ₫') : formatCurrency(tx.amount, tx.sheetType === 'Income')}
                       </div>
                     </div>
                   </div>

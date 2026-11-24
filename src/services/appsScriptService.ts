@@ -1,6 +1,6 @@
 import { BudgetTransferRecord, CheckTienSheetData, SheetTabType, TransactionRecord } from '../types/finance';
 import { parseDateString } from '../utils/csvParser';
-import { RowSignature } from '../utils/syncStateUtils';
+import { RowSignature, generateTxId } from '../utils/syncStateUtils';
 import { SpreadsheetMetadata } from './googleSheetsService';
 
 export const STORAGE_KEY_WEB_APP_URL = 'heomeo_apps_script_url_v1';
@@ -189,7 +189,8 @@ export async function appsScriptSyncAll(webAppUrl: string, apiKey?: string): Pro
     })
     .map((r: any, idx: number) => {
       const parsedDate = parseDateString(r.purchaseDate);
-      const txId = r.txId || r.id || `exp-${r.rowIndex || idx + 2}-${r.purchaseDate}`;
+      const rawTxId = (r.txId || r.id || '').trim();
+      const txId = rawTxId || generateTxId('exp');
       return {
         id: txId,
         txId,
@@ -219,7 +220,8 @@ export async function appsScriptSyncAll(webAppUrl: string, apiKey?: string): Pro
     })
     .map((r: any, idx: number) => {
       const parsedDate = parseDateString(r.purchaseDate);
-      const txId = r.txId || r.id || `inc-${r.rowIndex || idx + 2}-${r.purchaseDate}`;
+      const rawTxId = (r.txId || r.id || '').trim();
+      const txId = rawTxId || generateTxId('inc');
       return {
         id: txId,
         txId,
@@ -241,7 +243,8 @@ export async function appsScriptSyncAll(webAppUrl: string, apiKey?: string): Pro
 
   const budgetTransfers: BudgetTransferRecord[] = (res.budgetTransfers || []).map((t: any, idx: number) => {
     const parsedDate = parseDateString(t.date);
-    const txId = t.txId || t.id || `bt-${t.rowIndex || idx + 2}-${t.date}`;
+    const rawTxId = (t.txId || t.id || '').trim();
+    const txId = rawTxId || generateTxId('bt');
     return {
       id: txId,
       txId,

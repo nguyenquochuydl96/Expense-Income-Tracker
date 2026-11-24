@@ -82,6 +82,15 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
 }) => {
   const { isPrivate: hookIsPrivate } = usePrivacyMode();
   const _effectiveIsPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
+
+  const renderMoney = (amount: number, forceSign = false) => {
+    if (_effectiveIsPrivate) {
+      if (forceSign && amount > 0) return '+•••••• ₫';
+      if (forceSign && amount < 0) return '-•••••• ₫';
+      return '•••••• ₫';
+    }
+    return formatCurrency(amount, forceSign);
+  };
   // Category percentage allocation map
   const [percentages, setPercentages] = useState<Record<string, number>>(() => {
     try {
@@ -465,7 +474,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
                 Ngân sách &amp; Chi tiêu theo Hạng mục
               </h2>
               <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                Budget tổng = Income ({formatCurrency(totalIncome)})
+                Budget tổng = Income ({renderMoney(totalIncome)})
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 flex items-center gap-1">
                 <History className="w-3 h-3" />
@@ -655,7 +664,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
               {' · '}
               Tổng chi:{' '}
               <strong className="font-mono-tabular font-bold">
-                {formatCurrency(categoryTransactions.reduce((s, r) => s + r.amount, 0))}
+                {renderMoney(categoryTransactions.reduce((s, r) => s + r.amount, 0))}
               </strong>
             </span>
           </div>
@@ -780,13 +789,13 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
                     <div>
                       <div className="text-[10px] text-slate-400 uppercase">Khả dụng</div>
                       <div className="font-bold text-slate-800 dark:text-slate-200 mt-0.5">
-                        {formatCurrency(item.effectiveBudget)}
+                        {renderMoney(item.effectiveBudget)}
                       </div>
                     </div>
                     <div>
                       <div className="text-[10px] text-slate-400 uppercase">Đã chi</div>
                       <div className="font-bold text-slate-900 dark:text-slate-100 mt-0.5">
-                        {formatCurrency(item.spent)}
+                        {renderMoney(item.spent)}
                       </div>
                     </div>
                     <div className="text-right">
@@ -796,7 +805,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
                           ? 'text-rose-600 dark:text-rose-400'
                           : 'text-emerald-600 dark:text-emerald-400'
                       }`}>
-                        {formatCurrency(item.remaining)}
+                        {renderMoney(item.remaining)}
                       </div>
                     </div>
                   </div>
@@ -806,17 +815,17 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
                     <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/60">
                       {item.carryover !== 0 && (
                         <span className={item.carryover > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
-                          {item.carryover > 0 ? `${formatCurrency(item.carryover, true)} dư T trước` : `${formatCurrency(item.carryover)} nợ T trước`}
+                          {item.carryover > 0 ? `${renderMoney(item.carryover, true)} dư T trước` : `${renderMoney(item.carryover)} nợ T trước`}
                         </span>
                       )}
                       {item.dedicatedIncome > 0 && (
                         <span className="text-teal-600 dark:text-teal-400">
-                          {formatCurrency(item.dedicatedIncome, true)} thu riêng
+                          {renderMoney(item.dedicatedIncome, true)} thu riêng
                         </span>
                       )}
                       {item.netTransfer !== 0 && (
                         <span className={item.netTransfer > 0 ? 'text-emerald-600' : 'text-amber-600'}>
-                          {item.netTransfer > 0 ? `${formatCurrency(item.netTransfer, true)} chuyển vào` : `${formatCurrency(item.netTransfer)} chuyển đi`}
+                          {item.netTransfer > 0 ? `${renderMoney(item.netTransfer, true)} chuyển vào` : `${renderMoney(item.netTransfer)} chuyển đi`}
                         </span>
                       )}
                     </div>
@@ -913,10 +922,10 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
 
                     {/* Định mức tháng (Base Budget = Income * % + Dedicated) */}
                     <td className="py-2.5 px-3 text-right">
-                      <div className="font-semibold text-slate-700 dark:text-slate-300">{formatCurrency(item.baseBudget)}</div>
+                      <div className="font-semibold text-slate-700 dark:text-slate-300">{renderMoney(item.baseBudget)}</div>
                       {item.dedicatedIncome > 0 && (
-                        <div className="text-[10px] text-teal-700 dark:text-teal-400 font-medium whitespace-nowrap" title={`Bao gồm ${formatCurrency(item.dedicatedIncome, true)} thu nhập dành riêng`}>
-                          ({formatCurrency(item.dedicatedIncome, true)} thu riêng)
+                        <div className="text-[10px] text-teal-700 dark:text-teal-400 font-medium whitespace-nowrap" title={`Bao gồm ${renderMoney(item.dedicatedIncome, true)} thu nhập dành riêng`}>
+                          ({renderMoney(item.dedicatedIncome, true)} thu riêng)
                         </div>
                       )}
                     </td>
@@ -925,11 +934,11 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
                     <td className="py-2.5 px-3 text-right">
                       {item.carryover < 0 ? (
                         <span className="inline-flex items-center gap-0.5 font-bold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-900/60" title="Bội chi từ tháng trước cấn trừ vào tháng này">
-                          <span>{formatCurrency(item.carryover)}</span>
+                          <span>{renderMoney(item.carryover)}</span>
                         </span>
                       ) : item.carryover > 0 ? (
                         <span className="inline-flex items-center gap-0.5 font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-200/50 dark:border-emerald-900/60" title="Số dư tháng trước cộng dồn vào ngân sách tháng này">
-                          <span>{formatCurrency(item.carryover, true)}</span>
+                          <span>{renderMoney(item.carryover, true)}</span>
                         </span>
                       ) : (
                         <span className="text-slate-300 dark:text-slate-600 font-mono">0</span>
@@ -938,24 +947,24 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
 
                     {/* Ngân sách thực dụng khả dụng (Effective Budget = Base + Carryover + Transfer) */}
                     <td className="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-slate-100 bg-sky-50/40 dark:bg-sky-950/30">
-                      <div>{formatCurrency(item.effectiveBudget)}</div>
+                      <div>{renderMoney(item.effectiveBudget)}</div>
                       {item.netTransfer !== 0 && (
                         <div
                           className={`text-[10px] font-medium whitespace-nowrap ${
                             item.netTransfer > 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'
                           }`}
-                          title={`Điều chuyển ngân sách: ${formatCurrency(item.netTransfer, true)}`}
+                          title={`Điều chuyển ngân sách: ${renderMoney(item.netTransfer, true)}`}
                         >
                           {item.netTransfer > 0
-                            ? `(${formatCurrency(item.netTransfer, true)} nhận)`
-                            : `(${formatCurrency(item.netTransfer)} chuyển)`}
+                            ? `(${renderMoney(item.netTransfer, true)} nhận)`
+                            : `(${renderMoney(item.netTransfer)} chuyển)`}
                         </div>
                       )}
                     </td>
 
                     {/* Đã chi tiêu */}
                     <td className="py-2.5 px-3 text-right font-semibold text-slate-800 dark:text-slate-200">
-                      {formatCurrency(item.spent)}
+                      {renderMoney(item.spent)}
                     </td>
 
                     {/* Còn lại (Remaining) */}
@@ -963,12 +972,12 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
                       {isOver ? (
                         <span className="inline-flex items-center gap-1 font-bold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-900/60">
                           <TrendingDown className="w-3 h-3 shrink-0" />
-                          <span>Bội chi {formatCurrency(item.remaining)}</span>
+                          <span>Bội chi {renderMoney(item.remaining)}</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-900/60">
                           <TrendingUp className="w-3 h-3 shrink-0" />
-                          <span>Còn lại {formatCurrency(item.remaining)}</span>
+                          <span>Còn lại {renderMoney(item.remaining)}</span>
                         </span>
                       )}
                     </td>
@@ -1029,35 +1038,35 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
                   </span>
                 </td>
                 <td className="py-3 px-3 text-right text-slate-700 dark:text-slate-300">
-                  {formatCurrency(currentViewStats.totalBaseBudget)}
+                  {renderMoney(currentViewStats.totalBaseBudget)}
                 </td>
                 <td className="py-3 px-3 text-right">
                   {currentViewStats.totalCarryover < 0 ? (
                     <span className="text-rose-700 dark:text-rose-400 font-bold">
-                      {formatCurrency(currentViewStats.totalCarryover)}
+                      {renderMoney(currentViewStats.totalCarryover)}
                     </span>
                   ) : currentViewStats.totalCarryover > 0 ? (
                     <span className="text-emerald-700 dark:text-emerald-400 font-bold">
-                      {formatCurrency(currentViewStats.totalCarryover, true)}
+                      {renderMoney(currentViewStats.totalCarryover, true)}
                     </span>
                   ) : (
                     <span className="text-slate-400 dark:text-slate-500">0</span>
                   )}
                 </td>
                 <td className="py-3 px-3 text-right text-slate-900 dark:text-slate-100 bg-sky-50/60 dark:bg-sky-950/40 font-extrabold">
-                  {formatCurrency(currentViewStats.totalEffectiveBudget)}
+                  {renderMoney(currentViewStats.totalEffectiveBudget)}
                 </td>
                 <td className="py-3 px-3 text-right text-slate-900 dark:text-slate-100">
-                  {formatCurrency(currentViewStats.totalSpent)}
+                  {renderMoney(currentViewStats.totalSpent)}
                 </td>
                 <td className="py-3 px-3 text-right">
                   {currentViewStats.totalRemaining < 0 ? (
                     <span className="text-rose-700 dark:text-rose-300 bg-rose-100/80 dark:bg-rose-950/70 px-2.5 py-1 rounded border border-rose-300 dark:border-rose-800 font-bold">
-                      Vượt {formatCurrency(currentViewStats.totalRemaining)}
+                      Vượt {renderMoney(currentViewStats.totalRemaining)}
                     </span>
                   ) : (
                     <span className="text-emerald-800 dark:text-emerald-200 bg-emerald-100/80 dark:bg-emerald-950/70 px-2.5 py-1 rounded border border-emerald-300 dark:border-emerald-800 font-bold">
-                      Dư {formatCurrency(currentViewStats.totalRemaining)}
+                      Dư {renderMoney(currentViewStats.totalRemaining)}
                     </span>
                   )}
                 </td>
@@ -1131,7 +1140,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
                             </span>
                           </div>
                           <div className={`font-bold ${isReceiving ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>
-                            {isReceiving ? formatCurrency(bt.amount, true) : formatCurrency(-bt.amount)}
+                            {isReceiving ? renderMoney(bt.amount, true) : renderMoney(-bt.amount)}
                           </div>
                         </div>
                       );
@@ -1148,7 +1157,7 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
                   <span className="text-slate-500 dark:text-slate-400 font-normal">({categoryTransactions.length} giao dịch)</span>
                 </h4>
                 <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 font-mono-tabular">
-                  Tổng chi: <strong className="text-slate-900 dark:text-slate-100">{formatCurrency(categoryTransactions.reduce((s, r) => s + r.amount, 0))}</strong>
+                  Tổng chi: <strong className="text-slate-900 dark:text-slate-100">{renderMoney(categoryTransactions.reduce((s, r) => s + r.amount, 0))}</strong>
                 </div>
               </div>
 
@@ -1174,9 +1183,9 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
                         <tr key={tx.id || idx} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors">
                           <td className="py-2 px-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{tx.purchaseDate}</td>
                           <td className="py-2 px-3 font-sans text-slate-900 dark:text-slate-100 font-medium">{tx.purchaseItem}</td>
-                          <td className="py-2 px-3 text-right font-bold text-slate-900 dark:text-slate-100">{formatCurrency(tx.amount)}</td>
-                          <td className="py-2 px-3 text-right text-amber-700 dark:text-amber-400">{tx.beCorp > 0 ? formatCurrency(tx.beCorp) : '—'}</td>
-                          <td className="py-2 px-3 text-right text-purple-700 dark:text-purple-400">{tx.credit > 0 ? formatCurrency(tx.credit) : '—'}</td>
+                          <td className="py-2 px-3 text-right font-bold text-slate-900 dark:text-slate-100">{renderMoney(tx.amount)}</td>
+                          <td className="py-2 px-3 text-right text-amber-700 dark:text-amber-400">{tx.beCorp > 0 ? renderMoney(tx.beCorp) : '—'}</td>
+                          <td className="py-2 px-3 text-right text-purple-700 dark:text-purple-400">{tx.credit > 0 ? renderMoney(tx.credit) : '—'}</td>
                           <td className="py-2 px-3 font-sans text-slate-500 dark:text-slate-400 text-[11px]">{tx.note || '—'}</td>
                         </tr>
                       ))}
@@ -1258,16 +1267,16 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
                         >
                           <div className="flex flex-col items-end gap-0.5">
                             <div className="text-[11px] font-semibold text-slate-800 dark:text-slate-200">
-                              {formatNumberForSheet(mData.spent)} / {formatNumberForSheet(mData.effectiveBudget)}
+                              {_effectiveIsPrivate ? '•••••• / ••••••' : `${formatNumberForSheet(mData.spent)} / ${formatNumberForSheet(mData.effectiveBudget)}`}
                             </div>
                             <div className="text-[10px]">
                               {isOver ? (
                                 <span className="text-rose-700 dark:text-rose-400 font-bold bg-rose-50 dark:bg-rose-950/60 px-1 rounded">
-                                  Bội chi -{formatNumberForSheet(Math.abs(mData.remaining))}
+                                  Bội chi -{_effectiveIsPrivate ? '••••••' : formatNumberForSheet(Math.abs(mData.remaining))}
                                 </span>
                               ) : (
                                 <span className="text-emerald-700 dark:text-emerald-400 font-medium bg-emerald-50 dark:bg-emerald-950/60 px-1 rounded">
-                                  Dư +{formatNumberForSheet(mData.remaining)}
+                                  Dư +{_effectiveIsPrivate ? '••••••' : formatNumberForSheet(mData.remaining)}
                                 </span>
                               )}
                             </div>

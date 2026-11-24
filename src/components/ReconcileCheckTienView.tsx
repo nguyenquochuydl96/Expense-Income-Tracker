@@ -85,6 +85,15 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<ReconcileSubTab>('reconcile');
   const { isPrivate } = usePrivacyMode();
+
+  const renderMoney = (amount: number, forceSign = false, customSuffix = ' ₫') => {
+    if (isPrivate) {
+      if (forceSign && amount > 0) return `+••••••${customSuffix}`;
+      if (forceSign && amount < 0) return `-••••••${customSuffix}`;
+      return `••••••${customSuffix}`;
+    }
+    return formatCurrency(amount, forceSign);
+  };
   const walletSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -491,7 +500,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
               activeSubTab === 'accounts' ? 'bg-teal-800 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200'
             }`}>
-              {formatCurrency(totalRealMoney)}
+              {renderMoney(totalRealMoney)}
             </span>
           </button>
 
@@ -509,7 +518,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
               activeSubTab === 'becorp' ? 'bg-amber-700 text-white' : 'bg-amber-100 dark:bg-amber-950/80 text-amber-900 dark:text-amber-200 border border-transparent dark:border-amber-800/60'
             }`}>
-              {formatCurrency(beCorpCycleStats.totalBeCorp)}
+              {renderMoney(beCorpCycleStats.totalBeCorp)}
             </span>
           </button>
 
@@ -527,7 +536,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
               activeSubTab === 'credit' ? 'bg-indigo-800 text-white' : 'bg-indigo-100 dark:bg-indigo-950/80 text-indigo-900 dark:text-indigo-200 border border-transparent dark:border-indigo-800/60'
             }`}>
-              {formatCurrency(creditCycleStats.totalCredit)}
+              {renderMoney(creditCycleStats.totalCredit)}
             </span>
           </button>
         </div>
@@ -542,7 +551,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
               ? 'text-rose-700 dark:text-rose-400'
               : 'text-amber-700 dark:text-amber-400'
           }`}>
-            {formatCurrency(cycleReconcileStats.discrepancy, true)}
+            {renderMoney(cycleReconcileStats.discrepancy, true)}
           </strong>
         </div>
       </div>
@@ -646,9 +655,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                       ? 'text-emerald-700 dark:text-emerald-300'
                       : 'text-rose-700 dark:text-rose-300'
                   }`}>
-                    {cycleReconcileStats.discrepancy > 0
-                      ? `+${formatCurrency(cycleReconcileStats.discrepancy)}`
-                      : formatCurrency(cycleReconcileStats.discrepancy)}
+                    {renderMoney(cycleReconcileStats.discrepancy, true)}
                   </span>
                   <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
                     Math.abs(cycleReconcileStats.discrepancy) < 1000
@@ -666,8 +673,8 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                 </div>
               </div>
               <div className="text-right text-[11px] font-mono-tabular text-slate-500 dark:text-slate-400">
-                <div>Thực tế: <strong className="text-slate-800 dark:text-slate-200">{formatCurrency(totalRealMoney)}</strong></div>
-                <div>Lý thuyết: <strong className="text-slate-800 dark:text-slate-200">{formatCurrency(cycleReconcileStats.theoreticalRemaining)}</strong></div>
+                <div>Thực tế: <strong className="text-slate-800 dark:text-slate-200">{renderMoney(totalRealMoney)}</strong></div>
+                <div>Lý thuyết: <strong className="text-slate-800 dark:text-slate-200">{renderMoney(cycleReconcileStats.theoreticalRemaining)}</strong></div>
               </div>
             </div>
           </div>
@@ -700,7 +707,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                         </span>
                       </div>
                       <span className="font-mono-tabular font-extrabold text-teal-700 dark:text-teal-400 text-sm shrink-0">
-                        {formatCurrency(openingBalance, openingBalance !== 0)}
+                        {renderMoney(openingBalance, openingBalance !== 0)}
                       </span>
                     </div>
                     <MoneyCalculatorInput
@@ -710,6 +717,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                       size="xs"
                       theme="teal"
                       allowNegative={true}
+                      isPrivate={isPrivate}
                       className="w-full"
                       inputClassName={`text-right font-mono-tabular font-bold text-teal-900 dark:text-teal-200 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                     />
@@ -725,7 +733,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Khoản thu nhập ({cycleReconcileStats.incomeCount} khoản)</span>
                     </div>
                     <span className="font-mono-tabular font-extrabold text-emerald-700 dark:text-emerald-400 text-sm">
-                      {formatCurrency(cycleReconcileStats.cycleIncome, true)}
+                      {renderMoney(cycleReconcileStats.cycleIncome, true)}
                     </span>
                   </div>
 
@@ -739,7 +747,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Khoản chi tiêu ({cycleReconcileStats.expenseCount} giao dịch)</span>
                     </div>
                     <span className="font-mono-tabular font-extrabold text-rose-700 dark:text-rose-400 text-sm">
-                      {formatCurrency(-cycleReconcileStats.cycleExpense)}
+                      {renderMoney(-cycleReconcileStats.cycleExpense)}
                     </span>
                   </div>
 
@@ -753,7 +761,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Chưa trừ tiền mặt ({cycleReconcileStats.creditCount} dòng)</span>
                     </div>
                     <span className="font-mono-tabular font-extrabold text-indigo-700 dark:text-indigo-400 text-sm">
-                      {formatCurrency(cycleReconcileStats.cycleCredit, true)}
+                      {renderMoney(cycleReconcileStats.cycleCredit, true)}
                     </span>
                   </div>
                 </div>
@@ -770,7 +778,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                   </span>
                 </div>
                 <span className="text-base font-extrabold font-mono-tabular text-slate-900 dark:text-slate-100">
-                  {formatCurrency(cycleReconcileStats.theoreticalRemaining)}
+                  {renderMoney(cycleReconcileStats.theoreticalRemaining)}
                 </span>
               </div>
             </div>
@@ -801,7 +809,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                         <span>🐷</span> Heo
                       </span>
                       <strong className="text-xs font-extrabold font-mono-tabular text-rose-950 dark:text-rose-200">
-                        {formatCurrency(heoTotal)}
+                        {renderMoney(heoTotal)}
                       </strong>
                     </div>
 
@@ -818,6 +826,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                             size="xs"
                             theme="rose"
                             allowNegative={true}
+                            isPrivate={isPrivate}
                             className="w-full"
                             inputClassName={`text-right font-mono-tabular font-bold text-rose-950 dark:text-rose-200 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                           />
@@ -833,7 +842,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                         <span>🐱</span> Mèo
                       </span>
                       <strong className="text-xs font-extrabold font-mono-tabular text-sky-950 dark:text-sky-200">
-                        {formatCurrency(meoTotal)}
+                        {renderMoney(meoTotal)}
                       </strong>
                     </div>
 
@@ -850,6 +859,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                             size="xs"
                             theme="sky"
                             allowNegative={true}
+                            isPrivate={isPrivate}
                             className="w-full"
                             inputClassName={`text-right font-mono-tabular font-bold text-sky-950 dark:text-sky-200 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                           />
@@ -871,7 +881,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                   </span>
                 </div>
                 <span className="text-base font-extrabold font-mono-tabular text-teal-800 dark:text-teal-300">
-                  {formatCurrency(totalRealMoney)}
+                  {renderMoney(totalRealMoney)}
                 </span>
               </div>
             </div>
@@ -896,7 +906,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                         : 'text-amber-700 dark:text-amber-400'
                     }`}
                   >
-                    {formatCurrency(cycleReconcileStats.discrepancy, true)}
+                    {renderMoney(cycleReconcileStats.discrepancy, true)}
                   </div>
 
                   <div className="mt-4 p-3.5 rounded-xl border bg-white dark:bg-slate-800/90 border-slate-200 dark:border-slate-700 text-xs space-y-2">
@@ -912,7 +922,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                       <div className="flex items-start gap-2 text-rose-800 dark:text-rose-300">
                         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
                         <div>
-                          <strong className="block font-bold">Hụt {formatCurrency(Math.abs(cycleReconcileStats.discrepancy))}!</strong>
+                          <strong className="block font-bold">Hụt {isPrivate ? '•••••• ₫' : formatCurrency(Math.abs(cycleReconcileStats.discrepancy))}!</strong>
                           <span className="text-slate-600 dark:text-slate-400">Có khoản chi tiêu thực tế đã phát sinh nhưng chưa ghi vào sổ.</span>
                         </div>
                       </div>
@@ -920,7 +930,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                       <div className="flex items-start gap-2 text-amber-800 dark:text-amber-300">
                         <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
                         <div>
-                          <strong className="block font-bold">Dư {formatCurrency(cycleReconcileStats.discrepancy)}!</strong>
+                          <strong className="block font-bold">Dư {renderMoney(cycleReconcileStats.discrepancy)}!</strong>
                           <span className="text-slate-600 dark:text-slate-400">Có khoản tiền hoàn/thu vào hoặc trả hộ chưa được trừ ra.</span>
                         </div>
                       </div>
@@ -937,7 +947,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                     className="w-full py-2.5 px-3 text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white dark:text-slate-900 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <span>
-                      Ghi nhận lệch ({formatCurrency(Math.abs(cycleReconcileStats.discrepancy))})
+                      Ghi nhận lệch ({isPrivate ? '•••••• ₫' : formatCurrency(Math.abs(cycleReconcileStats.discrepancy))})
                     </span>
                     <ArrowUpRight className="w-3.5 h-3.5" />
                   </button>
@@ -972,7 +982,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
             <div className="flex items-center gap-3 bg-teal-50 dark:bg-teal-950/50 border border-teal-200 dark:border-teal-800/60 px-4 py-2.5 rounded-xl text-xs">
               <span className="text-teal-800 dark:text-teal-300 font-medium">Tổng tài sản 2 người:</span>
               <strong className="text-lg font-extrabold font-mono-tabular text-teal-950 dark:text-teal-100">
-                {formatCurrency(totalRealMoney)}
+                {renderMoney(totalRealMoney)}
               </strong>
             </div>
           </div>
@@ -992,7 +1002,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                 <div className="text-right">
                   <div className="text-xs text-rose-700 dark:text-rose-400 font-medium">Tổng tiền Heo</div>
                   <div className="text-xl font-extrabold font-mono-tabular text-rose-950 dark:text-rose-200">
-                    {formatCurrency(heoTotal)}
+                    {renderMoney(heoTotal)}
                   </div>
                 </div>
               </div>
@@ -1024,6 +1034,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                           size="md"
                           theme="rose"
                           allowNegative={true}
+                          isPrivate={isPrivate}
                           className="w-full sm:w-44 shrink-0"
                           inputClassName={`text-right text-sm font-extrabold text-slate-900 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/60 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                         />
@@ -1047,7 +1058,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                 <div className="text-right">
                   <div className="text-xs text-sky-700 dark:text-sky-400 font-medium">Tổng tiền Mèo</div>
                   <div className="text-xl font-extrabold font-mono-tabular text-sky-950 dark:text-sky-200">
-                    {formatCurrency(meoTotal)}
+                    {renderMoney(meoTotal)}
                   </div>
                 </div>
               </div>
@@ -1079,6 +1090,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                           size="md"
                           theme="sky"
                           allowNegative={true}
+                          isPrivate={isPrivate}
                           className="w-full sm:w-44 shrink-0"
                           inputClassName={`text-right text-sm font-extrabold text-slate-900 dark:text-slate-100 bg-slate-50/50 dark:bg-slate-800/60 ${isPrivate ? 'select-none blur-[4px] focus:blur-none transition-all' : ''}`}
                         />
@@ -1180,7 +1192,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                   </div>
                 ) : (
                   <div className="text-xl font-extrabold font-mono-tabular text-slate-900 dark:text-slate-100 mt-2">
-                    {formatCurrency(beSubsidyQuota)}
+                    {renderMoney(beSubsidyQuota)}
                   </div>
                 )}
               </div>
@@ -1194,7 +1206,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
               <div>
                 <div className="text-xs text-amber-800 dark:text-amber-300 font-medium">Đã dùng trong chu kỳ</div>
                 <div className="text-xl font-extrabold font-mono-tabular text-amber-950 dark:text-amber-100 mt-2">
-                  {formatCurrency(beCorpCycleStats.totalBeCorp)}
+                  {renderMoney(beCorpCycleStats.totalBeCorp)}
                 </div>
               </div>
               <div className="text-[11px] text-amber-800 dark:text-amber-400 mt-2 font-medium">
@@ -1217,7 +1229,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                 <div className={`text-xl font-extrabold font-mono-tabular mt-2 ${
                   beCorpCycleStats.remainingQuota >= 0 ? 'text-emerald-950 dark:text-emerald-100' : 'text-rose-950 dark:text-rose-100'
                 }`}>
-                  {formatCurrency(beCorpCycleStats.remainingQuota)}
+                  {renderMoney(beCorpCycleStats.remainingQuota)}
                 </div>
               </div>
               <div className={`text-[11px] font-bold mt-2 ${
@@ -1225,7 +1237,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
               }`}>
                 {beCorpCycleStats.remainingQuota >= 0
                   ? `Đã dùng ${beCorpCycleStats.pctUsed.toFixed(0)}% định mức`
-                  : `Vượt quá ${formatCurrency(Math.abs(beCorpCycleStats.remainingQuota))}`}
+                  : `Vượt quá ${isPrivate ? '•••••• ₫' : formatCurrency(Math.abs(beCorpCycleStats.remainingQuota))}`}
               </div>
             </div>
           </div>
@@ -1298,10 +1310,10 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                           {item.category}
                         </td>
                         <td className="py-2.5 px-3 text-right text-slate-700 dark:text-slate-300 font-semibold">
-                          {formatCurrency(item.amount)}
+                          {renderMoney(item.amount)}
                         </td>
                         <td className="py-2.5 px-3 text-right font-extrabold text-amber-800 dark:text-amber-300 bg-amber-50/40 dark:bg-amber-950/40">
-                          {formatCurrency(item.beCorp)}
+                          {renderMoney(item.beCorp)}
                         </td>
                         <td className="py-2.5 px-3 font-sans text-[11px] text-slate-500 dark:text-slate-400">
                           {item.note || '—'}
@@ -1375,7 +1387,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
             <div className="p-4 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/50 rounded-xl">
               <div className="text-xs text-indigo-800 dark:text-indigo-300 font-medium">Tổng tiền cần thanh toán sao kê Credit</div>
               <div className="text-2xl font-extrabold font-mono-tabular text-indigo-950 dark:text-indigo-100 mt-2">
-                {formatCurrency(creditCycleStats.totalCredit)}
+                {renderMoney(creditCycleStats.totalCredit)}
               </div>
               <div className="text-[11px] text-indigo-700 dark:text-indigo-400 mt-2 font-medium">
                 Tổng phát sinh quẹt thẻ tín dụng cần thanh toán trong chu kỳ ({creditStartDate} → {creditEndDate})
@@ -1388,7 +1400,7 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                 {creditCycleStats.items.length} <span className="text-sm font-normal text-slate-500 dark:text-slate-400">giao dịch</span>
               </div>
               <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-2">
-                Trung bình ~{formatCurrency(creditCycleStats.avgPerTransaction)} / giao dịch
+                Trung bình ~{renderMoney(creditCycleStats.avgPerTransaction)} / giao dịch
               </div>
             </div>
           </div>
@@ -1441,10 +1453,10 @@ export const ReconcileCheckTienView: React.FC<ReconcileCheckTienViewProps> = Rea
                           {item.category}
                         </td>
                         <td className="py-2.5 px-3 text-right text-slate-700 dark:text-slate-300 font-semibold">
-                          {formatCurrency(item.amount)}
+                          {renderMoney(item.amount)}
                         </td>
                         <td className="py-2.5 px-3 text-right font-extrabold text-indigo-800 dark:text-indigo-300 bg-indigo-50/40 dark:bg-indigo-950/40">
-                          {formatCurrency(item.credit)}
+                          {renderMoney(item.credit)}
                         </td>
                         <td className="py-2.5 px-3 font-sans text-[11px] text-slate-500 dark:text-slate-400">
                           {item.note || '—'}

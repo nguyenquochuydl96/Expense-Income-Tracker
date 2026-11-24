@@ -81,6 +81,16 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
   const { isPrivate: hookIsPrivate } = usePrivacyMode();
   // Ensure both hook and prop changes trigger re-render
   const _effectiveIsPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
+
+  const renderNum = (val: number) => (_effectiveIsPrivate ? '••••••' : formatNumberForSheet(val));
+  const renderMoney = (val: number, forceSign = false) => {
+    if (_effectiveIsPrivate) {
+      if (forceSign && val > 0) return '+•••••• ₫';
+      if (forceSign && val < 0) return '-•••••• ₫';
+      return '•••••• ₫';
+    }
+    return formatCurrency(val, forceSign);
+  };
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
 
   const isMonthSelected = (mKey: string) => {
@@ -605,14 +615,14 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
                       isMonthSelected(m.mKey) ? 'bg-sky-50/50 dark:bg-sky-950/30 font-semibold text-emerald-800 dark:text-emerald-400' : 'text-slate-700 dark:text-slate-300'
                     }`}
                   >
-                    {formatNumberForSheet(m.budget)}
+                    {renderNum(m.budget)}
                   </td>
                 ))}
                 <td className="py-2.5 px-3 text-right bg-slate-50 dark:bg-slate-800/80 font-semibold text-slate-800 dark:text-slate-200 border-l border-slate-200 dark:border-slate-800">
-                  {formatNumberForSheet(totals.avg.budget)}
+                  {renderNum(totals.avg.budget)}
                 </td>
                 <td className="py-2.5 px-4 text-right bg-slate-50 dark:bg-slate-800/80 font-bold text-emerald-800 dark:text-emerald-400">
-                  {formatNumberForSheet(totals.total.budget)}
+                  {renderNum(totals.total.budget)}
                 </td>
               </tr>
 
@@ -628,14 +638,14 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
                       isMonthSelected(m.mKey) ? 'bg-sky-50/30 dark:bg-sky-950/20 font-medium' : ''
                     }`}
                   >
-                    {formatNumberForSheet(m.livingExpense)}
+                    {renderNum(m.livingExpense)}
                   </td>
                 ))}
                 <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-400 border-l border-slate-200 dark:border-slate-800">
-                  {formatNumberForSheet(totals.avg.living)}
+                  {renderNum(totals.avg.living)}
                 </td>
                 <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300">
-                  {formatNumberForSheet(totals.total.living)}
+                  {renderNum(totals.total.living)}
                 </td>
               </tr>
 
@@ -651,14 +661,14 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
                       isMonthSelected(m.mKey) ? 'bg-sky-50/30 dark:bg-sky-950/20 font-medium' : ''
                     }`}
                   >
-                    {m.savingsExpense > 0 ? formatNumberForSheet(m.savingsExpense) : '—'}
+                    {m.savingsExpense > 0 ? renderNum(m.savingsExpense) : '—'}
                   </td>
                 ))}
                 <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-800/80 text-blue-700 dark:text-blue-400 border-l border-slate-200 dark:border-slate-800">
-                  {formatNumberForSheet(totals.avg.savings)}
+                  {renderNum(totals.avg.savings)}
                 </td>
                 <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-800/80 text-blue-800 dark:text-blue-300 font-medium">
-                  {formatNumberForSheet(totals.total.savings)}
+                  {renderNum(totals.total.savings)}
                 </td>
               </tr>
 
@@ -674,14 +684,14 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
                       isMonthSelected(m.mKey) ? 'bg-sky-50 dark:bg-sky-950/40 font-extrabold' : ''
                     }`}
                   >
-                    {formatNumberForSheet(m.totalExpense)}
+                    {renderNum(m.totalExpense)}
                   </td>
                 ))}
                 <td className="py-2.5 px-3 text-right bg-slate-100 dark:bg-slate-800 text-rose-700 dark:text-rose-400 font-bold border-l border-slate-200 dark:border-slate-800">
-                  {formatNumberForSheet(totals.avg.expense)}
+                  {renderNum(totals.avg.expense)}
                 </td>
                 <td className="py-2.5 px-4 text-right bg-slate-100 dark:bg-slate-800 text-rose-800 dark:text-rose-300 font-extrabold">
-                  {formatNumberForSheet(totals.total.expense)}
+                  {renderNum(totals.total.expense)}
                 </td>
               </tr>
 
@@ -706,7 +716,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
                             : 'bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border border-rose-200/60 dark:border-rose-800/60'
                         }`}
                       >
-                        {formatCurrency(m.remaining, true)}
+                        {renderMoney(m.remaining, true)}
                       </span>
                     </td>
                   );
@@ -717,7 +727,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
                       totals.avg.remaining >= 0 ? 'text-emerald-800 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'
                     }`}
                   >
-                    {formatCurrency(totals.avg.remaining, true)}
+                    {renderMoney(totals.avg.remaining, true)}
                   </span>
                 </td>
                 <td className="py-2.5 px-4 text-right bg-slate-50 dark:bg-slate-800/80">
@@ -728,7 +738,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
                         : 'bg-rose-100 dark:bg-rose-950/70 text-rose-900 dark:text-rose-200'
                     }`}
                   >
-                    {formatCurrency(totals.total.remaining, true)}
+                    {renderMoney(totals.total.remaining, true)}
                   </span>
                 </td>
               </tr>
@@ -752,7 +762,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
                           : 'text-rose-800 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/50'
                       }`}
                     >
-                      {formatCurrency(m.cumulativeRemaining, true)}
+                      {renderMoney(m.cumulativeRemaining, true)}
                     </span>
                   </td>
                 ))}
@@ -760,7 +770,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
                   —
                 </td>
                 <td className="py-2 px-4 text-right bg-indigo-100/60 dark:bg-indigo-950/50 font-mono-tabular font-extrabold text-indigo-950 dark:text-indigo-200">
-                  {formatCurrency(totals.total.cumulativeRemaining, true)}
+                  {renderMoney(totals.total.cumulativeRemaining, true)}
                 </td>
               </tr>
 
@@ -812,7 +822,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
                   >
                     {m.beCorpTotal > 0 ? (
                       <span className="bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded text-[11px] text-amber-900 dark:text-amber-200 border border-amber-200/50 dark:border-amber-800/50">
-                        {formatNumberForSheet(m.beCorpTotal)}
+                        {renderNum(m.beCorpTotal)}
                       </span>
                     ) : (
                       <span className="text-slate-300 dark:text-slate-600">0</span>
@@ -820,10 +830,10 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
                   </td>
                 ))}
                 <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-800/80 text-amber-800 dark:text-amber-400 font-semibold border-l border-slate-200 dark:border-slate-800">
-                  {formatNumberForSheet(totals.avg.beCorp)}
+                  {renderNum(totals.avg.beCorp)}
                 </td>
                 <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-800/80 text-amber-900 dark:text-amber-300 font-bold">
-                  {formatNumberForSheet(totals.total.beCorp)}
+                  {renderNum(totals.total.beCorp)}
                 </td>
               </tr>
 
@@ -842,7 +852,7 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
                   >
                     {m.creditTotal > 0 ? (
                       <span className="bg-indigo-50 dark:bg-indigo-950/50 px-1.5 py-0.5 rounded text-[11px] text-indigo-900 dark:text-indigo-200 border border-indigo-200/50 dark:border-indigo-800/50">
-                        {formatNumberForSheet(m.creditTotal)}
+                        {renderNum(m.creditTotal)}
                       </span>
                     ) : (
                       <span className="text-slate-300 dark:text-slate-600">0</span>
@@ -850,10 +860,10 @@ export const MultiMonthSummaryTable: React.FC<MultiMonthSummaryTableProps> = Rea
                   </td>
                 ))}
                 <td className="py-2 px-3 text-right bg-slate-50 dark:bg-slate-800/80 text-indigo-800 dark:text-indigo-400 font-semibold border-l border-slate-200 dark:border-slate-800">
-                  {formatNumberForSheet(totals.avg.credit)}
+                  {renderNum(totals.avg.credit)}
                 </td>
                 <td className="py-2 px-4 text-right bg-slate-50 dark:bg-slate-800/80 text-indigo-900 dark:text-indigo-300 font-bold">
-                  {formatNumberForSheet(totals.total.credit)}
+                  {renderNum(totals.total.credit)}
                 </td>
               </tr>
             </tbody>

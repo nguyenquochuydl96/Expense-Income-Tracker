@@ -45,6 +45,7 @@ interface TransactionRowProps {
   onSelectCategory: (cat: string) => void;
   onEditTransaction?: (record: TransactionRecord) => void;
   onDeleteTransaction?: (record: TransactionRecord) => void;
+  isPrivate?: boolean;
 }
 
 export const TransactionMobileCard: React.FC<TransactionRowProps> = React.memo(({
@@ -53,7 +54,10 @@ export const TransactionMobileCard: React.FC<TransactionRowProps> = React.memo((
   onSelectCategory,
   onEditTransaction,
   onDeleteTransaction,
+  isPrivate: propIsPrivate,
 }) => {
+  const { isPrivate: hookIsPrivate } = usePrivacyMode();
+  const isPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
   const isIncome = rec.sheetType === 'Income';
   return (
     <div className="p-3.5 space-y-2 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all rounded-xl">
@@ -108,7 +112,7 @@ export const TransactionMobileCard: React.FC<TransactionRowProps> = React.memo((
               : 'text-slate-900 dark:text-slate-100'
           }`}
         >
-          {formatCurrency(rec.amount, isIncome)}
+          {isPrivate ? (isIncome ? '+•••••• ₫' : '•••••• ₫') : formatCurrency(rec.amount, isIncome)}
         </div>
       </div>
 
@@ -117,12 +121,12 @@ export const TransactionMobileCard: React.FC<TransactionRowProps> = React.memo((
         <div className="flex flex-wrap items-center gap-1.5 pt-1 text-xs">
           {rec.beCorp !== 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 text-[11px] font-mono-tabular font-semibold border border-amber-200/60 dark:border-amber-900/60">
-              Ví BE: {formatNumberForSheet(rec.beCorp, true)}
+              Ví BE: {isPrivate ? '••••••' : formatNumberForSheet(rec.beCorp, true)}
             </span>
           )}
           {rec.credit !== 0 && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 text-[11px] font-mono-tabular font-semibold border border-indigo-200/60 dark:border-indigo-900/60">
-              Credit: {formatNumberForSheet(rec.credit, true)}
+              Credit: {isPrivate ? '••••••' : formatNumberForSheet(rec.credit, true)}
             </span>
           )}
           {rec.note && (
@@ -173,7 +177,10 @@ export const TransactionRow: React.FC<TransactionRowProps> = React.memo(({
   onSelectCategory,
   onEditTransaction,
   onDeleteTransaction,
+  isPrivate: propIsPrivate,
 }) => {
+  const { isPrivate: hookIsPrivate } = usePrivacyMode();
+  const isPrivate = propIsPrivate !== undefined ? propIsPrivate : hookIsPrivate;
   return (
     <tr className="hover:bg-slate-50/90 dark:hover:bg-slate-800/50 transition-colors">
       <td className="py-2.5 px-4 font-mono-tabular text-slate-600 dark:text-slate-400 whitespace-nowrap">
@@ -202,13 +209,13 @@ export const TransactionRow: React.FC<TransactionRowProps> = React.memo(({
             : 'text-slate-900 dark:text-slate-100'
         }`}
       >
-        {formatCurrency(rec.amount, rec.sheetType === 'Income')}
+        {isPrivate ? (rec.sheetType === 'Income' ? '+•••••• ₫' : '•••••• ₫') : formatCurrency(rec.amount, rec.sheetType === 'Income')}
       </td>
       <td className="py-2.5 px-4 text-right font-mono-tabular text-amber-700 dark:text-amber-400 whitespace-nowrap">
-        {rec.beCorp !== 0 ? formatNumberForSheet(rec.beCorp, true) : ''}
+        {rec.beCorp !== 0 ? (isPrivate ? '••••••' : formatNumberForSheet(rec.beCorp, true)) : ''}
       </td>
       <td className="py-2.5 px-4 text-right font-mono-tabular text-indigo-700 dark:text-indigo-400 whitespace-nowrap">
-        {rec.credit !== 0 ? formatNumberForSheet(rec.credit, true) : ''}
+        {rec.credit !== 0 ? (isPrivate ? '••••••' : formatNumberForSheet(rec.credit, true)) : ''}
       </td>
       <td className="py-2.5 px-4 text-slate-500 dark:text-slate-400 whitespace-nowrap">
         <span>{rec.sheetType}</span>
@@ -434,35 +441,35 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
                 <>
                   {' '}· Tổng thu nhập:{' '}
                   <strong className="font-mono-tabular text-emerald-700 dark:text-emerald-400">
-                    {formatCurrency(totals.incomeSum, true)}
+                    {_effectiveIsPrivate ? '+•••••• ₫' : formatCurrency(totals.incomeSum, true)}
                   </strong>
                 </>
               ) : quickFilter === 'expenses' ? (
                 <>
                   {' '}· Tổng chi tiêu:{' '}
                   <strong className="font-mono-tabular text-slate-900 dark:text-slate-200">
-                    {formatCurrency(totals.expenseSum)}
+                    {_effectiveIsPrivate ? '•••••• ₫' : formatCurrency(totals.expenseSum)}
                   </strong>
                   {' '}· Tổng BE Corp:{' '}
                   <strong className="font-mono-tabular text-amber-700 dark:text-amber-400">
-                    {formatCurrency(totals.beCorp)}
+                    {_effectiveIsPrivate ? '•••••• ₫' : formatCurrency(totals.beCorp)}
                   </strong>
                   {' '}· Tổng Credit:{' '}
                   <strong className="font-mono-tabular text-indigo-700 dark:text-indigo-400">
-                    {formatCurrency(totals.credit)}
+                    {_effectiveIsPrivate ? '•••••• ₫' : formatCurrency(totals.credit)}
                   </strong>
                 </>
               ) : (
                 <>
                   {' '}· Tổng chi:{' '}
                   <strong className="font-mono-tabular text-slate-900 dark:text-slate-200">
-                    {formatCurrency(totals.expenseSum)}
+                    {_effectiveIsPrivate ? '•••••• ₫' : formatCurrency(totals.expenseSum)}
                   </strong>
                   {totals.incomeSum > 0 && (
                     <>
                       {' '}· Thu:{' '}
                       <strong className="font-mono-tabular text-emerald-700 dark:text-emerald-400">
-                        {formatCurrency(totals.incomeSum, true)}
+                        {_effectiveIsPrivate ? '+•••••• ₫' : formatCurrency(totals.incomeSum, true)}
                       </strong>
                     </>
                   )}
@@ -470,7 +477,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
                     <>
                       {' '}· BE Corp:{' '}
                       <strong className="font-mono-tabular text-amber-700 dark:text-amber-400">
-                        {formatCurrency(totals.beCorp)}
+                        {_effectiveIsPrivate ? '•••••• ₫' : formatCurrency(totals.beCorp)}
                       </strong>
                     </>
                   )}
@@ -478,7 +485,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
                     <>
                       {' '}· Credit:{' '}
                       <strong className="font-mono-tabular text-indigo-700 dark:text-indigo-400">
-                        {formatCurrency(totals.credit)}
+                        {_effectiveIsPrivate ? '•••••• ₫' : formatCurrency(totals.credit)}
                       </strong>
                     </>
                   )}
@@ -767,6 +774,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
               onSelectCategory={onSelectCategory}
               onEditTransaction={onEditTransaction}
               onDeleteTransaction={onDeleteTransaction}
+              isPrivate={_effectiveIsPrivate}
             />
           ))
         )}
@@ -828,6 +836,7 @@ export const TransactionLedgerTable: React.FC<TransactionLedgerTableProps> = Rea
                   onSelectCategory={onSelectCategory}
                   onEditTransaction={onEditTransaction}
                   onDeleteTransaction={onDeleteTransaction}
+                  isPrivate={_effectiveIsPrivate}
                 />
               ))
             )}
