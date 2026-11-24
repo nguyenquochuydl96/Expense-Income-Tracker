@@ -2160,6 +2160,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-transparent text-[var(--ink)] transition-colors">
+      {/* ═══════ iOS STATUS BAR SAFE AREA BACKDROP ═══════ */}
+      <div
+        className="fixed top-0 inset-x-0 h-[env(safe-area-inset-top)] z-50 pointer-events-none bg-[#eef1f3]/90 dark:bg-[#0d1214]/90 backdrop-blur-md transition-colors"
+        aria-hidden="true"
+      />
+
       {/* Main Container Wrapper */}
       <div className="flex-1 flex flex-col transition-all">
         {/* ═══════ HEADER: KINLO FLOATING GLASS ═══════ */}
@@ -2946,7 +2952,7 @@ export default function App() {
             <span className="text-[10px]">Sổ cái</span>
           </div>
           {periodRecords.length > 0 && (
-            <span className="absolute -top-0.5 right-0.5 z-20 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-[var(--accent)] text-[var(--accent-ink)]">
+            <span className="absolute -top-1.5 -right-2 z-20 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-[var(--accent)] text-[var(--accent-ink)] font-mono-tabular leading-tight shadow-xs">
               {periodRecords.length}
             </span>
           )}

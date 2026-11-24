@@ -806,17 +806,17 @@ export const CategoryBudgetTable: React.FC<CategoryBudgetTableProps> = React.mem
                     <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/60">
                       {item.carryover !== 0 && (
                         <span className={item.carryover > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}>
-                          {item.carryover > 0 ? `+${formatCurrency(item.carryover, true)} dư T trước` : `${formatCurrency(item.carryover)} nợ T trước`}
+                          {item.carryover > 0 ? `${formatCurrency(item.carryover, true)} dư T trước` : `${formatCurrency(item.carryover)} nợ T trước`}
                         </span>
                       )}
                       {item.dedicatedIncome > 0 && (
                         <span className="text-teal-600 dark:text-teal-400">
-                          +{formatCurrency(item.dedicatedIncome, true)} thu riêng
+                          {formatCurrency(item.dedicatedIncome, true)} thu riêng
                         </span>
                       )}
                       {item.netTransfer !== 0 && (
                         <span className={item.netTransfer > 0 ? 'text-emerald-600' : 'text-amber-600'}>
-                          {item.netTransfer > 0 ? `+${formatCurrency(item.netTransfer, true)} chuyển vào` : `${formatCurrency(item.netTransfer)} chuyển đi`}
+                          {item.netTransfer > 0 ? `${formatCurrency(item.netTransfer, true)} chuyển vào` : `${formatCurrency(item.netTransfer)} chuyển đi`}
                         </span>
                       )}
                     </div>
